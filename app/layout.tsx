@@ -15,8 +15,11 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "Bloom AI - Plant & Floral Design",
-  description: "AI-powered plant and floral design platform.",
+  title: "Context Window HQ",
+  description: "A zero-friction, high-density hacker house located in Bengaluru, built exclusively for the top 1% of AI engineers.",
+  icons: {
+    icon: "/logo_real.png",
+  },
 };
 
 export default function RootLayout({
