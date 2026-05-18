@@ -1,7 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Server, CreditCard, Users, ArrowRight, CheckCircle2, ChevronRight, MapPin, Calendar, Users2, Code2, Menu } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Server, CreditCard, Users, ArrowRight, CheckCircle2, ChevronRight, MapPin, Calendar, Users2, Code2, Menu, X } from "lucide-react";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 
 const TwitterIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -27,24 +29,23 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
   </motion.div>
 );
 
+const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <a href={href} className="relative overflow-hidden group h-8 block font-serif text-base font-medium text-white/70 hover:text-white transition-colors">
+    <div className="flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] -translate-y-8 group-hover:translate-y-0">
+      <span className="h-8 flex items-center">{children}</span>
+      <span className="h-8 flex items-center">{children}</span>
+    </div>
+  </a>
+);
+
 const founders = [
   {
-    name: "Kei Hayashi",
-    title: "Co-founder & CEO",
-    bio: "Kei co-founded Context Window HQ and leads strategy. Previously at Anthropic, building core infrastructure and large language models.",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&q=80",
-  },
-  {
-    name: "Suhas Sumukh",
-    title: "Co-founder & COO",
-    bio: "Suhas co-founded Context Window HQ and leads all operations. Previously a founding engineer at Merkle Labs, he was working as a software engineer across US-based companies from the age of 16.",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
-  },
-  {
-    name: "Hardeep Gambhir",
-    title: "Co-Founder, Growth & Strategy",
-    bio: "Hardeep drives expansion and ecosystem partnerships. Former growth lead at Vercel where he scaled the developer community globally.",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&q=80",
+    name: "Syed Ateef",
+    title: "Founder & Builder",
+    bio: "Syed is the Founder and Builder of Context Window HQ. High-agency shipper hacking multi-agent orchestration, local LLM pipelines, and deep-tech architecture.",
+    image: "/ateef_photo.png",
+    twitter: "https://x.com/syedateef_",
+    linkedin: "https://www.linkedin.com/in/syed-ateef-quadri-v-4a55ab318/"
   }
 ];
 
@@ -86,12 +87,12 @@ const FounderCard = ({ founder }: { founder: typeof founders[0] }) => {
               {founder.bio}
             </p>
             <div className="flex gap-2">
-              <button className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
+              <a href={founder.twitter} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
                 <TwitterIcon className="w-4 h-4 fill-current" />
-              </button>
-              <button className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
+              </a>
+              <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
                 <LinkedinIcon className="w-4 h-4 fill-current" />
-              </button>
+              </a>
             </div>
           </motion.div>
 
@@ -106,6 +107,8 @@ const FounderCard = ({ founder }: { founder: typeof founders[0] }) => {
 };
 
 export default function Home() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <main className="relative min-h-screen w-full overflow-hidden text-white font-sans selection:bg-white/20">
       {/* Background Video */}
@@ -127,18 +130,55 @@ export default function Home() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-50 p-4 lg:p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent"
+        className="fixed top-0 left-0 right-0 z-50 px-6 py-4 lg:px-16 lg:py-6 grid grid-cols-2 md:grid-cols-3 items-center bg-gradient-to-b from-black/80 to-transparent"
       >
-        <div className="flex items-center gap-3">
-           <div className="liquid-glass w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg">
-             CW
+        {/* Left Side: Logo */}
+        <div className="flex items-center gap-3 justify-self-start">
+           <div className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden">
+             <img src="/logo_real.png" alt="Context Window HQ Logo" className="w-full h-full object-cover" />
            </div>
-           <span className="font-semibold text-lg sm:text-xl tracking-tight hidden sm:block">Context Window HQ</span>
+           <span className="font-retro text-[10px] sm:text-xs leading-tight mt-1 tracking-tight hidden lg:block">Context Window HQ</span>
         </div>
-        <button className="liquid-glass flex items-center justify-center w-10 h-10 rounded-full hover:scale-105 transition-transform active:scale-95">
-          <Menu className="w-5 h-5 text-white" />
-        </button>
+
+        {/* Center: Nav links */}
+        <nav className="hidden md:flex items-center justify-center gap-8 justify-self-center">
+          <NavLink href="#about">About</NavLink>
+          <NavLink href="#events">Events</NavLink>
+          <NavLink href="#sprint">The Sprint</NavLink>
+        </nav>
+
+        {/* Right Side: Menu Button and Apply Button */}
+        <div className="flex items-center gap-6 justify-self-end">
+          <div className="hidden md:block">
+            <LiquidMetalButton label="Apply Now" />
+          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden liquid-glass flex items-center justify-center w-10 h-10 rounded-full hover:scale-105 transition-transform active:scale-95"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+          </button>
+        </div>
       </motion.header>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-md pt-32 px-8 flex flex-col gap-8 md:hidden"
+          >
+            <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">About</a>
+            <a href="#events" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">Events</a>
+            <a href="#sprint" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">The Sprint</a>
+            <div className="mt-8">
+              <LiquidMetalButton label="Apply Now" onClick={() => setIsMobileMenuOpen(false)} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Content Overlay */}
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-24 space-y-32">
@@ -146,9 +186,9 @@ export default function Home() {
         {/* Section 1: The Hero */}
         <section className="min-h-[85vh] flex flex-col justify-center items-center text-center pt-20">
           <FadeIn delay={0.1}>
-            <div className="liquid-glass rounded-full px-4 py-1.5 mb-8 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-white/70" />
-              <span className="text-xs font-semibold tracking-widest text-white/80">BENGALURU, INDIA • COHORT ZERO OPEN</span>
+            <div className="liquid-glass rounded-full px-4 py-1.5 mb-8 flex items-center gap-2 max-w-[90vw]">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white/70 shrink-0" />
+              <span className="text-[9px] sm:text-xs font-semibold tracking-widest text-white/80 truncate">BENGALURU, INDIA • COHORT ZERO OPEN</span>
             </div>
           </FadeIn>
           
@@ -166,35 +206,24 @@ export default function Home() {
 
           <FadeIn delay={0.4}>
             <div className="flex flex-col sm:flex-row gap-6 items-center">
-              <button className="liquid-glass-strong rounded-full px-6 py-3 flex items-center gap-3 hover:scale-105 active:scale-95 transition-transform group text-base font-medium">
-                Apply for Cohort 0
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="text-sm text-white/70 hover:text-white font-medium flex items-center gap-2 transition-colors">
-                View the Manifesto
-              </button>
+              <LiquidMetalButton label="Apply for Cohort 0" />
+              <a href="#events" className="text-sm text-white/70 hover:text-white font-medium flex items-center gap-2 transition-colors">
+                Join Our Events
+              </a>
             </div>
           </FadeIn>
         </section>
 
-        {/* Section 2: The Manifesto */}
+        {/* Section 1.5: About */}
         <FadeIn>
-          <section className="liquid-glass-strong rounded-[2.5rem] p-10 lg:p-16 flex flex-col lg:flex-row gap-12 items-start">
-            <div className="lg:w-1/2">
-              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight leading-tight">
-                We eliminated the friction. <br/>
-                <em className="font-serif italic text-white/80">You just build.</em>
-              </h2>
-            </div>
-            <div className="lg:w-1/2">
-              <p className="text-base lg:text-lg text-white/70 leading-relaxed">
-                Traditional incubators are bloated with networking events, mentors, and mandatory lectures. We stripped the stack down to the bare metal. 
-                <br/><br/>
-                <strong className="text-white font-medium">Context Window HQ</strong> provides the absolute highest-quality inputs—raw compute, immediate capital, and elite peers—so you can generate world-class outputs. No distractions. Just a room full of people shipping code at 2:00 AM.
-              </p>
-            </div>
+          <section id="about" className="text-center space-y-6 max-w-4xl mx-auto pt-10">
+            <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">About Context Window HQ</h2>
+            <p className="text-lg text-white/70 leading-relaxed text-center px-4 sm:px-0">
+              Context Window HQ is a zero-friction, high-density hacker house located in Bengaluru, built exclusively for the top 1% of AI engineers. We clear your mental cache and provide raw compute, frictionless capital, and elite peers so you can produce world-class infrastructure.
+            </p>
           </section>
         </FadeIn>
+
 
         {/* Section 3: The Infrastructure */}
         <section className="space-y-12">
@@ -254,55 +283,56 @@ export default function Home() {
             </div>
           </FadeIn>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 w-full max-w-sm mx-auto">
             {founders.map((founder, i) => (
-              <FadeIn key={founder.name} delay={i * 0.1}>
+              <FadeIn key={founder.name} delay={i * 0.1} className="w-full">
                 <FounderCard founder={founder} />
               </FadeIn>
             ))}
           </div>
         </section>
 
-        {/* Section 4: The Filter */}
-        <FadeIn>
-          <section className="liquid-glass rounded-[2.5rem] p-8 lg:p-12">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight mb-4">
-                No Wantrepreneurs. <em className="font-serif italic text-white/80">Only Shippers.</em>
-              </h2>
-              <p className="text-lg text-white/70 max-w-3xl mx-auto">
-                We do not care about your college degree, your LinkedIn title, or your green GitHub squares. We care about your live deployments, your architectural choices, and your ability to hack through production roadblocks.
+        {/* Section: Events */}
+        <section id="events" className="space-y-12">
+          <FadeIn>
+            <div className="text-center">
+              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">Upcoming Events</h2>
+              <p className="text-lg text-white/70 max-w-2xl mx-auto mt-4">
+                Join our exclusive meetups and hackathons in Bengaluru.
               </p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 mb-2">
-                  <CheckCircle2 className="w-5 h-5 text-white/80" />
-                  <h3 className="text-lg font-semibold">System Architects</h3>
+          </FadeIn>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <FadeIn delay={0.1} className="h-full">
+              <div className="liquid-glass rounded-3xl p-8 h-full flex flex-col justify-between gap-6">
+                <div>
+                  <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-2">OCT 24 • HSR Layout</div>
+                  <h3 className="text-2xl font-medium mb-3">Multi-Agent Hackathon</h3>
+                  <p className="text-white/60">A 24-hour sprint to build autonomous agent swarms. Bring your own compute, we provide the API credits and Red Bull.</p>
                 </div>
-                <p className="text-white/60 text-sm leading-relaxed">Building multi-agent orchestration and autonomous workflows.</p>
-              </div>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 mb-2">
-                  <CheckCircle2 className="w-5 h-5 text-white/80" />
-                  <h3 className="text-lg font-semibold">Infrastructure Hackers</h3>
+                <div>
+                  <LiquidMetalButton label="RSVP Now" />
                 </div>
-                <p className="text-white/60 text-sm leading-relaxed">Deploying and optimizing local models (Ollama, DeepSeek, Qwen).</p>
               </div>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3 mb-2">
-                  <CheckCircle2 className="w-5 h-5 text-white/80" />
-                  <h3 className="text-lg font-semibold">Full-Stack Shippers</h3>
+            </FadeIn>
+            <FadeIn delay={0.2} className="h-full">
+              <div className="liquid-glass rounded-3xl p-8 h-full flex flex-col justify-between gap-6">
+                <div>
+                  <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-2">NOV 12 • Indiranagar</div>
+                  <h3 className="text-2xl font-medium mb-3">Local LLM Deployment Mixer</h3>
+                  <p className="text-white/60">Connect with researchers and infra engineers running deep reasoning models on local hardware. Drinks are on us.</p>
                 </div>
-                <p className="text-white/60 text-sm leading-relaxed">Moving complex UI into pixel-perfect React/Next.js code.</p>
+                <div>
+                  <LiquidMetalButton label="RSVP Now" />
+                </div>
               </div>
-            </div>
-          </section>
-        </FadeIn>
+            </FadeIn>
+          </div>
+        </section>
 
         {/* Section 5: The Execution */}
-        <section className="space-y-12">
+        <section id="sprint" className="space-y-12">
           <FadeIn>
             <div className="text-center">
               <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">The Genesis Sprint.</h2>
@@ -310,31 +340,31 @@ export default function Home() {
           </FadeIn>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <FadeIn delay={0.1}>
-              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center">
+            <FadeIn delay={0.1} className="h-full">
+              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center h-full">
                 <MapPin className="w-8 h-8 text-white/80 mb-4" />
                 <span className="text-xs uppercase tracking-widest text-white/50 mb-1 font-semibold">Location</span>
                 <strong className="text-base font-medium">HSR Layout, Bengaluru</strong>
               </div>
             </FadeIn>
             
-            <FadeIn delay={0.2}>
-              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center">
+            <FadeIn delay={0.2} className="h-full">
+              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center h-full">
                 <Calendar className="w-8 h-8 text-white/80 mb-4" />
                 <span className="text-xs uppercase tracking-widest text-white/50 mb-1 font-semibold">Duration</span>
                 <strong className="text-base font-medium">30 Days of Intense Building</strong>
               </div>
             </FadeIn>
 
-            <FadeIn delay={0.3}>
-              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center">
+            <FadeIn delay={0.3} className="h-full">
+              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center h-full">
                 <Users2 className="w-8 h-8 text-white/80 mb-4" />
                 <span className="text-xs uppercase tracking-widest text-white/50 mb-1 font-semibold">Capacity</span>
                 <strong className="text-base font-medium">5 Founding Engineers</strong>
               </div>
             </FadeIn>
 
-            <FadeIn delay={0.4} className="lg:col-span-1 sm:col-span-2">
+            <FadeIn delay={0.4} className="h-full">
               <div className="liquid-glass-strong rounded-3xl p-6 flex flex-col items-center text-center h-full">
                 <Code2 className="w-8 h-8 text-white mb-4" />
                 <span className="text-xs uppercase tracking-widest text-white/70 mb-1 font-semibold">The Only Rule</span>
@@ -354,10 +384,7 @@ export default function Home() {
             <p className="text-lg text-white/60 mb-10 font-medium">
               Applications for Cohort 0 close soon. Show us what you are shipping.
             </p>
-            <button className="liquid-glass-strong rounded-full px-8 py-4 flex items-center gap-3 hover:scale-105 active:scale-95 transition-transform group text-lg font-medium">
-              Initialize Application
-              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            <LiquidMetalButton label="Initialize Application" />
             
             <div className="mt-24 text-white/40 text-sm font-medium">
               © 2026 Context Window HQ. All rights reserved.

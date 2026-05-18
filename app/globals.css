@@ -1,7 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import "tailwindcss";
 
 :root {
   --radius: 1rem;
+}
+
+.font-retro {
+  font-family: 'Press Start 2P', cursive;
 }
 
 @layer components {
@@ -52,6 +57,10 @@
     mask-composite: exclude;
     pointer-events: none;
   }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {

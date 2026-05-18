@@ -1,3 +1,24 @@
+# Context Window HQ
+
+Context Window HQ is a zero-friction, high-density hacker house and launchpad located in Bengaluru, built exclusively for the top 1% of AI engineers.
+
+It is designed to operate like the active memory of an autonomous agent: if you fill an engineer's environment with noise, friction, and isolation, their output degrades. If you clear their mental cache and fill their immediate surroundings with raw compute, frictionless capital, and elite peers, they produce world-class infrastructure.
+
+We don't manage AI; we manage the human context window.
+
+Here is the exact blueprint of what Context Window HQ is:
+
+## 1. The Core Infrastructure (Cohort Zero)
+- **The Location**: A physical sandbox in Bengaluru (targeting areas like HSR Layout).
+- **The Sprint**: A 30-day intense building phase for 5 hand-selected "Founding Engineers."
+- **The Inputs**: Builders are provided with instant micro-grants for infrastructure and massive pools of API credits (AWS, Cloudflare, local model rigs). Zero red tape. Zero reimbursement forms.
+- **The Outputs**: The only metric that matters is the Midnight Demo Protocol. Every day, builders must drop visual proof of a live deployment or architectural hurdle they cleared. No text updates allowed.
+
+## 2. The Filter (Who is Inside)
+This is not an incubator for "wantrepreneurs" or people who want to attend networking lectures. The house is strictly for high-agency shippers hacking multi-agent orchestration, local LLM pipelines, and deep-tech architecture. The entrance exam isn't a resume; it's a GitHub repo and a live deployment link.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
