@@ -112,7 +112,7 @@ export default function Home() {
   return (
     <main className="relative min-h-screen w-full overflow-hidden text-white font-sans selection:bg-white/20">
       {/* Background Video */}
-      <div className="fixed inset-0 w-full h-full z-0">
+      <div className="fixed inset-0 w-full h-full z-0 pointer-events-none">
         <video
           autoPlay
           loop
@@ -216,9 +216,9 @@ export default function Home() {
 
         {/* Section 1.5: About */}
         <FadeIn>
-          <section id="about" className="text-center space-y-6 max-w-4xl mx-auto pt-10">
-            <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">About Context Window HQ</h2>
-            <p className="text-lg text-white/70 leading-relaxed text-center px-4 sm:px-0">
+          <section id="about" className="text-center space-y-4 max-w-4xl mx-auto pt-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight px-4 sm:px-0">About Context Window HQ</h2>
+            <p className="text-base sm:text-lg text-white/70 leading-relaxed text-center px-6 sm:px-0">
               Context Window HQ is a zero-friction, high-density hacker house located in Bengaluru, built exclusively for the top 1% of AI engineers. We clear your mental cache and provide raw compute, frictionless capital, and elite peers so you can produce world-class infrastructure.
             </p>
           </section>
