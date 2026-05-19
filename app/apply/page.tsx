@@ -123,14 +123,14 @@ export default function ApplyPage() {
       {/* Close Button */}
       <button
         onClick={() => router.push("/")}
-        className="fixed top-6 right-6 z-50 w-10 h-10 liquid-glass rounded-full flex items-center justify-center hover:scale-105 transition-transform"
+        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50 w-9 h-9 sm:w-10 sm:h-10 liquid-glass rounded-full flex items-center justify-center hover:scale-105 transition-transform"
       >
-        <X className="w-5 h-5 text-white/80" />
+        <X className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-white/80" />
       </button>
 
       {/* Main Container */}
-      <div className="relative z-10 w-full max-w-2xl mx-auto my-12">
-        <div className="liquid-glass-strong rounded-[2.5rem] p-8 sm:p-12 border border-white/10 shadow-2xl overflow-hidden relative min-h-[580px] flex flex-col justify-between">
+      <div className="relative z-10 w-full max-w-2xl mx-auto my-4 sm:my-8 md:my-12 px-2 sm:px-0">
+        <div className="liquid-glass-strong rounded-[1.5rem] sm:rounded-[2.5rem] p-5 sm:p-10 md:p-12 border border-white/10 shadow-2xl overflow-hidden relative min-h-[500px] sm:min-h-[580px] flex flex-col justify-between">
           
           {/* Progress Indicator */}
           {step > 0 && step < 5 && (
@@ -154,28 +154,40 @@ export default function ApplyPage() {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-8 flex flex-col justify-between flex-grow"
               >
-                <div className="space-y-6 text-center pt-4">
-                  <div className="w-16 h-16 rounded-2xl bg-red-950/20 border border-red-500/20 flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
-                    <Terminal className="w-8 h-8 text-red-400" />
+                <div className="space-y-6 text-center pt-2">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-red-950/20 border border-red-500/20 flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
+                    <Terminal className="w-7 h-7 sm:w-8 sm:h-8 text-red-400" />
                   </div>
-                  <h2 className="text-3xl font-extrabold tracking-tight font-serif italic text-white">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-serif italic text-white">
                     MISSION BRIEFING
                   </h2>
-                  <p className="text-red-400/90 font-mono text-sm leading-relaxed max-w-lg mx-auto bg-red-950/20 border border-red-950/30 p-6 rounded-2xl">
+                  <p className="text-red-400/90 font-mono text-xs sm:text-sm leading-relaxed max-w-lg mx-auto bg-red-950/20 border border-red-950/30 p-4 sm:p-6 rounded-2xl">
                     "WARNING: We do not read resumes. We do not care about your degree or your corporate title. We only care about what you ship. Fill this out only if you are ready for a 30-day, bare-metal sprint with mandatory midnight deployments."
                   </p>
-                  <p className="text-white/60 text-sm max-w-md mx-auto">
+                  <p className="text-white/50 text-[11px] sm:text-sm max-w-md mx-auto">
                     This form functions as a compiler. It will filter for actual builders.
                   </p>
                 </div>
 
                 <div className="flex justify-center pt-8">
-                  <Button
+                  <button
+                    type="button"
                     onClick={nextStep}
-                    className="bg-[#00ff66] text-black hover:bg-[#00ff66]/90 rounded-full px-8 py-6 font-bold text-base shadow-[0_0_30px_rgba(0,255,102,0.2)] hover:scale-105 transition-transform"
+                    className="relative group overflow-hidden w-full sm:w-auto px-8 py-4 liquid-glass border border-white/15 hover:border-white/30 hover:bg-white/5 rounded-full font-semibold text-base shadow-[0_0_15px_rgba(255,255,255,0.02)] hover:shadow-[0_0_25px_rgba(255,255,255,0.05)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center"
                   >
-                    I AM READY TO SPRINT <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
+                    <div className="relative overflow-hidden h-6 w-full">
+                      <div className="flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] -translate-y-6 group-hover:translate-y-0">
+                        {/* Hover State: Green text, white arrow */}
+                        <span className="h-6 flex items-center justify-center text-[#00ff66] gap-2">
+                          I AM READY TO SPRINT <ArrowRight className="w-5 h-5 text-white" />
+                        </span>
+                        {/* Default State: White text, green arrow */}
+                        <span className="h-6 flex items-center justify-center text-white/90 gap-2">
+                          I AM READY TO SPRINT <ArrowRight className="w-5 h-5 text-[#00ff66]" />
+                        </span>
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -191,8 +203,8 @@ export default function ApplyPage() {
               >
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-white font-serif">Section 1: The Core Identifiers</h2>
-                    <p className="text-sm text-white/50 mt-1">Keep it bare-bones. Who are you and where do you live on the internet?</p>
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-serif">Section 1: The Core Identifiers</h2>
+                    <p className="text-xs sm:text-sm text-white/50 mt-1">Keep it bare-bones. Who are you and where do you live on the internet?</p>
                   </div>
                   <Separator className="bg-white/10" />
 
@@ -265,12 +277,31 @@ export default function ApplyPage() {
                 {error && <div className="text-red-400 text-sm bg-red-950/20 p-3 rounded-lg border border-red-950/30">{error}</div>}
 
                 <div className="flex justify-between pt-6 mt-auto">
-                  <Button onClick={prevStep} variant="ghost" className="text-white/60 hover:text-white rounded-full">
-                    <ArrowLeft className="mr-2 w-4 h-4" /> Back
-                  </Button>
-                  <Button onClick={nextStep} className="bg-white text-black hover:bg-white/90 rounded-full px-6">
-                    Continue <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="px-6 py-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-full font-medium text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="relative group overflow-hidden px-6 py-2.5 liquid-glass border border-white/15 hover:border-white/30 hover:bg-white/5 rounded-full font-semibold text-sm shadow-[0_0_10px_rgba(255,255,255,0.01)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center"
+                  >
+                    <div className="relative overflow-hidden h-5">
+                      <div className="flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] -translate-y-5 group-hover:translate-y-0">
+                        {/* Hover State: Green text, white arrow */}
+                        <span className="h-5 flex items-center justify-center text-[#00ff66] gap-1.5">
+                          Continue <ArrowRight className="w-4 h-4 text-white" />
+                        </span>
+                        {/* Default State: White text, green arrow */}
+                        <span className="h-5 flex items-center justify-center text-white/90 gap-1.5">
+                          Continue <ArrowRight className="w-4 h-4 text-[#00ff66]" />
+                        </span>
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -286,8 +317,8 @@ export default function ApplyPage() {
               >
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-white font-serif">Section 2: The Proof of Work</h2>
-                    <p className="text-sm text-red-400/80 font-mono mt-1">This is where 90% of applicants drop off. Prove your work.</p>
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-serif">Section 2: The Proof of Work</h2>
+                    <p className="text-xs sm:text-sm text-red-400/80 font-mono mt-1">This is where 90% of applicants drop off. Prove your work.</p>
                   </div>
                   <Separator className="bg-white/10" />
 
@@ -332,12 +363,31 @@ export default function ApplyPage() {
                 {error && <div className="text-red-400 text-sm bg-red-950/20 p-3 rounded-lg border border-red-950/30">{error}</div>}
 
                 <div className="flex justify-between pt-6 mt-auto">
-                  <Button onClick={prevStep} variant="ghost" className="text-white/60 hover:text-white rounded-full">
-                    <ArrowLeft className="mr-2 w-4 h-4" /> Back
-                  </Button>
-                  <Button onClick={nextStep} className="bg-white text-black hover:bg-white/90 rounded-full px-6">
-                    Continue <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="px-6 py-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-full font-medium text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="relative group overflow-hidden px-6 py-2.5 liquid-glass border border-white/15 hover:border-white/30 hover:bg-white/5 rounded-full font-semibold text-sm shadow-[0_0_10px_rgba(255,255,255,0.01)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center"
+                  >
+                    <div className="relative overflow-hidden h-5">
+                      <div className="flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] -translate-y-5 group-hover:translate-y-0">
+                        {/* Hover State: Green text, white arrow */}
+                        <span className="h-5 flex items-center justify-center text-[#00ff66] gap-1.5">
+                          Continue <ArrowRight className="w-4 h-4 text-white" />
+                        </span>
+                        {/* Default State: White text, green arrow */}
+                        <span className="h-5 flex items-center justify-center text-white/90 gap-1.5">
+                          Continue <ArrowRight className="w-4 h-4 text-[#00ff66]" />
+                        </span>
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -353,8 +403,8 @@ export default function ApplyPage() {
               >
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-white font-serif">Section 3: The Current Context</h2>
-                    <p className="text-sm text-white/50 mt-1">We need to know if what you are building fits the thesis of the house.</p>
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-serif">Section 3: The Current Context</h2>
+                    <p className="text-xs sm:text-sm text-white/50 mt-1">We need to know if what you are building fits the thesis of the house.</p>
                   </div>
                   <Separator className="bg-white/10" />
 
@@ -399,12 +449,31 @@ export default function ApplyPage() {
                 {error && <div className="text-red-400 text-sm bg-red-950/20 p-3 rounded-lg border border-red-950/30">{error}</div>}
 
                 <div className="flex justify-between pt-6 mt-auto">
-                  <Button onClick={prevStep} variant="ghost" className="text-white/60 hover:text-white rounded-full">
-                    <ArrowLeft className="mr-2 w-4 h-4" /> Back
-                  </Button>
-                  <Button onClick={nextStep} className="bg-white text-black hover:bg-white/90 rounded-full px-6">
-                    Continue <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="px-6 py-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-full font-medium text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="relative group overflow-hidden px-6 py-2.5 liquid-glass border border-white/15 hover:border-white/30 hover:bg-white/5 rounded-full font-semibold text-sm shadow-[0_0_10px_rgba(255,255,255,0.01)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center"
+                  >
+                    <div className="relative overflow-hidden h-5">
+                      <div className="flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] -translate-y-5 group-hover:translate-y-0">
+                        {/* Hover State: Green text, white arrow */}
+                        <span className="h-5 flex items-center justify-center text-[#00ff66] gap-1.5">
+                          Continue <ArrowRight className="w-4 h-4 text-white" />
+                        </span>
+                        {/* Default State: White text, green arrow */}
+                        <span className="h-5 flex items-center justify-center text-white/90 gap-1.5">
+                          Continue <ArrowRight className="w-4 h-4 text-[#00ff66]" />
+                        </span>
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -420,13 +489,13 @@ export default function ApplyPage() {
               >
                 <div className="space-y-6">
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-white font-serif">Section 4: The Logistics</h2>
-                    <p className="text-sm text-white/50 mt-1">Confirm you can actually execute on the 30-day physical sprint.</p>
+                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-serif">Section 4: The Logistics</h2>
+                    <p className="text-xs sm:text-sm text-white/50 mt-1">Confirm you can actually execute on the 30-day physical sprint.</p>
                   </div>
                   <Separator className="bg-white/10" />
 
                   <div className="space-y-4">
-                    <Label className="text-white/80 text-base">
+                    <Label className="text-white/80 text-sm sm:text-base leading-relaxed block">
                       Cohort Zero is a physical sprint in Bengaluru (HSR Layout / Koramangala area). What is your status?
                     </Label>
 
@@ -477,24 +546,38 @@ export default function ApplyPage() {
                 {error && <div className="text-red-400 text-sm bg-red-950/20 p-3 rounded-lg border border-red-950/30">{error}</div>}
 
                 <div className="flex justify-between pt-6 mt-auto">
-                  <Button onClick={prevStep} variant="ghost" className="text-white/60 hover:text-white rounded-full">
-                    <ArrowLeft className="mr-2 w-4 h-4" /> Back
-                  </Button>
-                  <Button
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="px-6 py-2.5 text-white/60 hover:text-white hover:bg-white/5 rounded-full font-medium text-sm flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Back
+                  </button>
+                  <button
+                    type="submit"
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="bg-[#00ff66] text-black hover:bg-[#00ff66]/90 rounded-full px-8 font-bold shadow-[0_0_25px_rgba(0,255,102,0.25)] hover:scale-105 transition-transform disabled:opacity-50"
+                    className="relative group overflow-hidden px-8 py-3.5 liquid-glass border border-white/15 hover:border-white/30 hover:bg-white/5 rounded-full font-bold text-sm shadow-[0_0_15px_rgba(255,255,255,0.02)] hover:shadow-[0_0_25px_rgba(255,255,255,0.05)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center min-w-[180px]"
                   >
                     {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Transmitting...
-                      </>
+                      <span className="flex items-center justify-center gap-1.5 text-white/95">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#00ff66]" /> Transmitting...
+                      </span>
                     ) : (
-                      <>
-                        Submit Application <ArrowRight className="ml-2 w-4 h-4" />
-                      </>
+                      <div className="relative overflow-hidden h-5 w-full">
+                        <div className="flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] -translate-y-5 group-hover:translate-y-0">
+                          {/* Hover State: Green text, white arrow */}
+                          <span className="h-5 flex items-center justify-center text-[#00ff66] gap-1.5">
+                            Submit Application <ArrowRight className="w-4 h-4 text-white" />
+                          </span>
+                          {/* Default State: White text, green arrow */}
+                          <span className="h-5 flex items-center justify-center text-white/90 gap-1.5">
+                            Submit Application <ArrowRight className="w-4 h-4 text-[#00ff66]" />
+                          </span>
+                        </div>
+                      </div>
                     )}
-                  </Button>
+                  </button>
                 </div>
               </motion.div>
             )}
@@ -514,12 +597,23 @@ export default function ApplyPage() {
                 <p className="text-white/60 text-base max-w-md mx-auto">
                   Your profile, proof of work, and thesis alignments have been written to our context. We will review your build status and contact you via WhatsApp shortly.
                 </p>
-                <Button
-                  onClick={() => router.push("/")}
-                  className="bg-white/10 hover:bg-white/20 text-white rounded-full border border-white/10 px-8 py-2 mt-4"
-                >
-                  Return to Matrix
-                </Button>
+                 <button
+                   onClick={() => router.push("/")}
+                   className="relative group overflow-hidden px-8 py-2.5 liquid-glass border border-white/15 hover:border-white/30 hover:bg-white/5 rounded-full font-semibold text-sm shadow-[0_0_15px_rgba(255,255,255,0.02)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center mt-4"
+                 >
+                   <div className="relative overflow-hidden h-5">
+                     <div className="flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] -translate-y-5 group-hover:translate-y-0">
+                       {/* Hover State: Green text */}
+                       <span className="h-5 flex items-center justify-center text-[#00ff66]">
+                         Return to Matrix
+                       </span>
+                       {/* Default State: White text */}
+                       <span className="h-5 flex items-center justify-center text-white/90">
+                         Return to Matrix
+                       </span>
+                     </div>
+                   </div>
+                 </button>
               </motion.div>
             )}
           </AnimatePresence>
