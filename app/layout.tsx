@@ -22,6 +22,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { SmoothScroll } from "@/components/ui/smooth-scroll";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,7 +34,9 @@ export default function RootLayout({
       lang="en"
       className={`${poppins.variable} ${sourceSerif.variable} font-sans h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SmoothScroll>{children}</SmoothScroll>
+      </body>
     </html>
   );
 }

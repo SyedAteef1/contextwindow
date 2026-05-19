@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Server, CreditCard, Users, ArrowRight, CheckCircle2, ChevronRight, MapPin, Calendar, Users2, Code2, Menu, X } from "lucide-react";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
+import { CanvasDots } from "@/components/ui/canvas-dots";
 
 const TwitterIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -137,7 +138,7 @@ export default function Home() {
            <div className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden">
              <img src="/logo_real.png" alt="Context Window HQ Logo" className="w-full h-full object-cover" />
            </div>
-           <span className="font-retro text-[10px] sm:text-xs leading-tight mt-1 tracking-tight hidden lg:block">Context Window HQ</span>
+           <span className="font-serif font-medium text-lg sm:text-xl tracking-tight hidden sm:block">Context Window HQ</span>
         </div>
 
         {/* Center: Nav links */}
@@ -181,7 +182,7 @@ export default function Home() {
       </AnimatePresence>
 
       {/* Content Overlay */}
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-24 space-y-32">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-24 space-y-20 sm:space-y-32">
         
         {/* Section 1: The Hero */}
         <section className="min-h-[85vh] flex flex-col justify-center items-center text-center pt-20">
@@ -216,7 +217,7 @@ export default function Home() {
 
         {/* Section 1.5: About */}
         <FadeIn>
-          <section id="about" className="text-center space-y-4 max-w-4xl mx-auto pt-10">
+          <section id="about" className="text-center space-y-4 max-w-4xl mx-auto pt-4 sm:pt-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight px-4 sm:px-0">About Context Window HQ</h2>
             <p className="text-base sm:text-lg text-white/70 leading-relaxed text-center px-6 sm:px-0">
               Context Window HQ is a zero-friction, high-density hacker house located in Bengaluru, built exclusively for the top 1% of AI engineers. We clear your mental cache and provide raw compute, frictionless capital, and elite peers so you can produce world-class infrastructure.
@@ -271,6 +272,30 @@ export default function Home() {
             </FadeIn>
           </div>
         </section>
+
+        {/* Section: Connecting the Dots */}
+        <FadeIn>
+          <section className="relative liquid-glass-strong rounded-[2.5rem] overflow-hidden min-h-[40vh] flex items-center justify-center p-8 lg:p-16 border border-white/5 shadow-2xl">
+            <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
+              <h2 className="text-2xl sm:text-3xl lg:text-5xl font-medium tracking-tight leading-tight mb-8 text-white">
+                "You can't connect the dots looking forward; you can only connect them looking backwards."
+              </h2>
+              
+              <div className="flex items-center gap-4 mb-10">
+                <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20">
+                  <img src="/steve_jobs.jpg" alt="Steve Jobs" className="w-full h-full object-cover grayscale" />
+                </div>
+                <span className="font-serif italic text-white/80 text-lg sm:text-xl">~ Steve Jobs</span>
+              </div>
+
+              <div className="w-16 h-[1px] bg-white/20 mb-10" />
+
+              <p className="text-base sm:text-lg lg:text-xl text-white/90 font-medium leading-relaxed max-w-2xl mx-auto">
+                Context Window HQ is built for cracked engineers to collide. We provide the high-density environment required for those dots to connect.
+              </p>
+            </div>
+          </section>
+        </FadeIn>
 
         {/* New Section: The Founders */}
         <section className="space-y-12">
