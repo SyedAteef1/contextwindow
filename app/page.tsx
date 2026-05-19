@@ -203,7 +203,7 @@ export default function Home() {
           
           <FadeIn delay={0.3}>
             <p className="text-lg lg:text-xl text-white/60 max-w-3xl mb-12 font-medium">
-              A zero-friction, high-density hacker house for the top 1% of engineers orchestrating multi-agent systems, local LLMs, and deep-tech infrastructure.
+              A zero-friction, high-density co-living hacker house gathering India's top 1% of AI engineering talent to build, live, and deploy together.
             </p>
           </FadeIn>
 
@@ -220,9 +220,9 @@ export default function Home() {
         {/* Section 1.5: About */}
         <FadeIn>
           <section id="about" className="text-center space-y-4 max-w-4xl mx-auto pt-4 sm:pt-10">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight px-4 sm:px-0">About Context Window HQ</h2>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight px-4 sm:px-0">Gathering the Cracked Builders</h2>
             <p className="text-base sm:text-lg text-white/70 leading-relaxed text-center px-6 sm:px-0">
-              Context Window HQ is a zero-friction, high-density hacker house located in Bengaluru, built exclusively for the top 1% of AI engineers. We clear your mental cache and provide raw compute, frictionless capital, and elite peers so you can produce world-class infrastructure.
+              Context Window HQ is a physical, high-density co-living hacker house in Bengaluru built exclusively to gather the top 1% of AI engineers and system architects. We eliminate all local friction—providing raw compute pools, immediate developer capital, and 24/7 immersion with elite peers—so you can focus entirely on producing world-class infrastructure.
             </p>
           </section>
         </FadeIn>
@@ -266,9 +266,9 @@ export default function Home() {
                 <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-6">
                   <Users className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold mb-3">High-Density Context</h3>
+                <h3 className="text-lg font-semibold mb-3">Hacker House Residency</h3>
                 <p className="text-sm text-white/60 leading-relaxed">
-                  You are the average of the five builders around you. Surround yourself with system architects, Next.js heavyweights, and devs deploying local reasoning models.
+                  Live and co-work alongside a curated crew of the country's most cracked builders, system architects, and compiler engineers. 24/7 high-density feedback loops.
                 </p>
               </div>
             </FadeIn>
@@ -293,7 +293,7 @@ export default function Home() {
               <div className="w-16 h-[1px] bg-white/20 mb-10" />
 
               <p className="text-base sm:text-lg lg:text-xl text-white/90 font-medium leading-relaxed max-w-2xl mx-auto">
-                Context Window HQ is built for cracked engineers to collide. We provide the high-density environment required for those dots to connect.
+                Context Window HQ is built to assemble the country's absolute best engineering minds under one roof. We provide the high-density physical environment required for those dots to connect.
               </p>
             </div>
           </section>
@@ -386,8 +386,8 @@ export default function Home() {
             <FadeIn delay={0.3} className="h-full">
               <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center h-full">
                 <Users2 className="w-8 h-8 text-white/80 mb-4" />
-                <span className="text-xs uppercase tracking-widest text-white/50 mb-1 font-semibold">Capacity</span>
-                <strong className="text-base font-medium">5 Founding Engineers</strong>
+                <span className="text-xs uppercase tracking-widest text-white/50 mb-1 font-semibold">Residency Group</span>
+                <strong className="text-base font-medium">5 Curated Elite Builders</strong>
               </div>
             </FadeIn>
 
@@ -409,7 +409,7 @@ export default function Home() {
               Ready to expand your <em className="font-serif italic font-normal text-white/80">context?</em>
             </h2>
             <p className="text-lg text-white/60 mb-10 font-medium">
-              Applications for Cohort 0 close soon. Show us what you are shipping.
+              Join the physical residency. Applications for Cohort 0 close soon. Show us what you are shipping.
             </p>
             <LiquidMetalButton label="Initialize Application" onClick={() => router.push('/apply')} />
             

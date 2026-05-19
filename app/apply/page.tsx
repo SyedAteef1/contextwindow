@@ -155,12 +155,15 @@ export default function ApplyPage() {
                 className="space-y-8 flex flex-col justify-between flex-grow"
               >
                 <div className="space-y-6 text-center pt-2">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-red-950/20 border border-red-500/20 flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
-                    <Terminal className="w-7 h-7 sm:w-8 sm:h-8 text-red-400" />
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#00ff66]/10 border border-[#00ff66]/20 flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-[0_0_30px_rgba(0,255,102,0.1)]">
+                    <Terminal className="w-7 h-7 sm:w-8 sm:h-8 text-[#00ff66]" />
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-serif italic text-white">
                     MISSION BRIEFING
                   </h2>
+                  <p className="text-white/80 text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
+                    Context Window HQ is a high-density physical hacker house in Bengaluru gathering elite AI engineering talent to build, deploy, and scale.
+                  </p>
                   <p className="text-red-400/90 font-mono text-xs sm:text-sm leading-relaxed max-w-lg mx-auto bg-red-950/20 border border-red-950/30 p-4 sm:p-6 rounded-2xl">
                     "WARNING: We do not read resumes. We do not care about your degree or your corporate title. We only care about what you ship. Fill this out only if you are ready for a 30-day, bare-metal sprint with mandatory midnight deployments."
                   </p>
@@ -490,13 +493,13 @@ export default function ApplyPage() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-serif">Section 4: The Logistics</h2>
-                    <p className="text-xs sm:text-sm text-white/50 mt-1">Confirm you can actually execute on the 30-day physical sprint.</p>
+                    <p className="text-xs sm:text-sm text-white/50 mt-1">Confirm you can check into the physical hacker house in Bengaluru.</p>
                   </div>
                   <Separator className="bg-white/10" />
 
                   <div className="space-y-4">
                     <Label className="text-white/80 text-sm sm:text-base leading-relaxed block">
-                      Cohort Zero is a physical sprint in Bengaluru (HSR Layout / Koramangala area). What is your status?
+                      Cohort Zero is a 30-day residency at our physical hacker house in Bengaluru. What is your status?
                     </Label>
 
                     <RadioGroup
@@ -590,12 +593,60 @@ export default function ApplyPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="flex flex-col items-center justify-center text-center py-12 space-y-6"
               >
-                <div className="w-20 h-20 bg-[#00ff66]/20 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(0,255,102,0.2)]">
-                  <CheckCircle2 className="w-10 h-10 text-[#00ff66]" />
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="w-24 h-24 bg-[#00ff66]/5 rounded-full flex items-center justify-center border border-[#00ff66]/20 shadow-[0_0_50px_rgba(0,255,102,0.1)] relative"
+                >
+                  {/* Subtle pulsing background glow */}
+                  <motion.div
+                    className="absolute inset-0 rounded-full bg-[#00ff66]/10 -z-10"
+                    animate={{
+                      scale: [1, 1.15, 1],
+                      opacity: [0.6, 0.2, 0.6],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 60 60"
+                    fill="none"
+                    className="w-12 h-12 text-[#00ff66]"
+                  >
+                    {/* Animated Outer Circle */}
+                    <motion.circle
+                      cx="30"
+                      cy="30"
+                      r="26"
+                      stroke="#00ff66"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ duration: 0.8, ease: "easeInOut" }}
+                    />
+                    {/* Animated Checkmark Path */}
+                    <motion.path
+                      d="M18 30 L26 38 L42 22"
+                      stroke="#00ff66"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ delay: 0.6, duration: 0.5, ease: "easeOut" }}
+                    />
+                  </svg>
+                </motion.div>
                 <h2 className="text-3xl font-bold tracking-tight">TRANSMISSION COMPLETE</h2>
                 <p className="text-white/60 text-base max-w-md mx-auto">
-                  Your profile, proof of work, and thesis alignments have been written to our context. We will review your build status and contact you via WhatsApp shortly.
+                  Your profile, proof of work, and thesis alignments have been written to our context. We will review your build status for a residency spot at the hacker house and contact you via WhatsApp shortly.
                 </p>
                  <button
                    onClick={() => router.push("/")}
