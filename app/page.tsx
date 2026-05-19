@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Server, CreditCard, Users, ArrowRight, CheckCircle2, ChevronRight, MapPin, Calendar, Users2, Code2, Menu, X } from "lucide-react";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { CanvasDots } from "@/components/ui/canvas-dots";
+import { useRouter } from "next/navigation";
 
 const TwitterIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -109,6 +110,7 @@ const FounderCard = ({ founder }: { founder: typeof founders[0] }) => {
 
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden text-white font-sans selection:bg-white/20">
@@ -151,7 +153,7 @@ export default function Home() {
         {/* Right Side: Menu Button and Apply Button */}
         <div className="flex items-center gap-6 justify-self-end">
           <div className="hidden md:block">
-            <LiquidMetalButton label="Apply Now" />
+            <LiquidMetalButton label="Apply Now" onClick={() => router.push('/apply')} />
           </div>
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -175,7 +177,7 @@ export default function Home() {
             <a href="#events" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">Events</a>
             <a href="#sprint" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">The Sprint</a>
             <div className="mt-8">
-              <LiquidMetalButton label="Apply Now" onClick={() => setIsMobileMenuOpen(false)} />
+              <LiquidMetalButton label="Apply Now" onClick={() => { setIsMobileMenuOpen(false); router.push('/apply'); }} />
             </div>
           </motion.div>
         )}
@@ -207,7 +209,7 @@ export default function Home() {
 
           <FadeIn delay={0.4}>
             <div className="flex flex-col sm:flex-row gap-6 items-center">
-              <LiquidMetalButton label="Apply for Cohort 0" />
+              <LiquidMetalButton label="Apply for Cohort 0" onClick={() => router.push('/apply')} />
               <a href="#events" className="text-sm text-white/70 hover:text-white font-medium flex items-center gap-2 transition-colors">
                 Join Our Events
               </a>
@@ -409,7 +411,7 @@ export default function Home() {
             <p className="text-lg text-white/60 mb-10 font-medium">
               Applications for Cohort 0 close soon. Show us what you are shipping.
             </p>
-            <LiquidMetalButton label="Initialize Application" />
+            <LiquidMetalButton label="Initialize Application" onClick={() => router.push('/apply')} />
             
             <div className="mt-24 text-white/40 text-sm font-medium">
               © 2026 Context Window HQ. All rights reserved.
