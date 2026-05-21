@@ -718,4 +718,28 @@ svg.network-graph .connection-line {
   .spec-table th, .spec-table td { display: block; width: 100%; padding: 0.5rem 0; border: none; }
   .spec-table tr { border-bottom: 2px solid var(--border-dark); display: block; padding: 1.5rem 0; }
   .nav-sys { display: none; }
+  .topology-container { grid-template-columns: 1fr; }
+  .terminal-section { padding: 2rem; }
+}
+
+@media (max-width: 768px) {
+  .telemetry-deck { grid-template-columns: repeat(2, 1fr); }
+  .hero h1 { font-size: clamp(2.5rem, 8vw, 4rem); margin-bottom: 1.5rem; }
+  .hero p { font-size: 14px; margin-bottom: 2rem; }
+  .btn-group { flex-direction: column; width: 100%; gap: 1rem; }
+  .btn { width: 100%; justify-content: center; }
+  .footer-action { padding: 4rem 2rem; }
+  .footer-action h2 { font-size: clamp(2rem, 8vw, 3rem); }
+  .app-input-group { flex-direction: column; }
+  .app-input-group button { padding: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .telemetry-deck { grid-template-columns: 1fr; }
+  .terminal-section { padding: 1rem; }
+  .terminal-body { padding: 1rem; height: 300px; }
+  .topology-viz { padding: 1.5rem; min-height: 250px; }
+  .topology-details { padding: 2rem 1.5rem; }
+  .grid-cell { padding: 2rem 1.5rem; }
+  .marquee span { font-size: 1.2rem; }
 }

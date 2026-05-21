@@ -181,6 +181,13 @@ export default function LandingPage() {
     return () => timeouts.forEach(clearTimeout);
   }, [activeNode]);
 
+  // Terminal scroll handler
+  useEffect(() => {
+    if (termBodyRef.current) {
+      termBodyRef.current.scrollTop = termBodyRef.current.scrollHeight;
+    }
+  }, [termHistory]);
+
   // ---------------------------------------------------------------------------
   // Terminal Logic
   // ---------------------------------------------------------------------------
@@ -450,11 +457,6 @@ export default function LandingPage() {
       
       setTermHistory(prev => [...prev, combinedOutput]);
       setTermInput("");
-      setTimeout(() => {
-        if (termBodyRef.current) {
-          termBodyRef.current.scrollTop = termBodyRef.current.scrollHeight;
-        }
-      }, 10);
     }
   };
 
