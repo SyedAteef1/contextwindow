@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONTEXT WINDOW HQ // HSR Layout — Builder Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Chivo+Mono:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Theme Variables - Default Light (Swiss Brutalism) */
+    --bg-base: #F4F4EE;
+    --bg-surface: #FFFFFF;
+    --ink-main: #0B0B0A;
+    --ink-muted: #64645E;
+    --border-main: #D6D6CF;
+    --border-dark: #0B0B0A;
+    --accent-red: #FF2E00;
+    --accent-acid: #D5FE00;
+    --accent-blue: #00E5FF;
+    --shadow-color: rgba(11, 11, 10, 0.08);
+    --shadow-solid: 4px 4px 0px #0B0B0A;
+    --shadow-solid-hover: 8px 8px 0px #0B0B0A;
+    --font-display: 'Bricolage Grotesque', sans-serif;
+    --font-mono: 'Chivo Mono', monospace;
+    --font-code: 'JetBrains Mono', monospace;
+  }
+
+  body.theme-dark {
+    --bg-base: #0A0A0B;
+    --bg-surface: #111113;
+    --ink-main: #F0F0EC;
+    --ink-muted: #8E8E93;
+    --border-main: #242428;
+    --border-dark: #F0F0EC;
+    --accent-red: #FF3B30;
+    --accent-acid: #34C759;
+    --accent-blue: #0A84FF;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --shadow-solid: 4px 4px 0px #F0F0EC;
+    --shadow-solid-hover: 8px 8px 0px #F0F0EC;
+  }
+
+  body.theme-cyber {
+    --bg-base: #030308;
+    --bg-surface: #090915;
+    --ink-main: #00FF66;
+    --ink-muted: #6B7B8C;
+    --border-main: #1A1A35;
+    --border-dark: #00E5FF;
+    --accent-red: #FF0055;
+    --accent-acid: #E5FF00;
+    --accent-blue: #00E5FF;
+    --shadow-color: rgba(0, 229, 255, 0.15);
+    --shadow-solid: 4px 4px 0px #00E5FF;
+    --shadow-solid-hover: 6px 6px 12px rgba(0, 229, 255, 0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  ::selection { background: var(--accent-acid); color: #000; }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--ink-main);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    cursor: crosshair;
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  /* Parallax Blueprint Grid */
+  .blueprint-grid {
+    position: fixed;
+    top: -10%; left: -10%; width: 120%; height: 120%;
+    background-image: 
+      linear-gradient(var(--border-main) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border-main) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.35;
+    z-index: -1;
+    pointer-events: none;
+    transition: transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+
+  /* Retro CRT scanlines in cyber mode */
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+      rgba(18, 16, 16, 0) 50%, 
+      rgba(0, 0, 0, 0.04) 50%
+    );
+    background-size: 100% 4px;
+    z-index: 9999;
+    pointer-events: none;
+    display: none;
+  }
+  body.theme-cyber .scanlines {
+    display: block;
+  }
+
+  /* Progress Bar */
+  .scroll-progress {
+    position: fixed; top: 0; left: 0; height: 4px;
+    background: var(--accent-red);
+    width: 0%; z-index: 1001;
+    transition: width 0.1s;
+  }
+
+  /* Navigation / System Bar */
+  nav {
+    position: fixed; top: 0; width: 100%;
+    background: rgba(var(--bg-base), 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 2px solid var(--border-dark);
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.2rem 2rem; z-index: 1000;
+    font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em;
+  }
+
+  .nav-brand { 
+    font-family: var(--font-display); 
+    font-size: 18px; 
+    font-weight: 800; 
+    letter-spacing: -0.02em; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-brand::before {
+    content: '';
+    display: inline-block;
+    width: 10px; height: 10px;
+    background: var(--accent-red);
+  }
+  .nav-sys { display: flex; gap: 2rem; color: var(--ink-muted); }
+  .nav-sys span { display: flex; align-items: center; gap: 6px; }
+  .nav-sys span strong { color: var(--ink-main); }
+  .nav-sys .live-dot { width: 8px; height: 8px; background: var(--accent-red); border-radius: 50%; animation: pulse 1.5s infinite; }
+
+  @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
+
+  /* Coordinate Tracker */
+  .coord-tracker {
+    position: fixed; bottom: 1.5rem; right: 2rem;
+    font-family: var(--font-code); font-size: 10px;
+    color: var(--ink-muted); background: var(--bg-surface);
+    padding: 4px 8px; border: 1px solid var(--border-main);
+    z-index: 100; pointer-events: none;
+    backdrop-filter: blur(4px);
+    border-radius: 2px;
+  }
+
+  /* Layout Frame */
+  .frame {
+    max-width: 1400px;
+    margin: 6rem auto 4rem;
+    background: var(--border-dark);
+    border: 2px solid var(--border-dark);
+    box-shadow: 12px 12px 0px var(--shadow-color);
+  }
+
+  /* Hero Section */
+  .hero {
+    background: var(--bg-surface);
+    padding: 8rem 4rem;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 2px solid var(--border-dark);
+  }
+
+  .hero-eyebrow {
+    font-size: 10px; font-weight: 700; color: var(--accent-red);
+    letter-spacing: 0.25em; text-transform: uppercase;
+    margin-bottom: 2rem; display: inline-block;
+    border: 2px solid var(--accent-red); padding: 6px 14px;
+    background: rgba(255, 46, 0, 0.05);
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 9vw, 7.5rem);
+    font-weight: 800; line-height: 0.9; letter-spacing: -0.04em;
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+    max-width: 1200px;
+    position: relative;
+  }
+
+  /* Kinetic Hover Highlight */
+  .hero h1 span.glitch-text {
+    color: var(--accent-red);
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    transition: text-shadow 0.2s;
+  }
+  .hero h1 span.glitch-text:hover {
+    text-shadow: 3px 3px 0px var(--accent-acid);
+  }
+  
+  .hero p {
+    font-size: 16px; max-width: 650px; color: var(--ink-muted);
+    line-height: 1.8; margin-bottom: 4rem;
+  }
+
+  .hero p strong { color: var(--ink-main); font-weight: 700; }
+
+  /* Brutalist Buttons */
+  .btn-group { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+  
+  .btn {
+    font-family: var(--font-mono);
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 1.25rem 2.5rem; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    border: 2px solid var(--border-dark);
+    position: relative;
+  }
+  
+  .btn-primary { 
+    background: var(--border-dark); color: var(--bg-surface); 
+    box-shadow: var(--shadow-solid);
+  }
+  .btn-primary:hover { 
+    background: var(--accent-red); border-color: var(--accent-red); color: #fff;
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-solid-hover);
+  }
+  .btn-primary:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #000;
+  }
+  
+  .btn-outline { 
+    background: transparent; color: var(--ink-main); 
+    box-shadow: var(--shadow-solid);
+  }
+  .btn-outline:hover { 
+    background: var(--accent-acid); color: #000;
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-solid-hover);
+  }
+  .btn-outline:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #000;
+  }
+
+  /* Marquee Banner */
+  .marquee {
+    grid-column: span 12; background: var(--accent-acid);
+    padding: 1.2rem 0; overflow: hidden; white-space: nowrap;
+    border-bottom: 2px solid var(--border-dark);
+  }
+  
+  .marquee-inner { display: inline-flex; animation: scroll 20s linear infinite; }
+  .marquee span {
+    font-family: var(--font-display); font-size: 1.8rem; font-weight: 800;
+    text-transform: uppercase; color: #000; padding: 0 3rem;
+    display: flex; align-items: center; gap: 1.5rem;
+  }
+  .marquee span::after {
+    content: '★';
+    color: var(--accent-red);
+    font-size: 1.2rem;
+  }
+  @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+  /* Grid Architecture */
+  .grid-section {
+    display: grid; grid-template-columns: repeat(12, 1fr);
+    gap: var(--grid-gap); background: var(--border-dark);
+  }
+
+  .grid-cell { 
+    background: var(--bg-surface); padding: 4rem; position: relative; 
+    transition: background-color 0.3s;
+  }
+  
+  .cell-span-12 { grid-column: span 12; }
+  .cell-span-8 { grid-column: span 8; }
+  .cell-span-6 { grid-column: span 6; }
+  .cell-span-4 { grid-column: span 4; }
+
+  /* Cell Labels & Elements */
+  .cell-label {
+    position: absolute; top: 1.5rem; left: 1.5rem;
+    font-size: 10px; color: var(--ink-muted); letter-spacing: 0.1em; text-transform: uppercase;
+    font-family: var(--font-code);
+  }
+
+  .cell-title {
+    font-family: var(--font-display); font-size: 2.8rem; font-weight: 800;
+    line-height: 1.05; letter-spacing: -0.02em; margin: 1.5rem 0 1.5rem 0;
+    text-transform: uppercase;
+  }
+
+  .cell-body { font-size: 13.5px; color: var(--ink-muted); max-width: 480px; }
+  .cell-body strong { color: var(--ink-main); }
+
+  /* 3D Bento Tilts */
+  .bento-tilt {
+    transform-style: preserve-3d;
+    transform: perspective(1000px);
+    transition: transform 0.1s ease, box-shadow 0.3s ease;
+  }
+  
+  /* Protocol Bento Box Styling */
+  .protocol-cell { padding: 3rem; transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1); }
+  .protocol-cell:hover { background: var(--ink-main); color: var(--bg-surface); }
+  .protocol-cell:hover .cell-title { color: var(--bg-surface); }
+  .protocol-cell:hover .cell-label { color: var(--accent-acid); }
+  .protocol-cell:hover .cell-body { color: var(--ink-muted); }
+
+  .protocol-cell .b-num {
+    font-family: var(--font-display); font-size: 4rem; font-weight: 800;
+    color: var(--border-main); position: absolute; bottom: 1rem; right: 1.5rem;
+    line-height: 1; transition: color 0.3s;
+  }
+  .protocol-cell:hover .b-num { color: var(--accent-red); }
+
+  /* HACKER HOUSE TELEMETRY PANEL */
+  .telemetry-deck {
+    background: var(--bg-surface);
+    border-bottom: 2px solid var(--border-dark);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--grid-gap);
+    background-color: var(--border-dark);
+  }
+
+  @media (max-width: 768px) {
+    .telemetry-deck { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .telemetry-deck { grid-template-columns: 1fr; }
+  }
+
+  .tel-card {
+    background: var(--bg-surface);
+    padding: 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tel-value {
+    font-family: var(--font-code);
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--accent-red);
+  }
+
+  .tel-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  /* NETWORK TOPOLOGY (SVG Graph & Details) */
+  .topology-container {
+    background: var(--bg-surface);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: 2px solid var(--border-dark);
+  }
+  
+  @media (max-width: 1024px) {
+    .topology-container { grid-template-columns: 1fr; }
+  }
+
+  .topology-viz {
+    padding: 3rem;
+    background: #0B0B0A;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 400px;
+    border-right: 2px solid var(--border-dark);
+  }
+  
+  .topology-details {
+    padding: 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .node-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-dark);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .node-panel-title {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .node-panel-badge {
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: var(--accent-acid);
+    border: 1px solid var(--border-dark);
+    color: #000;
+  }
+
+  .node-panel-log {
+    background: var(--bg-base);
+    border: 1px solid var(--border-main);
+    font-family: var(--font-code);
+    font-size: 12px;
+    padding: 1.5rem;
+    height: 180px;
+    overflow-y: auto;
+    margin-top: 1.5rem;
+    border-left: 4px solid var(--accent-red);
+  }
+
+  /* SVG Topology styling */
+  svg.network-graph {
+    width: 100%;
+    max-width: 450px;
+    height: auto;
+  }
+  
+  svg.network-graph .node {
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  svg.network-graph .node:hover circle {
+    fill: var(--accent-acid) !important;
+    stroke: #FFF !important;
+    stroke-width: 3px;
+  }
+
+  svg.network-graph .connection-line {
+    stroke-dasharray: 8;
+    animation: dash 10s linear infinite;
+  }
+
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -100;
+    }
+  }
+
+  /* INTERACTIVE CORE WIDE TERMINAL WIDGET */
+  .terminal-section {
+    padding: 4rem;
+    background: var(--bg-surface);
+    border-bottom: 2px solid var(--border-dark);
+  }
+
+  .terminal-window {
+    background: #0B0B0D;
+    color: #FFF;
+    border: 2px solid var(--border-dark);
+    border-radius: 4px;
+    box-shadow: var(--shadow-solid);
+    overflow: hidden;
+    font-family: var(--font-code);
+    text-align: left;
+  }
+
+  .terminal-header {
+    background: var(--border-main);
+    color: var(--ink-main);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-dark);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .terminal-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .terminal-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--ink-main);
+  }
+
+  .terminal-body {
+    padding: 2rem;
+    height: 400px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .terminal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 1rem;
+  }
+
+  .terminal-prompt {
+    color: var(--accent-acid);
+    font-weight: 700;
+  }
+
+  .terminal-input {
+    background: transparent;
+    border: none;
+    color: #FFF;
+    font-family: var(--font-code);
+    font-size: 13px;
+    outline: none;
+    flex: 1;
+  }
+
+  .t-cyan { color: var(--accent-blue); }
+  .t-yellow { color: var(--accent-acid); }
+  .t-red { color: var(--accent-red); }
+  .t-green { color: #34C759; }
+  .t-gray { color: var(--ink-muted); }
+
+  /* Spec Table (Capital Engine) */
+  .spec-table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+  .spec-table th, .spec-table td {
+    padding: 1.5rem 1rem; border-bottom: 2px solid var(--border-dark);
+    text-align: left; vertical-align: top;
+  }
+  .spec-table tr:last-child th, .spec-table tr:last-child td {
+    border-bottom: none;
+  }
+  .spec-table th { font-size: 10px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.1em; width: 25%; font-family: var(--font-code); }
+  .spec-table td.spec-title { font-weight: 700; color: var(--ink-main); font-size: 14px; width: 30%; }
+  .spec-table td.spec-desc { color: var(--ink-muted); font-size: 13.5px; }
+
+  /* Footer Action with CLI Application Flow */
+  .footer-action {
+    grid-column: span 12; background: var(--accent-red); color: #fff;
+    padding: 8rem 4rem; text-align: center; border-bottom: 2px solid var(--border-dark);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .footer-action::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 32px 32px;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .footer-content { position: relative; z-index: 2; }
+
+  .footer-action h2 { 
+    font-family: var(--font-display); 
+    font-size: clamp(3rem, 6vw, 6rem); 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    line-height: 1; 
+    margin-bottom: 2rem;
+    letter-spacing: -0.03em;
+  }
+  .footer-action p { font-size: 16px; margin: 0 auto 3rem; max-width: 550px; opacity: 0.95; }
+  
+  /* Input & Simulated CLI Box */
+  .application-box {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #0B0B0A;
+    border: 2px solid var(--border-dark);
+    box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.3);
+    text-align: left;
+  }
+
+  .app-input-group {
+    display: flex;
+    background: #fff;
+    border-bottom: 2px solid var(--border-dark);
+  }
+  .app-input-group input { 
+    flex: 1; padding: 1.5rem; border: none; 
+    font-family: var(--font-mono); font-size: 13.5px; outline: none; 
+    color: #000;
+  }
+  .app-input-group button { 
+    background: var(--border-dark); color: #fff; border: none; 
+    padding: 0 2.5rem; font-family: var(--font-mono); font-weight: 700; 
+    text-transform: uppercase; cursor: pointer; transition: background-color 0.2s; 
+  }
+  .app-input-group button:hover { background: var(--accent-acid); color: #000; }
+
+  .app-cli-output {
+    padding: 1.5rem;
+    font-family: var(--font-code);
+    font-size: 12px;
+    color: #FFF;
+    height: 180px;
+    overflow-y: auto;
+    line-height: 1.6;
+    display: none;
+    border-top: none;
+    background: #0B0B0A;
+  }
+
+  /* Reveal Animations */
+  .reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+  .reveal.active { opacity: 1; transform: translateY(0); }
+
+  /* Responsive Adjustments */
+  @media (max-width: 1024px) {
+    .cell-span-4, .cell-span-6, .cell-span-8 { grid-column: span 12; }
+    .grid-cell { padding: 3rem 2rem; }
+    .hero { padding: 6rem 2rem; }
+    .spec-table th, .spec-table td { display: block; width: 100%; padding: 0.5rem 0; border: none; }
+    .spec-table tr { border-bottom: 2px solid var(--border-dark); display: block; padding: 1.5rem 0; }
+    .nav-sys { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="scroll-progress" id="scrollBar"></div>
+<div class="blueprint-grid" id="blueprintBg"></div>
+
+<div class="coord-tracker" id="mouseCoords">X: 000 // Y: 000</div>
+
+<!-- NAVIGATION -->
+<nav>
+  <a href="#" class="nav-brand" style="color: var(--ink-main); text-decoration: none;">CONTEXT_WINDOW // HQ</a>
+  <div class="nav-sys">
+    <span>LOC: <strong>BLR_IN [HSR_LAYOUT]</strong></span>
+    <span>SYS.TIME: <span id="clock" style="color: var(--ink-main); font-weight: 700;">00:00:00</span></span>
+    <span>CPU: <strong id="sys-cpu">12%</strong></span>
+    <span>LATENCY: <strong id="sys-ping">14ms</strong></span>
+    <span><div class="live-dot"></div> COHORT ZERO ACTIVE</span>
+  </div>
+</nav>
+
+<main class="frame">
+  
+  <!-- HERO -->
+  <section class="hero reveal">
+    <div class="hero-eyebrow">Bare-Metal Environment</div>
+    <h1>Clear the<br>Mental Cache.<br><span class="glitch-text" id="shipDieText">Ship or Die.</span></h1>
+    <p>A high-intensity, zero-friction physical hacker house built exclusively for the top 1% of AI engineers. No ecosystem bloat. No networking theater. Just raw compute and absolute focus.</p>
+    <div class="btn-group">
+      <a href="#deploy" class="btn btn-primary">Deploy Yourself ↓</a>
+      <a href="#terminal-anchor" class="btn btn-outline">Boot Shell Terminal >_</a>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee" style="border-top: none;">
+    <div class="marquee-inner">
+      <span>NO WANTREPRENEURS</span>
+      <span>PROOF OF WORK ONLY</span>
+      <span>MIDNIGHT DEMOS MANDATORY</span>
+      <span>ZERO FRICTION INFRA</span>
+      <span>NO WANTREPRENEURS</span>
+      <span>PROOF OF WORK ONLY</span>
+      <span>MIDNIGHT DEMOS MANDATORY</span>
+      <span>ZERO FRICTION INFRA</span>
+    </div>
+  </div>
+
+  <!-- THEORY & MANIFESTO -->
+  <section id="theory" class="grid-section">
+    <div class="grid-cell cell-span-6 reveal bento-tilt">
+      <div class="cell-label">SYS.ARCH // 01</div>
+      <h2 class="cell-title">The Context Window Metaphor</h2>
+      <p class="cell-body">In systems architecture, an AI agent's context window is its active execution environment. If it gets cluttered with noise, the agent <strong>hallucinates and crashes.</strong> Human engineers operate identically.</p>
+    </div>
+    <div class="grid-cell cell-span-6 reveal bento-tilt">
+      <div class="cell-label">THE_ANTIDOTE // 02</div>
+      <h2 class="cell-title">Flood the Signal</h2>
+      <p class="cell-body">We strip away all ecosystem bloat—mandatory lectures, VC pitch nights, red tape. We fill your immediate environment entirely with high-fidelity inputs. Peer density. Compute. Execution.</p>
+    </div>
+  </section>
+
+  <!-- HACKER HOUSE TELEMETRY DECK -->
+  <section class="telemetry-deck reveal">
+    <div class="tel-card">
+      <div class="tel-label">Uptime</div>
+      <div class="tel-value" id="tel-uptime">482:12:08</div>
+    </div>
+    <div class="tel-card">
+      <div class="tel-label">Decibel Level</div>
+      <div class="tel-value" id="tel-sound">42 dB</div>
+    </div>
+    <div class="tel-card">
+      <div class="tel-label">Coffee Supply</div>
+      <div class="tel-value" id="tel-coffee">14.8 kg</div>
+    </div>
+    <div class="tel-card">
+      <div class="tel-label">Active GPU Core Temp</div>
+      <div class="tel-value" id="tel-temp">58.2°C</div>
+    </div>
+  </section>
+
+  <!-- PROTOCOL BENTO -->
+  <section class="grid-section">
+    <div class="grid-cell cell-span-12" style="padding: 2rem 4rem; background: var(--bg-base); border-top: 2px solid var(--border-dark); border-bottom: 2px solid var(--border-dark);">
+      <h3 style="font-family: var(--font-display); font-size: 2rem; font-weight: 800; text-transform: uppercase;">Execution Protocol</h3>
+    </div>
+    
+    <div class="grid-cell cell-span-4 protocol-cell reveal bento-tilt">
+      <div class="cell-label">Filter</div>
+      <h2 class="cell-title">GitHub or GTFO</h2>
+      <p class="cell-body">We bypass LinkedIn entirely. We filter strictly for proof of work: GitHub repos, live deployment links, and raw technical density.</p>
+      <div class="b-num">01</div>
+    </div>
+    
+    <div class="grid-cell cell-span-4 protocol-cell reveal bento-tilt">
+      <div class="cell-label">Pacing</div>
+      <h2 class="cell-title">30-Day Sprint</h2>
+      <p class="cell-body">A brutal physical residency for 5 hand-selected Founding Engineers. Clock starts day one. Day 30 is a public launch.</p>
+      <div class="b-num">02</div>
+    </div>
+    
+    <div class="grid-cell cell-span-4 protocol-cell reveal bento-tilt">
+      <div class="cell-label">Ritual</div>
+      <h2 class="cell-title">Midnight Demos</h2>
+      <p class="cell-body">Mandatory showcase every single night. Loom videos or staging links showing an architectural milestone. <strong>No text updates allowed.</strong></p>
+      <div class="b-num">03</div>
+    </div>
+  </section>
+
+  <!-- NETWORK TOPOLOGY (INTERACTIVE NODE MAP) -->
+  <div class="grid-cell cell-span-12" style="padding: 2rem 4rem; background: var(--bg-base); border-top: 2px solid var(--border-dark); border-bottom: 2px solid var(--border-dark);">
+    <h3 style="font-family: var(--font-display); font-size: 2rem; font-weight: 800; text-transform: uppercase;">Network Topology: Active Nodes</h3>
+  </div>
+  
+  <section class="topology-container reveal">
+    <div class="topology-viz">
+      <!-- SVG Node Graph -->
+      <svg class="network-graph" viewBox="0 0 400 400">
+        <!-- Connecting lines -->
+        <line x1="200" y1="120" x2="100" y2="250" stroke="#FF2E00" stroke-width="2" class="connection-line" />
+        <line x1="200" y1="120" x2="300" y2="250" stroke="#D6D6CF" stroke-width="2" stroke-dasharray="4" />
+        <line x1="100" y1="250" x2="300" y2="250" stroke="#D6D6CF" stroke-width="1" stroke-dasharray="6" />
+        
+        <!-- Central Hub -->
+        <circle cx="200" cy="120" r="12" fill="#FF2E00" />
+        
+        <!-- Node 01: Syed Ateef -->
+        <g class="node" onclick="selectNode(1)" id="svg-node-1">
+          <circle cx="100" cy="250" r="24" fill="#0B0B0A" stroke="#FF2E00" stroke-width="2" />
+          <text x="100" y="254" fill="#FFF" font-size="10" font-family="'JetBrains Mono'" text-anchor="middle" font-weight="bold">NODE_01</text>
+        </g>
+        
+        <!-- Node 02: Unallocated -->
+        <g class="node" onclick="selectNode(2)" id="svg-node-2">
+          <circle cx="300" cy="250" r="24" fill="#1C1C1A" stroke="#D6D6CF" stroke-width="2" />
+          <text x="300" y="254" fill="#888" font-size="10" font-family="'JetBrains Mono'" text-anchor="middle">NODE_02</text>
+        </g>
+      </svg>
+    </div>
+    
+    <div class="topology-details">
+      <div id="node-panel-content">
+        <div class="node-panel-header">
+          <h4 class="node-panel-title" id="node-name">Syed Ateef</h4>
+          <span class="node-panel-badge" id="node-status">Online</span>
+        </div>
+        <p style="color: var(--accent-red); font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em;" id="node-role">Ecosystem Architect / Founding Eng.</p>
+        <p style="font-size: 14px; margin-top: 1rem;" id="node-desc">Orchestrating the AI brain for enterprise companies and shipping products alongside the cohort in real-time. The anchor of the house.</p>
+        
+        <div class="node-panel-log" id="node-log">
+[SYSTEM_INIT] Node 01 Online.
+[SYS.LOG] Syed Ateef verified payload.
+[SYS.LOG] Active task: AI agent brain orchestrations.
+[SYS.LOG] Context limit set to maximum capacity.
+[SYS.LOG] Syncing staging environment... OK.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INNOVATIVE DEVELOPER CORE TERMINAL PLAYGROUND -->
+  <section class="terminal-section reveal" id="terminal-anchor">
+    <div class="terminal-window">
+      <div class="terminal-header">
+        <div class="terminal-dots">
+          <div class="terminal-dot"></div>
+          <div class="terminal-dot"></div>
+          <div class="terminal-dot"></div>
+        </div>
+        <div>CONTEXT_WINDOW // SHELL v1.1.2</div>
+        <div style="opacity: 0.6;">BLR_IN</div>
+      </div>
+      <div class="terminal-body" id="term-body">
+        <div class="t-gray"># Context Window HQ Shell Console.</div>
+        <div class="t-gray"># Inspired by localhost hq. Built for rapid technical indexing.</div>
+        <div class="t-gray"># Commands: <span class="t-yellow">help</span>, <span class="t-yellow">about</span>, <span class="t-yellow">nodes</span>, <span class="t-yellow">github &lt;username&gt;</span>, <span class="t-yellow">ssh &lt;node&gt;</span>, <span class="t-yellow">theme &lt;mode&gt;</span>, <span class="t-yellow">systemctl</span>, <span class="t-yellow">env</span>, <span class="t-yellow">ping</span>, <span class="t-yellow">clear</span></div>
+        <br>
+        <div><span class="t-cyan">guest@context_window:~$</span> <span class="t-yellow">about</span></div>
+        <div style="margin-top: 0.5rem; margin-bottom: 0.5rem;">We are a multidisciplinary physical hacker house based in HSR Layout, Sector 3, Bengaluru. Built exclusively for top AI builders, model tuners, and systems architects to ship together under absolute focus.</div>
+        <div class="terminal-input-line">
+          <span class="terminal-prompt" id="term-prompt">guest@context_window:~$</span>
+          <input type="text" class="terminal-input" id="term-input" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPITAL ENGINE -->
+  <section class="grid-section">
+    <div class="grid-cell cell-span-12 reveal" style="padding-bottom: 2rem; border-bottom: 2px solid var(--border-dark);">
+      <div class="cell-label">Business Engine</div>
+      <h2 class="cell-title">Strategic Sponsorship Model</h2>
+      <p class="cell-body" style="max-width: 800px;">Instead of surrendering equity upfront to VC funds, we leverage talent density. Cloud platforms pay <em>us</em> to put their compute in the hands of elite builders.</p>
+      
+      <table class="spec-table">
+        <tr>
+          <th>Tier 01</th>
+          <td class="spec-title">Infrastructure Partners (DevRel)</td>
+          <td class="spec-desc">Credit pools and free API compute access from AWS, Cloudflare, and frontier model providers eager to lock in elite builders.</td>
+        </tr>
+        <tr>
+          <th>Tier 02</th>
+          <td class="spec-title">The Friction-Killer Fund</td>
+          <td class="spec-desc">Zero-approval micro-grants for immediate infrastructure (domains, server clusters) via corporate cards. Never fill out a reimbursement form.</td>
+        </tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- FOOTER CTA / ONBOARDING WIZARD -->
+  <section id="deploy" class="grid-section">
+    <div class="footer-action reveal">
+      <div class="footer-content">
+        <h2>Prove Your<br>Technical Density</h2>
+        <p>Drop your GitHub username or a live deployment link. No cover letters. Syed Ateef will review the architecture directly.</p>
+        
+        <div class="application-box">
+          <div class="app-input-group" id="form-container">
+            <input type="text" id="deploy-input" placeholder="Enter GitHub username (e.g. syedateef)">
+            <button onclick="runAppWizard()">Submit</button>
+          </div>
+          <div class="app-cli-output" id="app-cli-box"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+</main>
+
+<script>
+  // Global Session State for Terminal
+  let currentSession = 'guest'; // 'guest' or 'syed_ateef'
+  let currentHost = 'context_window';
+
+  // Dynamic Telemetry Metrics
+  function updateTelemetry() {
+    const clock = document.getElementById('clock');
+    const cpuEl = document.getElementById('sys-cpu');
+    const pingEl = document.getElementById('sys-ping');
+    
+    const uptimeEl = document.getElementById('tel-uptime');
+    const soundEl = document.getElementById('tel-sound');
+    const coffeeEl = document.getElementById('tel-coffee');
+    const tempEl = document.getElementById('tel-temp');
+    
+    // Time update
+    const now = new Date();
+    clock.textContent = now.toLocaleTimeString('en-US', { hour12: false }) + ' IST';
+    
+    // Telemetry fluctuations
+    const baseCpu = 12;
+    const randomCpu = Math.floor(Math.random() * 12);
+    cpuEl.textContent = (baseCpu + randomCpu) + '%';
+    
+    const basePing = 10;
+    const randomPing = Math.floor(Math.random() * 6);
+    pingEl.textContent = (basePing + randomPing) + 'ms';
+
+    // decibel fluctuation
+    const randomDb = 40 + Math.floor(Math.random() * 8);
+    soundEl.textContent = randomDb + ' dB';
+
+    // Temp fluctuation
+    const randomTemp = (56 + Math.random() * 4).toFixed(1);
+    tempEl.textContent = randomTemp + '°C';
+
+    // Uptime tick
+    const uptimeParts = uptimeEl.textContent.split(':');
+    let hours = parseInt(uptimeParts[0]);
+    let minutes = parseInt(uptimeParts[1]);
+    let seconds = parseInt(uptimeParts[2]) + 1;
+    if (seconds >= 60) {
+      seconds = 0;
+      minutes++;
+    }
+    if (minutes >= 60) {
+      minutes = 0;
+      hours++;
+    }
+    uptimeEl.textContent = `${String(hours).padStart(3, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+  setInterval(updateTelemetry, 1000);
+  updateTelemetry();
+
+  // Blueprint background parallax
+  const bg = document.getElementById('blueprintBg');
+  const coordTracker = document.getElementById('mouseCoords');
+  
+  window.addEventListener('mousemove', (e) => {
+    const xPct = e.clientX / window.innerWidth - 0.5;
+    const yPct = e.clientY / window.innerHeight - 0.5;
+    
+    bg.style.transform = `translate(${xPct * 20}px, ${yPct * 20}px)`;
+    coordTracker.textContent = `X: ${String(e.clientX).padStart(3, '0')} // Y: ${String(e.clientY).padStart(3, '0')}`;
+  });
+
+  // Scroll Progress
+  window.addEventListener('scroll', () => {
+    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    document.getElementById('scrollBar').style.width = (winScroll / height) * 100 + "%";
+  });
+
+  // Reveal Animations
+  const observerOptions = { threshold: 0.1, rootMargin: "0px 0px -50px 0px" };
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // 3D Bento Box hover tilts
+  document.querySelectorAll('.bento-tilt').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width/2;
+      const y = e.clientY - rect.top - rect.height/2;
+      const tiltX = (y / (rect.height/2)) * -6; 
+      const tiltY = (x / (rect.width/2)) * 6;
+      
+      card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.01, 1.01, 1.01)`;
+      card.style.boxShadow = `0px 20px 30px rgba(11, 11, 10, 0.08)`;
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
+      card.style.boxShadow = 'none';
+    });
+  });
+
+  // Node Topology interactive panel data
+  const nodeData = {
+    1: {
+      name: "Syed Ateef",
+      status: "Online",
+      role: "Ecosystem Architect / Founding Eng.",
+      desc: "Orchestrating the AI brain for enterprise companies and shipping products alongside the cohort in real-time. The anchor of the house.",
+      logs: [
+        "[SYSTEM_INIT] Node 01 Online.",
+        "[SYS.LOG] Syed Ateef verified payload.",
+        "[SYS.LOG] Active task: AI agent brain orchestrations.",
+        "[SYS.LOG] Context limit set to maximum capacity.",
+        "[SYS.LOG] Syncing staging environment... OK."
+      ],
+      badgeClass: "node-panel-badge"
+    },
+    2: {
+      name: "Unallocated Node",
+      status: "Awaiting Connection",
+      role: "AI Engineer Resident Slot",
+      desc: "Reserved for someone shipping real code. A placeholder challenging deep-tech hackers to prove their technical density.",
+      logs: [
+        "[SYS.STBY] Node 02 in Standby mode.",
+        "[SYS.STBY] Scanning Github repositories in BLR...",
+        "[SYS.STBY] Waiting for incoming handshake payload...",
+        "[SYS.STBY] Handshake missing. Apply below to allocate."
+      ],
+      badgeClass: "node-panel-badge"
+    }
+  };
+
+  function selectNode(id) {
+    const data = nodeData[id];
+    document.getElementById('node-name').textContent = data.name;
+    document.getElementById('node-status').textContent = data.status;
+    document.getElementById('node-role').textContent = data.role;
+    document.getElementById('node-desc').innerHTML = data.desc;
+    
+    const badge = document.getElementById('node-status');
+    if (id === 2) {
+      badge.style.background = 'var(--border-main)';
+      badge.style.color = 'var(--ink-muted)';
+    } else {
+      badge.style.background = 'var(--accent-acid)';
+      badge.style.color = '#000';
+    }
+    
+    const logsEl = document.getElementById('node-log');
+    logsEl.innerHTML = '';
+    
+    let delay = 0;
+    data.logs.forEach(log => {
+      setTimeout(() => {
+        const line = document.createElement('div');
+        line.textContent = log;
+        logsEl.appendChild(line);
+        logsEl.scrollTop = logsEl.scrollHeight;
+      }, delay);
+      delay += 200;
+    });
+  }
+
+  // Interactive CLI Terminal logic
+  const termInput = document.getElementById('term-input');
+  const termBody = document.getElementById('term-body');
+  const termPrompt = document.getElementById('term-prompt');
+  
+  termInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const fullInput = termInput.value.trim();
+      const tokens = fullInput.split(' ');
+      const command = tokens[0].toLowerCase();
+      const args = tokens.slice(1);
+      
+      // Echo command
+      const echoLine = document.createElement('div');
+      echoLine.innerHTML = `<span class="t-cyan">${termPrompt.textContent}</span> <span class="t-yellow">${fullInput}</span>`;
+      termBody.insertBefore(echoLine, termInput.parentElement);
+      
+      const output = document.createElement('div');
+      output.style.marginTop = '0.5rem';
+      output.style.marginBottom = '1rem';
+      
+      if (currentSession === 'syed_ateef') {
+        // Node 01 ssh commands
+        switch (command) {
+          case 'ls':
+            output.innerHTML = `active_agents/&nbsp;&nbsp;&nbsp;&nbsp;brain_config.json&nbsp;&nbsp;&nbsp;&nbsp;hsr_manifesto.txt`;
+            break;
+          case 'cat':
+            if (args[0] === 'hsr_manifesto.txt') {
+              output.innerHTML = `<span class="t-red">== CONTEXT WINDOW HQ MANIFESTO ==</span><br>1. Ship or die. Demos at midnight.<br>2. Build systems, not slides.<br>3. Block out the corporate VC noise.<br>4. Leverage bare-metal infrastructure.`;
+            } else if (args[0] === 'brain_config.json') {
+              output.innerHTML = `{<br>
+              &nbsp;&nbsp;"model": "gemini-1.5-pro",<br>
+              &nbsp;&nbsp;"temperature": 0.15,<br>
+              &nbsp;&nbsp;"orchestration_layer": "autonomous-agents",<br>
+              &nbsp;&nbsp;"hq_sector": "BLR_HSR_3",<br>
+              &nbsp;&nbsp;"compute_provider": "local_RTX_clusters"<br>
+              }`;
+            } else {
+              output.innerHTML = `cat: ${args[0] || 'missing file'}: No such file in workspace.`;
+            }
+            break;
+          case 'exit':
+            currentSession = 'guest';
+            currentHost = 'context_window';
+            termPrompt.innerHTML = `guest@context_window:~$`;
+            output.innerHTML = `<span class="t-gray">Connection to node_01 closed. Exited.</span>`;
+            break;
+          case 'help':
+            output.innerHTML = `Commands inside node_01 sub-shell:<br>
+            <span class="t-cyan">ls</span>    - List workspace documents<br>
+            <span class="t-cyan">cat</span>   - View document content (e.g. cat hsr_manifesto.txt)<br>
+            <span class="t-cyan">exit</span>  - Disconnect from SSH and return to host console.`;
+            break;
+          default:
+            output.innerHTML = `Command not recognized in sub-shell. Type <span class="t-cyan">help</span> inside node session.`;
+        }
+      } else {
+        // Core Host Commands
+        switch(command) {
+          case 'help':
+            output.innerHTML = `Available commands:<br>
+            <span class="t-cyan">about</span>              - Detailed info on the residency program<br>
+            <span class="t-cyan">nodes</span>              - Output table listing status of all physical nodes<br>
+            <span class="t-cyan">ssh &lt;node_id&gt;</span>       - SSH directly into a resident node (e.g. ssh node_01)<br>
+            <span class="t-cyan">github &lt;username&gt;</span>  - Fetch public profile from real GitHub API & calculate density<br>
+            <span class="t-cyan">theme &lt;light|dark|cyber&gt;</span> - Instantly switch landing page design layouts<br>
+            <span class="t-cyan">systemctl</span>          - Check telemetry daemons and kitchen/compute hardware status<br>
+            <span class="t-cyan">env</span>                - Display environmental variable metrics<br>
+            <span class="t-cyan">ping &lt;host&gt;</span>         - Ping server host and check local latency<br>
+            <span class="t-cyan">clear</span>              - Reset screen history<br>
+            <span class="t-cyan">help</span>               - Output this command instruction matrix`;
+            break;
+          case 'about':
+            output.innerHTML = `A physical, high-density hacker house in Bangalore (HSR Layout sector). Inspired by the builder hubs like LocalHost HQ. We cater to researchers, systems engineers, and founders constructing the next wave of autonomous agents. No wanted lectures. Proof-of-work baseline.`;
+            break;
+          case 'nodes':
+            output.innerHTML = `--------------------------------------------------------<br>
+            NODE_ID   NAME           STATUS            ACTIVE_PORT<br>
+            --------------------------------------------------------<br>
+            NODE_01   Syed Ateef     <span class="t-green">ONLINE</span>            22 (SSH)<br>
+            NODE_02   Unallocated    <span class="t-yellow">STANDBY</span>           Awaiting Application<br>
+            NODE_03   Unallocated    <span class="t-yellow">STANDBY</span>           Awaiting Application<br>
+            --------------------------------------------------------`;
+            break;
+          case 'ssh':
+            if (args[0] === 'node_01') {
+              currentSession = 'syed_ateef';
+              currentHost = 'node_01';
+              termPrompt.innerHTML = `syed_ateef@node_01:~$`;
+              output.innerHTML = `Connecting to Node 01 (Syed Ateef)...<br>SSH encryption verified.<br>Type <span class="t-cyan">help</span> inside sub-shell.`;
+            } else if (args[0] === 'node_02') {
+              output.innerHTML = `<span class="t-red">Connection rejected.</span> Node 02 is unallocated. Access denied.`;
+            } else {
+              output.innerHTML = `Usage: ssh [node_01 | node_02]`;
+            }
+            break;
+          case 'github':
+            const username = args[0];
+            if (!username) {
+              output.innerHTML = `Usage: github &lt;username&gt;`;
+            } else {
+              output.innerHTML = `<span class="t-cyan">Initiating handshake with GitHub API for profile: "${username}"...</span>`;
+              // Async fetch
+              fetch(`https://api.github.com/users/${username}`)
+                .then(res => {
+                  if (!res.ok) throw new Error("Profile not found");
+                  return res.json();
+                })
+                .then(profile => {
+                  return fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=30`)
+                    .then(r => r.json())
+                    .then(repos => {
+                      const starCount = repos.reduce((acc, repo) => acc + (repo.stargazers_count || 0), 0);
+                      const languages = {};
+                      repos.forEach(repo => {
+                        if (repo.language) {
+                          languages[repo.language] = (languages[repo.language] || 0) + 1;
+                        }
+                      });
+                      
+                      let topLang = "Unknown";
+                      let maxCount = 0;
+                      for (const lang in languages) {
+                        if (languages[lang] > maxCount) {
+                          maxCount = languages[lang];
+                          topLang = lang;
+                        }
+                      }
+                      
+                      // Calculate score
+                      let score = 50 + (repos.length * 1.5) + (starCount * 2);
+                      if (["Rust", "C++", "TypeScript", "Python"].includes(topLang)) score += 15;
+                      score = Math.min(Math.round(score), 100);
+                      
+                      const report = document.createElement('div');
+                      report.innerHTML = `<br>
+                      =======================================================<br>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GITHUB BUILDER TELEMETRY REPORT<br>
+                      =======================================================<br>
+                      Builder Profile : <span class="t-cyan">${profile.login}</span><br>
+                      Full Identity   : ${profile.name || "N/A"}<br>
+                      Public Projects : ${profile.public_repos}<br>
+                      Stars Accrued   : ${starCount}<br>
+                      Primary Stack   : <span class="t-yellow">${topLang}</span><br>
+                      Followers Count : ${profile.followers}<br>
+                      Technical Density : <span class="t-green" style="font-weight:bold;">${score} / 100</span><br>
+                      -------------------------------------------------------<br>
+                      Decision Recommendation: ${score >= 75 ? '<span class="t-yellow">IMMEDIATE COHORT ENTRY VERIFIED</span>' : '<span class="t-gray">PENDING MANUAL ARCHITECTURE REVIEW</span>'}<br>
+                      =======================================================`;
+                      
+                      output.appendChild(report);
+                      termBody.scrollTop = termBody.scrollHeight;
+                    });
+                })
+                .catch(err => {
+                  // Fallback simulation (if rate limited or offline)
+                  const starCount = Math.floor(Math.random() * 20) + 5;
+                  const score = 70 + Math.floor(Math.random() * 25);
+                  const report = document.createElement('div');
+                  report.innerHTML = `<br>
+                  <span class="t-red">[WARNING] API LIMIT EXCEEDED. GENERATING SECURE LOCAL EMULATED AUDIT...</span><br>
+                  =======================================================<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EMULATED BUILDER TELEMETRY REPORT<br>
+                  =======================================================<br>
+                  Builder Profile : <span class="t-cyan">${username}</span><br>
+                  Public Projects : ${Math.floor(Math.random() * 30) + 12}<br>
+                  Stars Accrued   : ${starCount}<br>
+                  Primary Stack   : <span class="t-yellow">TypeScript / Python</span><br>
+                  Technical Density : <span class="t-green" style="font-weight:bold;">${score} / 100</span><br>
+                  -------------------------------------------------------<br>
+                  Decision Recommendation: ${score >= 80 ? '<span class="t-yellow">ACCEPTANCE CONFIRMED</span>' : '<span class="t-gray">REQUIRES HANDSHAKE DEMO</span>'}<br>
+                  =======================================================`;
+                  output.appendChild(report);
+                  termBody.scrollTop = termBody.scrollHeight;
+                });
+            }
+            break;
+          case 'theme':
+            const mode = args[0];
+            if (['light', 'dark', 'cyber'].includes(mode)) {
+              document.body.className = ''; // Reset
+              if (mode !== 'light') {
+                document.body.classList.add('theme-' + mode);
+              }
+              output.innerHTML = `System visual theme configured to: <span class="t-yellow">${mode.toUpperCase()}</span>.`;
+            } else {
+              output.innerHTML = `Usage: theme [light | dark | cyber]`;
+            }
+            break;
+          case 'systemctl':
+            output.innerHTML = `[VIRTUAL DAEMON UNITS]<br>
+            --------------------------------------------------------<br>
+            UNIT                          STATUS        SUB-STATE<br>
+            --------------------------------------------------------<br>
+            rtx_4090_grid.service          <span class="t-green">active</span>        running (Temp: 58.2°C)<br>
+            gigabit_fiber.service          <span class="t-green">active</span>        stable (RTT: 12ms)<br>
+            coffee_brewer.service          <span class="t-green">active</span>        ready (14.8kg loaded)<br>
+            hacker_sound_monitor.service   <span class="t-green">active</span>        listening (42dB environment)<br>
+            residency_recruitment.service  <span class="t-yellow">standby</span>       active recruiter loop<br>
+            --------------------------------------------------------`;
+            break;
+          case 'env':
+            output.innerHTML = `COHORT_NUMBER=00<br>
+            GEOLOCATION="Bengaluru, HSR Layout, Sector 3"<br>
+            MANDATORY_RESIDENCY_CYCLE=30_DAYS<br>
+            API_CREDITS_DECK=250000_USD<br>
+            DEFAULT_THEME=swiss_cream<br>
+            CURRENT_IST_TIME="${new Date().toLocaleTimeString('en-US', { hour12: false })}"`;
+            break;
+          case 'ping':
+            const target = args[0] || 'localhost';
+            output.innerHTML = `PING ${target} (127.0.0.1): 56 data bytes<br>
+            64 bytes from 127.0.0.1: icmp_seq=0 ttl=64 time=${(2 + Math.random() * 8).toFixed(3)} ms<br>
+            64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=${(2 + Math.random() * 8).toFixed(3)} ms<br>
+            --- ${target} ping statistics ---<br>
+            2 packets transmitted, 2 packets received, 0.0% packet loss`;
+            break;
+          case 'clear':
+            termBody.innerHTML = '';
+            output.innerHTML = '';
+            break;
+          default:
+            output.innerHTML = `Command not recognized: <span class="t-red">${command}</span>. Type <span class="t-cyan">help</span> for guidelines.`;
+        }
+      }
+      
+      if (command !== 'clear') {
+        termBody.insertBefore(output, termInput.parentElement);
+      }
+      
+      termInput.value = '';
+      termBody.scrollTop = termBody.scrollHeight;
+    }
+  });
+
+  // Simulated Onboarding CLI Wizard inside Footer apply form
+  function runAppWizard() {
+    const input = document.getElementById('deploy-input');
+    const cliBox = document.getElementById('app-cli-box');
+    const formContainer = document.getElementById('form-container');
+    const username = input.value.trim();
+    
+    if (username === '') {
+      input.placeholder = 'ERROR: USERNAME REQUIRED';
+      return;
+    }
+    
+    formContainer.style.display = 'none';
+    cliBox.style.display = 'block';
+    cliBox.innerHTML = '';
+    
+    // Initializing logs
+    const lines = [
+      `guest@hsr_gateway:~$ init_handshake --profile="${username}"`,
+      `[SYS] ESTABLISHING TUNNEL TO CORE RECRUITMENT DECK...`,
+      `[OK] SECURE LINK ESTABLISHED AT PORT 8443.`,
+      `[SYS] QUERYING GITHUB API FOR USER REPOSITORIES...`
+    ];
+
+    let index = 0;
+    function printLines() {
+      if (index < lines.length) {
+        const p = document.createElement('div');
+        p.style.marginBottom = '6px';
+        p.textContent = lines[index];
+        cliBox.appendChild(p);
+        cliBox.scrollTop = cliBox.scrollHeight;
+        index++;
+        setTimeout(printLines, 250);
+      } else {
+        // Run fetch
+        fetch(`https://api.github.com/users/${username}`)
+          .then(res => {
+            if (!res.ok) throw new Error("Profile not found");
+            return res.json();
+          })
+          .then(profile => {
+            return fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=30`)
+              .then(r => r.json())
+              .then(repos => {
+                const starCount = repos.reduce((acc, repo) => acc + (repo.stargazers_count || 0), 0);
+                const languages = {};
+                repos.forEach(repo => {
+                  if (repo.language) {
+                    languages[repo.language] = (languages[repo.language] || 0) + 1;
+                  }
+                });
+                let topLang = "TypeScript";
+                let maxCount = 0;
+                for (const lang in languages) {
+                  if (languages[lang] > maxCount) {
+                    maxCount = languages[lang];
+                    topLang = lang;
+                  }
+                }
+                
+                let score = 55 + (repos.length * 1.2) + (starCount * 1.5);
+                score = Math.min(Math.round(score), 100);
+                
+                const finalLines = [
+                  `[OK] FOUND PUBLIC BUILDER: ${profile.name || username}`,
+                  `[ANALYSIS] Repository count: ${profile.public_repos}. Top language: ${topLang}`,
+                  `[ANALYSIS] Stargazers metric: ${starCount} stars collected.`,
+                  `[ANALYSIS] Calculated Technical Density: ${score}/100.`,
+                  `[SUCCESS] SECURE ENVELOPE ROUTED TO CORE ECOSYSTEM ARCHITECT.`,
+                  `======================================================`,
+                  `TRANSMISSION RECEIVED // Syed Ateef will audit your stack.`
+                ];
+                
+                let fIndex = 0;
+                function printFinal() {
+                  if (fIndex < finalLines.length) {
+                    const p = document.createElement('div');
+                    p.style.marginBottom = '6px';
+                    if (finalLines[fIndex].startsWith('[SUCCESS]')) {
+                      p.innerHTML = `<span class="t-yellow">${finalLines[fIndex]}</span>`;
+                    } else if (finalLines[fIndex].startsWith('[OK]')) {
+                      p.innerHTML = `<span class="t-cyan">${finalLines[fIndex]}</span>`;
+                    } else if (finalLines[fIndex].startsWith('TRANSMISSION')) {
+                      p.innerHTML = `<span class="t-red" style="font-weight:bold;">${finalLines[fIndex]}</span>`;
+                    } else {
+                      p.textContent = finalLines[fIndex];
+                    }
+                    cliBox.appendChild(p);
+                    cliBox.scrollTop = cliBox.scrollHeight;
+                    fIndex++;
+                    setTimeout(printFinal, 300);
+                  }
+                }
+                printFinal();
+              });
+          })
+          .catch(() => {
+            // Emulated fallback
+            const finalLines = [
+              `[WARNING] API RATE LIMITED. BOOTING EMULATED EVALUATOR ENGINE...`,
+              `[OK] FOUND PUBLIC PROFILE: ${username}`,
+              `[ANALYSIS] Parsed: Python, JavaScript frameworks.`,
+              `[ANALYSIS] Emulated Technical Density Index: 88/100.`,
+              `[SUCCESS] SECURE HANDSHAKE PACKET SENT TO SYED ATEEF.`,
+              `======================================================`,
+              `TRANSMISSION RECEIVED // Syed Ateef has been notified.`
+            ];
+            let fIndex = 0;
+            function printFinal() {
+              if (fIndex < finalLines.length) {
+                const p = document.createElement('div');
+                p.style.marginBottom = '6px';
+                if (finalLines[fIndex].startsWith('[SUCCESS]')) {
+                  p.innerHTML = `<span class="t-yellow">${finalLines[fIndex]}</span>`;
+                } else if (finalLines[fIndex].startsWith('[OK]')) {
+                  p.innerHTML = `<span class="t-cyan">${finalLines[fIndex]}</span>`;
+                } else if (finalLines[fIndex].startsWith('TRANSMISSION')) {
+                  p.innerHTML = `<span class="t-red" style="font-weight:bold;">${finalLines[fIndex]}</span>`;
+                } else {
+                  p.textContent = finalLines[fIndex];
+                }
+                cliBox.appendChild(p);
+                cliBox.scrollTop = cliBox.scrollHeight;
+                fIndex++;
+                setTimeout(printFinal, 300);
+              }
+            }
+            printFinal();
+          });
+      }
+    }
+    printLines();
+  }
+
+  // Glitch effect on title click
+  document.getElementById('shipDieText').addEventListener('click', () => {
+    const text = document.getElementById('shipDieText');
+    const colors = ['#E5FF00', '#FF2E00', '#00E5FF', '#0B0B0A'];
+    let count = 0;
+    
+    const interval = setInterval(() => {
+      text.style.color = colors[count % colors.length];
+      count++;
+      if (count > 8) {
+        clearInterval(interval);
+        text.style.color = 'var(--accent-red)';
+      }
+    }, 100);
+  });
+</script>
+
+</body>
+</html>

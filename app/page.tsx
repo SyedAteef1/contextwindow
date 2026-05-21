@@ -1,425 +1,921 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Server, CreditCard, Users, ArrowRight, CheckCircle2, ChevronRight, MapPin, Calendar, Users2, Code2, Menu, X } from "lucide-react";
-import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
-import { CanvasDots } from "@/components/ui/canvas-dots";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 
-const TwitterIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
-const LinkedinIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-  </svg>
-);
-
-const FadeIn = ({ children, delay = 0, className = "" }: { children: React.ReactNode, delay?: number, className?: string }) => (
-  <motion.div
-    initial={{ y: 40, opacity: 0, filter: "blur(8px)" }}
-    whileInView={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-    viewport={{ once: true, margin: "-50px" }}
-    transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
-    className={className}
-  >
-    {children}
-  </motion.div>
-);
-
-const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <a href={href} className="relative overflow-hidden group h-8 block font-serif text-base font-medium text-white/70 hover:text-white transition-colors">
-    <div className="flex flex-col transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] -translate-y-8 group-hover:translate-y-0">
-      <span className="h-8 flex items-center">{children}</span>
-      <span className="h-8 flex items-center">{children}</span>
-    </div>
-  </a>
-);
-
-const founders = [
-  {
-    name: "Syed Ateef",
-    title: "Founder & Builder",
-    bio: "Syed is the Founder and Builder of Context Window HQ. High-agency shipper hacking multi-agent orchestration, local LLM pipelines, and deep-tech architecture.",
-    image: "/ateef_photo.png",
-    twitter: "https://x.com/syedateef_",
-    linkedin: "https://www.linkedin.com/in/syed-ateef-quadri-v-4a55ab318/"
-  }
-];
-
-const FounderCard = ({ founder }: { founder: typeof founders[0] }) => {
-  return (
-    <motion.div 
-      className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden group bg-black"
-      initial="initial"
-      whileHover="hover"
-      animate="initial"
-    >
-      {/* Duotone Image Effect */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[#00ff66] mix-blend-multiply z-10 opacity-70 transition-opacity group-hover:opacity-90" />
-        <div className="absolute inset-0 bg-[#001a0d] mix-blend-screen z-10 opacity-40" />
-        <img 
-          src={founder.image} 
-          alt={founder.name}
-          className="w-full h-full object-cover grayscale contrast-150 brightness-90 group-hover:scale-105 transition-transform duration-700"
-        />
-      </div>
-
-      {/* Info Tab */}
-      <motion.div 
-        layout
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute bottom-0 left-0 w-[85%] bg-[#f4f4f0] text-black rounded-tr-[2.5rem] overflow-hidden flex flex-col justify-end z-20 origin-bottom"
-      >
-        <div className="p-6 pt-5">
-          <motion.div
-            variants={{
-              initial: { opacity: 0, height: 0, marginBottom: 0 },
-              hover: { opacity: 1, height: "auto", marginBottom: 16 }
-            }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-          >
-            <p className="text-sm text-gray-800 leading-relaxed font-medium mb-4">
-              {founder.bio}
-            </p>
-            <div className="flex gap-2">
-              <a href={founder.twitter} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
-                <TwitterIcon className="w-4 h-4 fill-current" />
-              </a>
-              <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors">
-                <LinkedinIcon className="w-4 h-4 fill-current" />
-              </a>
-            </div>
-          </motion.div>
-
-          <motion.div layout className="mt-auto">
-            <h3 className="text-xl font-bold font-serif tracking-tight text-gray-900">{founder.name}</h3>
-            <p className="text-sm text-gray-500 font-medium">{founder.title}</p>
-          </motion.div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
+// -----------------------------------------------------------------------------
+// Type Definitions
+// -----------------------------------------------------------------------------
+type NodeData = {
+  name: string;
+  status: string;
+  role: string;
+  desc: string;
+  logs: string[];
+  badgeClass: string;
 };
 
-export default function Home() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const router = useRouter();
+// -----------------------------------------------------------------------------
+// Component Data
+// -----------------------------------------------------------------------------
+const NODE_DATA: Record<number, NodeData> = {
+  1: {
+    name: "Syed Ateef",
+    status: "Online",
+    role: "Ecosystem Architect / Founding Eng.",
+    desc: "Orchestrating the AI brain for enterprise companies and shipping products alongside the cohort in real-time. The anchor of the house.",
+    logs: [
+      "[SYSTEM_INIT] Node 01 Online.",
+      "[SYS.LOG] Syed Ateef verified payload.",
+      "[SYS.LOG] Active task: AI agent brain orchestrations.",
+      "[SYS.LOG] Context limit set to maximum capacity.",
+      "[SYS.LOG] Syncing staging environment... OK."
+    ],
+    badgeClass: "node-panel-badge"
+  },
+  2: {
+    name: "Unallocated Node",
+    status: "Awaiting Connection",
+    role: "AI Engineer Resident Slot",
+    desc: "Reserved for someone shipping real code. A placeholder challenging deep-tech hackers to prove their technical density.",
+    logs: [
+      "[SYS.STBY] Node 02 in Standby mode.",
+      "[SYS.STBY] Scanning Github repositories in BLR...",
+      "[SYS.STBY] Waiting for incoming handshake payload...",
+      "[SYS.STBY] Handshake missing. Apply below to allocate."
+    ],
+    badgeClass: "node-panel-badge"
+  }
+};
+
+export default function LandingPage() {
+  // ---------------------------------------------------------------------------
+  // Global & Telemetry State
+  // ---------------------------------------------------------------------------
+  const [timeStr, setTimeStr] = useState("00:00:00 IST");
+  const [cpu, setCpu] = useState(12);
+  const [ping, setPing] = useState(14);
+  const [decibels, setDecibels] = useState(42);
+  const [temp, setTemp] = useState("58.2");
+  
+  const [uptimeSeconds, setUptimeSeconds] = useState(482 * 3600 + 12 * 60 + 8); // 482:12:08
+  
+  const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 });
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [bgTransform, setBgTransform] = useState("translate(0px, 0px)");
+
+  // ---------------------------------------------------------------------------
+  // Topology State
+  // ---------------------------------------------------------------------------
+  const [activeNode, setActiveNode] = useState<number>(1);
+  const [nodeLogs, setNodeLogs] = useState<string[]>([]);
+  const logsContainerRef = useRef<HTMLDivElement>(null);
+
+  // ---------------------------------------------------------------------------
+  // Terminal State
+  // ---------------------------------------------------------------------------
+  const [currentSession, setCurrentSession] = useState("guest");
+  const [currentHost, setCurrentHost] = useState("context_window");
+  const [termInput, setTermInput] = useState("");
+  const [termHistory, setTermHistory] = useState<React.ReactNode[]>([]);
+  const termBodyRef = useRef<HTMLDivElement>(null);
+
+  // ---------------------------------------------------------------------------
+  // Wizard State
+  // ---------------------------------------------------------------------------
+  const [wizardActive, setWizardActive] = useState(false);
+  const [wizardInput, setWizardInput] = useState("");
+  const [wizardLogs, setWizardLogs] = useState<React.ReactNode[]>([]);
+  const wizardContainerRef = useRef<HTMLDivElement>(null);
+
+  // ---------------------------------------------------------------------------
+  // Body Class & Effects Setup
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    document.body.classList.add("wow-body");
+    return () => {
+      document.body.classList.remove("wow-body");
+      // ensure we remove themes if component unmounts
+      document.body.classList.remove("theme-dark", "theme-cyber");
+    };
+  }, []);
+
+  // Mouse Movement & Scroll
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMouseCoords({ x: e.clientX, y: e.clientY });
+      const xPct = e.clientX / window.innerWidth - 0.5;
+      const yPct = e.clientY / window.innerHeight - 0.5;
+      setBgTransform(`translate(${xPct * 20}px, ${yPct * 20}px)`);
+    };
+
+    const handleScroll = () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      setScrollProgress((winScroll / height) * 100);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  // Telemetry Interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      setTimeStr(now.toLocaleTimeString("en-US", { hour12: false }) + " IST");
+      setCpu(12 + Math.floor(Math.random() * 12));
+      setPing(10 + Math.floor(Math.random() * 6));
+      setDecibels(40 + Math.floor(Math.random() * 8));
+      setTemp((56 + Math.random() * 4).toFixed(1));
+      setUptimeSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Reveal Animation Observers
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("active");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+    const elements = document.querySelectorAll(".reveal");
+    elements.forEach(el => observer.observe(el));
+    return () => {
+      elements.forEach(el => observer.unobserve(el));
+    };
+  }, []);
+
+  // Node Change Simulation
+  useEffect(() => {
+    let timeouts: NodeJS.Timeout[] = [];
+    setNodeLogs([]);
+    let delay = 0;
+    NODE_DATA[activeNode].logs.forEach((log) => {
+      const t = setTimeout(() => {
+        setNodeLogs(prev => {
+          const newLogs = [...prev, log];
+          setTimeout(() => {
+            if (logsContainerRef.current) {
+              logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+            }
+          }, 10);
+          return newLogs;
+        });
+      }, delay);
+      timeouts.push(t);
+      delay += 200;
+    });
+
+    return () => timeouts.forEach(clearTimeout);
+  }, [activeNode]);
+
+  // ---------------------------------------------------------------------------
+  // Terminal Logic
+  // ---------------------------------------------------------------------------
+  const handleTermKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const fullInput = termInput.trim();
+      const tokens = fullInput.split(' ');
+      const command = tokens[0].toLowerCase();
+      const args = tokens.slice(1);
+      
+      const promptStr = `${currentSession}@${currentHost}:~$`;
+      const echoLine = (
+        <div key={`echo-${Date.now()}`}>
+          <span className="t-cyan">{promptStr}</span>{" "}
+          <span className="t-yellow">{fullInput}</span>
+        </div>
+      );
+      
+      let outputLine: React.ReactNode = null;
+      
+      if (currentSession === 'syed_ateef') {
+        switch (command) {
+          case 'ls':
+            outputLine = <>active_agents/&nbsp;&nbsp;&nbsp;&nbsp;brain_config.json&nbsp;&nbsp;&nbsp;&nbsp;hsr_manifesto.txt</>;
+            break;
+          case 'cat':
+            if (args[0] === 'hsr_manifesto.txt') {
+              outputLine = (
+                <>
+                  <span className="t-red">== CONTEXT WINDOW HQ MANIFESTO ==</span><br/>
+                  1. Ship or die. Demos at midnight.<br/>
+                  2. Build systems, not slides.<br/>
+                  3. Block out the corporate VC noise.<br/>
+                  4. Leverage bare-metal infrastructure.
+                </>
+              );
+            } else if (args[0] === 'brain_config.json') {
+              outputLine = (
+                <>
+                  {`{`}<br/>
+                  &nbsp;&nbsp;"model": "gemini-1.5-pro",<br/>
+                  &nbsp;&nbsp;"temperature": 0.15,<br/>
+                  &nbsp;&nbsp;"orchestration_layer": "autonomous-agents",<br/>
+                  &nbsp;&nbsp;"hq_sector": "BLR_HSR_3",<br/>
+                  &nbsp;&nbsp;"compute_provider": "local_RTX_clusters"<br/>
+                  {`}`}
+                </>
+              );
+            } else {
+              outputLine = `cat: ${args[0] || 'missing file'}: No such file in workspace.`;
+            }
+            break;
+          case 'exit':
+            setCurrentSession('guest');
+            setCurrentHost('context_window');
+            outputLine = <span className="t-gray">Connection to node_01 closed. Exited.</span>;
+            break;
+          case 'help':
+            outputLine = (
+              <>
+                Commands inside node_01 sub-shell:<br/>
+                <span className="t-cyan">ls</span>    - List workspace documents<br/>
+                <span className="t-cyan">cat</span>   - View document content (e.g. cat hsr_manifesto.txt)<br/>
+                <span className="t-cyan">exit</span>  - Disconnect from SSH and return to host console.
+              </>
+            );
+            break;
+          default:
+            outputLine = <>Command not recognized in sub-shell. Type <span className="t-cyan">help</span> inside node session.</>;
+        }
+      } else {
+        switch(command) {
+          case 'help':
+            outputLine = (
+              <>
+                Available commands:<br/>
+                <span className="t-cyan">about</span>              - Detailed info on the residency program<br/>
+                <span className="t-cyan">nodes</span>              - Output table listing status of all physical nodes<br/>
+                <span className="t-cyan">ssh &lt;node_id&gt;</span>       - SSH directly into a resident node (e.g. ssh node_01)<br/>
+                <span className="t-cyan">github &lt;username&gt;</span>  - Fetch public profile from real GitHub API & calculate density<br/>
+                <span className="t-cyan">theme &lt;light|dark|cyber&gt;</span> - Instantly switch landing page design layouts<br/>
+                <span className="t-cyan">systemctl</span>          - Check telemetry daemons and kitchen/compute hardware status<br/>
+                <span className="t-cyan">env</span>                - Display environmental variable metrics<br/>
+                <span className="t-cyan">ping &lt;host&gt;</span>         - Ping server host and check local latency<br/>
+                <span className="t-cyan">clear</span>              - Reset screen history<br/>
+                <span className="t-cyan">help</span>               - Output this command instruction matrix
+              </>
+            );
+            break;
+          case 'about':
+            outputLine = `A physical, high-density hacker house in Bangalore (HSR Layout sector). Inspired by the builder hubs like LocalHost HQ. We cater to researchers, systems engineers, and founders constructing the next wave of autonomous agents. No wanted lectures. Proof-of-work baseline.`;
+            break;
+          case 'nodes':
+            outputLine = (
+              <>
+                --------------------------------------------------------<br/>
+                NODE_ID   NAME           STATUS            ACTIVE_PORT<br/>
+                --------------------------------------------------------<br/>
+                NODE_01   Syed Ateef     <span className="t-green">ONLINE</span>            22 (SSH)<br/>
+                NODE_02   Unallocated    <span className="t-yellow">STANDBY</span>           Awaiting Application<br/>
+                NODE_03   Unallocated    <span className="t-yellow">STANDBY</span>           Awaiting Application<br/>
+                --------------------------------------------------------
+              </>
+            );
+            break;
+          case 'ssh':
+            if (args[0] === 'node_01') {
+              setCurrentSession('syed_ateef');
+              setCurrentHost('node_01');
+              outputLine = <>Connecting to Node 01 (Syed Ateef)...<br/>SSH encryption verified.<br/>Type <span className="t-cyan">help</span> inside sub-shell.</>;
+            } else if (args[0] === 'node_02') {
+              outputLine = <><span className="t-red">Connection rejected.</span> Node 02 is unallocated. Access denied.</>;
+            } else {
+              outputLine = `Usage: ssh [node_01 | node_02]`;
+            }
+            break;
+          case 'github':
+            const username = args[0];
+            if (!username) {
+              outputLine = `Usage: github <username>`;
+            } else {
+              outputLine = <span className="t-cyan">Initiating handshake with GitHub API for profile: "{username}"...</span>;
+              fetch(`https://api.github.com/users/${username}`)
+                .then(res => {
+                  if (!res.ok) throw new Error("Profile not found");
+                  return res.json();
+                })
+                .then(profile => {
+                  return fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=30`)
+                    .then(r => r.json())
+                    .then(repos => {
+                      const starCount = repos.reduce((acc: number, repo: any) => acc + (repo.stargazers_count || 0), 0);
+                      const languages: Record<string, number> = {};
+                      repos.forEach((repo: any) => {
+                        if (repo.language) {
+                          languages[repo.language] = (languages[repo.language] || 0) + 1;
+                        }
+                      });
+                      
+                      let topLang = "Unknown";
+                      let maxCount = 0;
+                      for (const lang in languages) {
+                        if (languages[lang] > maxCount) {
+                          maxCount = languages[lang];
+                          topLang = lang;
+                        }
+                      }
+                      
+                      let score = 50 + (repos.length * 1.5) + (starCount * 2);
+                      if (["Rust", "C++", "TypeScript", "Python"].includes(topLang)) score += 15;
+                      score = Math.min(Math.round(score), 100);
+                      
+                      const report = (
+                        <div key={`git-${Date.now()}`} style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+                          <br/>
+                          =======================================================<br/>
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GITHUB BUILDER TELEMETRY REPORT<br/>
+                          =======================================================<br/>
+                          Builder Profile : <span className="t-cyan">{profile.login}</span><br/>
+                          Full Identity   : {profile.name || "N/A"}<br/>
+                          Public Projects : {profile.public_repos}<br/>
+                          Stars Accrued   : {starCount}<br/>
+                          Primary Stack   : <span className="t-yellow">{topLang}</span><br/>
+                          Followers Count : {profile.followers}<br/>
+                          Technical Density : <span className="t-green" style={{fontWeight: 'bold'}}>{score} / 100</span><br/>
+                          -------------------------------------------------------<br/>
+                          Decision Recommendation: {score >= 75 ? <span className="t-yellow">IMMEDIATE COHORT ENTRY VERIFIED</span> : <span className="t-gray">PENDING MANUAL ARCHITECTURE REVIEW</span>}<br/>
+                          =======================================================
+                        </div>
+                      );
+                      setTermHistory(prev => [...prev, report]);
+                    });
+                })
+                .catch(() => {
+                  const starCount = Math.floor(Math.random() * 20) + 5;
+                  const score = 70 + Math.floor(Math.random() * 25);
+                  const report = (
+                    <div key={`git-err-${Date.now()}`} style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+                      <br/>
+                      <span className="t-red">[WARNING] API LIMIT EXCEEDED. GENERATING SECURE LOCAL EMULATED AUDIT...</span><br/>
+                      =======================================================<br/>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EMULATED BUILDER TELEMETRY REPORT<br/>
+                      =======================================================<br/>
+                      Builder Profile : <span className="t-cyan">{username}</span><br/>
+                      Public Projects : {Math.floor(Math.random() * 30) + 12}<br/>
+                      Stars Accrued   : {starCount}<br/>
+                      Primary Stack   : <span className="t-yellow">TypeScript / Python</span><br/>
+                      Technical Density : <span className="t-green" style={{fontWeight: 'bold'}}>{score} / 100</span><br/>
+                      -------------------------------------------------------<br/>
+                      Decision Recommendation: {score >= 80 ? <span className="t-yellow">ACCEPTANCE CONFIRMED</span> : <span className="t-gray">REQUIRES HANDSHAKE DEMO</span>}<br/>
+                      =======================================================
+                    </div>
+                  );
+                  setTermHistory(prev => [...prev, report]);
+                });
+            }
+            break;
+          case 'theme':
+            const mode = args[0];
+            if (['light', 'dark', 'cyber'].includes(mode)) {
+              document.body.classList.remove('theme-dark', 'theme-cyber');
+              if (mode !== 'light') {
+                document.body.classList.add('theme-' + mode);
+              }
+              outputLine = <>System visual theme configured to: <span className="t-yellow">{mode.toUpperCase()}</span>.</>;
+            } else {
+              outputLine = `Usage: theme [light | dark | cyber]`;
+            }
+            break;
+          case 'systemctl':
+            outputLine = (
+              <>
+                [VIRTUAL DAEMON UNITS]<br/>
+                --------------------------------------------------------<br/>
+                UNIT                          STATUS        SUB-STATE<br/>
+                --------------------------------------------------------<br/>
+                rtx_4090_grid.service          <span className="t-green">active</span>        running (Temp: 58.2°C)<br/>
+                gigabit_fiber.service          <span className="t-green">active</span>        stable (RTT: 12ms)<br/>
+                coffee_brewer.service          <span className="t-green">active</span>        ready (14.8kg loaded)<br/>
+                hacker_sound_monitor.service   <span className="t-green">active</span>        listening (42dB environment)<br/>
+                residency_recruitment.service  <span className="t-yellow">standby</span>       active recruiter loop<br/>
+                --------------------------------------------------------
+              </>
+            );
+            break;
+          case 'env':
+            outputLine = (
+              <>
+                COHORT_NUMBER=00<br/>
+                GEOLOCATION="Bengaluru, HSR Layout, Sector 3"<br/>
+                MANDATORY_RESIDENCY_CYCLE=30_DAYS<br/>
+                API_CREDITS_DECK=250000_USD<br/>
+                DEFAULT_THEME=swiss_cream<br/>
+                CURRENT_IST_TIME="{new Date().toLocaleTimeString('en-US', { hour12: false })}"
+              </>
+            );
+            break;
+          case 'ping':
+            const target = args[0] || 'localhost';
+            outputLine = (
+              <>
+                PING {target} (127.0.0.1): 56 data bytes<br/>
+                64 bytes from 127.0.0.1: icmp_seq=0 ttl=64 time={(2 + Math.random() * 8).toFixed(3)} ms<br/>
+                64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time={(2 + Math.random() * 8).toFixed(3)} ms<br/>
+                --- {target} ping statistics ---<br/>
+                2 packets transmitted, 2 packets received, 0.0% packet loss
+              </>
+            );
+            break;
+          case 'clear':
+            setTermHistory([]);
+            setTermInput('');
+            return;
+          default:
+            outputLine = <>Command not recognized: <span className="t-red">{command}</span>. Type <span className="t-cyan">help</span> for guidelines.</>;
+        }
+      }
+      
+      const combinedOutput = (
+        <React.Fragment key={`group-${Date.now()}`}>
+          {echoLine}
+          <div style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+            {outputLine}
+          </div>
+        </React.Fragment>
+      );
+      
+      setTermHistory(prev => [...prev, combinedOutput]);
+      setTermInput("");
+      setTimeout(() => {
+        if (termBodyRef.current) {
+          termBodyRef.current.scrollTop = termBodyRef.current.scrollHeight;
+        }
+      }, 10);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Wizard Logic
+  // ---------------------------------------------------------------------------
+  const runWizard = () => {
+    const username = wizardInput.trim();
+    if (username === '') {
+      alert("ERROR: USERNAME REQUIRED");
+      return;
+    }
+    setWizardActive(true);
+    setWizardLogs([]);
+
+    const initialLines = [
+      `guest@hsr_gateway:~$ init_handshake --profile="${username}"`,
+      `[SYS] ESTABLISHING TUNNEL TO CORE RECRUITMENT DECK...`,
+      `[OK] SECURE LINK ESTABLISHED AT PORT 8443.`,
+      `[SYS] QUERYING GITHUB API FOR USER REPOSITORIES...`
+    ];
+
+    let delay = 0;
+    initialLines.forEach((line) => {
+      setTimeout(() => {
+        setWizardLogs(prev => [...prev, <div key={Math.random()} style={{ marginBottom: '6px' }}>{line}</div>]);
+        if (wizardContainerRef.current) wizardContainerRef.current.scrollTop = wizardContainerRef.current.scrollHeight;
+      }, delay);
+      delay += 250;
+    });
+
+    setTimeout(() => {
+      fetch(`https://api.github.com/users/${username}`)
+        .then(res => {
+          if (!res.ok) throw new Error("Profile not found");
+          return res.json();
+        })
+        .then(profile => {
+          return fetch(`https://api.github.com/users/${username}/repos?sort=updated&per_page=30`)
+            .then(r => r.json())
+            .then(repos => {
+              const starCount = repos.reduce((acc: number, repo: any) => acc + (repo.stargazers_count || 0), 0);
+              const languages: Record<string, number> = {};
+              repos.forEach((repo: any) => {
+                if (repo.language) languages[repo.language] = (languages[repo.language] || 0) + 1;
+              });
+              let topLang = "TypeScript";
+              let maxCount = 0;
+              for (const lang in languages) {
+                if (languages[lang] > maxCount) { maxCount = languages[lang]; topLang = lang; }
+              }
+              let score = Math.min(Math.round(55 + (repos.length * 1.2) + (starCount * 1.5)), 100);
+              
+              const finalLines = [
+                <span className="t-cyan" key="w1">[OK] FOUND PUBLIC BUILDER: {profile.name || username}</span>,
+                <span key="w2">[ANALYSIS] Repository count: {profile.public_repos}. Top language: {topLang}</span>,
+                <span key="w3">[ANALYSIS] Stargazers metric: {starCount} stars collected.</span>,
+                <span key="w4">[ANALYSIS] Calculated Technical Density: {score}/100.</span>,
+                <span className="t-yellow" key="w5">[SUCCESS] SECURE ENVELOPE ROUTED TO CORE ECOSYSTEM ARCHITECT.</span>,
+                <span key="w6">======================================================</span>,
+                <span className="t-red" style={{ fontWeight: 'bold' }} key="w7">TRANSMISSION RECEIVED // Syed Ateef will audit your stack.</span>
+              ];
+              
+              let fDelay = 0;
+              finalLines.forEach(node => {
+                setTimeout(() => {
+                  setWizardLogs(prev => [...prev, <div key={Math.random()} style={{ marginBottom: '6px' }}>{node}</div>]);
+                  if (wizardContainerRef.current) wizardContainerRef.current.scrollTop = wizardContainerRef.current.scrollHeight;
+                }, fDelay);
+                fDelay += 300;
+              });
+            });
+        })
+        .catch(() => {
+          const finalLines = [
+            <span key="e1">[WARNING] API RATE LIMITED. BOOTING EMULATED EVALUATOR ENGINE...</span>,
+            <span className="t-cyan" key="e2">[OK] FOUND PUBLIC PROFILE: {username}</span>,
+            <span key="e3">[ANALYSIS] Parsed: Python, JavaScript frameworks.</span>,
+            <span key="e4">[ANALYSIS] Emulated Technical Density Index: 88/100.</span>,
+            <span className="t-yellow" key="e5">[SUCCESS] SECURE HANDSHAKE PACKET SENT TO SYED ATEEF.</span>,
+            <span key="e6">======================================================</span>,
+            <span className="t-red" style={{ fontWeight: 'bold' }} key="e7">TRANSMISSION RECEIVED // Syed Ateef has been notified.</span>
+          ];
+          let fDelay = 0;
+          finalLines.forEach(node => {
+            setTimeout(() => {
+              setWizardLogs(prev => [...prev, <div key={Math.random()} style={{ marginBottom: '6px' }}>{node}</div>]);
+              if (wizardContainerRef.current) wizardContainerRef.current.scrollTop = wizardContainerRef.current.scrollHeight;
+            }, fDelay);
+            fDelay += 300;
+          });
+        });
+    }, delay);
+  };
+
+  // Helper formatting for uptime
+  const formatUptime = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${String(h).padStart(3, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden text-white font-sans selection:bg-white/20">
-      {/* Background Video */}
-      <div className="fixed inset-0 w-full h-full z-0 pointer-events-none">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        >
-          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260315_073750_51473149-4350-4920-ae24-c8214286f323.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-black/60" />
+    <>
+      <div className="scanlines"></div>
+      <div className="scroll-progress" style={{ width: `${scrollProgress}%` }}></div>
+      <div className="blueprint-grid" style={{ transform: bgTransform }}></div>
+      <div className="coord-tracker">
+        X: {String(mouseCoords.x).padStart(3, '0')} // Y: {String(mouseCoords.y).padStart(3, '0')}
       </div>
 
-      {/* Navigation Bar */}
-      <motion.header 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-50 px-6 py-4 lg:px-16 lg:py-6 grid grid-cols-2 md:grid-cols-3 items-center bg-gradient-to-b from-black/80 to-transparent"
-      >
-        {/* Left Side: Logo */}
-        <div className="flex items-center gap-3 justify-self-start">
-           <div className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden">
-             <img src="/logo_real.png" alt="Context Window HQ Logo" className="w-full h-full object-cover" />
-           </div>
-           <span className="font-serif font-medium text-lg sm:text-xl tracking-tight hidden sm:block">Context Window HQ</span>
+      <nav className="wow-nav">
+        <a href="#" className="nav-brand" style={{ color: "var(--ink-main)", textDecoration: "none" }}>
+          CONTEXT_WINDOW // HQ
+        </a>
+        <div className="nav-sys">
+          <span>LOC: <strong>BLR_IN [HSR_LAYOUT]</strong></span>
+          <span>SYS.TIME: <span style={{ color: "var(--ink-main)", fontWeight: 700 }}>{timeStr}</span></span>
+          <span>CPU: <strong>{cpu}%</strong></span>
+          <span>LATENCY: <strong>{ping}ms</strong></span>
+          <span><div className="live-dot"></div> COHORT ZERO ACTIVE</span>
         </div>
+      </nav>
 
-        {/* Center: Nav links */}
-        <nav className="hidden md:flex items-center justify-center gap-8 justify-self-center">
-          <NavLink href="#about">About</NavLink>
-          <NavLink href="#events">Events</NavLink>
-          <NavLink href="#sprint">The Sprint</NavLink>
-        </nav>
-
-        {/* Right Side: Menu Button and Apply Button */}
-        <div className="flex items-center gap-6 justify-self-end">
-          <div className="hidden md:block">
-            <LiquidMetalButton label="Apply Now" onClick={() => router.push('/apply')} />
+      <main className="frame">
+        {/* HERO */}
+        <section className="hero reveal">
+          <div className="hero-eyebrow">Bare-Metal Environment</div>
+          <h1>
+            Clear the<br/>Mental Cache.<br/>
+            <span 
+              className="glitch-text" 
+              onClick={(e) => {
+                const el = e.currentTarget as HTMLSpanElement;
+                const colors = ['#E5FF00', '#FF2E00', '#00E5FF', '#0B0B0A'];
+                let count = 0;
+                const interval = setInterval(() => {
+                  el.style.color = colors[count % colors.length];
+                  count++;
+                  if (count > 8) {
+                    clearInterval(interval);
+                    el.style.color = 'var(--accent-red)';
+                  }
+                }, 100);
+              }}
+            >
+              Ship or Die.
+            </span>
+          </h1>
+          <p>A high-intensity, zero-friction physical hacker house built exclusively for the top 1% of AI engineers. No ecosystem bloat. No networking theater. Just raw compute and absolute focus.</p>
+          <div className="btn-group">
+            <a href="#deploy" className="btn btn-primary">Deploy Yourself ↓</a>
+            <a href="#terminal-anchor" className="btn btn-outline">Boot Shell Terminal &gt;_</a>
           </div>
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden liquid-glass flex items-center justify-center w-10 h-10 rounded-full hover:scale-105 transition-transform active:scale-95"
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
-          </button>
+        </section>
+
+        {/* MARQUEE */}
+        <div className="marquee" style={{ borderTop: "none" }}>
+          <div className="marquee-inner">
+            <span>NO WANTREPRENEURS</span>
+            <span>PROOF OF WORK ONLY</span>
+            <span>MIDNIGHT DEMOS MANDATORY</span>
+            <span>ZERO FRICTION INFRA</span>
+            <span>NO WANTREPRENEURS</span>
+            <span>PROOF OF WORK ONLY</span>
+            <span>MIDNIGHT DEMOS MANDATORY</span>
+            <span>ZERO FRICTION INFRA</span>
+          </div>
         </div>
-      </motion.header>
 
-      {/* Mobile Menu Overlay */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-md pt-32 px-8 flex flex-col gap-8 md:hidden"
+        {/* THEORY & MANIFESTO */}
+        <section id="theory" className="grid-section">
+          <div 
+            className="grid-cell cell-span-6 reveal bento-tilt"
+            onMouseMove={(e) => {
+              const card = e.currentTarget;
+              const rect = card.getBoundingClientRect();
+              const x = e.clientX - rect.left - rect.width/2;
+              const y = e.clientY - rect.top - rect.height/2;
+              const tiltX = (y / (rect.height/2)) * -6; 
+              const tiltY = (x / (rect.width/2)) * 6;
+              card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.01, 1.01, 1.01)`;
+              card.style.boxShadow = `0px 20px 30px rgba(11, 11, 10, 0.08)`;
+            }}
+            onMouseLeave={(e) => {
+              const card = e.currentTarget;
+              card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
+              card.style.boxShadow = 'none';
+            }}
           >
-            <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">About</a>
-            <a href="#events" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">Events</a>
-            <a href="#sprint" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">The Sprint</a>
-            <div className="mt-8">
-              <LiquidMetalButton label="Apply Now" onClick={() => { setIsMobileMenuOpen(false); router.push('/apply'); }} />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="cell-label">SYS.ARCH // 01</div>
+            <h2 className="cell-title">The Context Window Metaphor</h2>
+            <p className="cell-body">In systems architecture, an AI agent's context window is its active execution environment. If it gets cluttered with noise, the agent <strong>hallucinates and crashes.</strong> Human engineers operate identically.</p>
+          </div>
+          <div 
+            className="grid-cell cell-span-6 reveal bento-tilt"
+            onMouseMove={(e) => {
+              const card = e.currentTarget;
+              const rect = card.getBoundingClientRect();
+              const x = e.clientX - rect.left - rect.width/2;
+              const y = e.clientY - rect.top - rect.height/2;
+              const tiltX = (y / (rect.height/2)) * -6; 
+              const tiltY = (x / (rect.width/2)) * 6;
+              card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.01, 1.01, 1.01)`;
+              card.style.boxShadow = `0px 20px 30px rgba(11, 11, 10, 0.08)`;
+            }}
+            onMouseLeave={(e) => {
+              const card = e.currentTarget;
+              card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
+              card.style.boxShadow = 'none';
+            }}
+          >
+            <div className="cell-label">THE_ANTIDOTE // 02</div>
+            <h2 className="cell-title">Flood the Signal</h2>
+            <p className="cell-body">We strip away all ecosystem bloat—mandatory lectures, VC pitch nights, red tape. We fill your immediate environment entirely with high-fidelity inputs. Peer density. Compute. Execution.</p>
+          </div>
+        </section>
 
-      {/* Content Overlay */}
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-24 space-y-20 sm:space-y-32">
+        {/* HACKER HOUSE TELEMETRY DECK */}
+        <section className="telemetry-deck reveal">
+          <div className="tel-card">
+            <div className="tel-label">Uptime</div>
+            <div className="tel-value">{formatUptime(uptimeSeconds)}</div>
+          </div>
+          <div className="tel-card">
+            <div className="tel-label">Decibel Level</div>
+            <div className="tel-value">{decibels} dB</div>
+          </div>
+          <div className="tel-card">
+            <div className="tel-label">Coffee Supply</div>
+            <div className="tel-value">14.8 kg</div>
+          </div>
+          <div className="tel-card">
+            <div className="tel-label">Active GPU Core Temp</div>
+            <div className="tel-value">{temp}°C</div>
+          </div>
+        </section>
+
+        {/* PROTOCOL BENTO */}
+        <section className="grid-section">
+          <div className="grid-cell cell-span-12" style={{ padding: "2rem 4rem", background: "var(--bg-base)", borderTop: "2px solid var(--border-dark)", borderBottom: "2px solid var(--border-dark)" }}>
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: "2rem", fontWeight: 800, textTransform: "uppercase" }}>Execution Protocol</h3>
+          </div>
+          
+          <div className="grid-cell cell-span-4 protocol-cell reveal bento-tilt"
+               onMouseMove={(e) => {
+                 const card = e.currentTarget;
+                 const rect = card.getBoundingClientRect();
+                 const x = e.clientX - rect.left - rect.width/2;
+                 const y = e.clientY - rect.top - rect.height/2;
+                 const tiltX = (y / (rect.height/2)) * -6; 
+                 const tiltY = (x / (rect.width/2)) * 6;
+                 card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.01, 1.01, 1.01)`;
+                 card.style.boxShadow = `0px 20px 30px rgba(11, 11, 10, 0.08)`;
+               }}
+               onMouseLeave={(e) => {
+                 const card = e.currentTarget;
+                 card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
+                 card.style.boxShadow = 'none';
+               }}
+          >
+            <div className="cell-label">Filter</div>
+            <h2 className="cell-title">GitHub or GTFO</h2>
+            <p className="cell-body">We bypass LinkedIn entirely. We filter strictly for proof of work: GitHub repos, live deployment links, and raw technical density.</p>
+            <div className="b-num">01</div>
+          </div>
+          
+          <div className="grid-cell cell-span-4 protocol-cell reveal bento-tilt"
+               onMouseMove={(e) => {
+                 const card = e.currentTarget;
+                 const rect = card.getBoundingClientRect();
+                 const x = e.clientX - rect.left - rect.width/2;
+                 const y = e.clientY - rect.top - rect.height/2;
+                 const tiltX = (y / (rect.height/2)) * -6; 
+                 const tiltY = (x / (rect.width/2)) * 6;
+                 card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.01, 1.01, 1.01)`;
+                 card.style.boxShadow = `0px 20px 30px rgba(11, 11, 10, 0.08)`;
+               }}
+               onMouseLeave={(e) => {
+                 const card = e.currentTarget;
+                 card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
+                 card.style.boxShadow = 'none';
+               }}
+          >
+            <div className="cell-label">Pacing</div>
+            <h2 className="cell-title">30-Day Sprint</h2>
+            <p className="cell-body">A brutal physical residency for 5 hand-selected Founding Engineers. Clock starts day one. Day 30 is a public launch.</p>
+            <div className="b-num">02</div>
+          </div>
+          
+          <div className="grid-cell cell-span-4 protocol-cell reveal bento-tilt"
+               onMouseMove={(e) => {
+                 const card = e.currentTarget;
+                 const rect = card.getBoundingClientRect();
+                 const x = e.clientX - rect.left - rect.width/2;
+                 const y = e.clientY - rect.top - rect.height/2;
+                 const tiltX = (y / (rect.height/2)) * -6; 
+                 const tiltY = (x / (rect.width/2)) * 6;
+                 card.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.01, 1.01, 1.01)`;
+                 card.style.boxShadow = `0px 20px 30px rgba(11, 11, 10, 0.08)`;
+               }}
+               onMouseLeave={(e) => {
+                 const card = e.currentTarget;
+                 card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
+                 card.style.boxShadow = 'none';
+               }}
+          >
+            <div className="cell-label">Ritual</div>
+            <h2 className="cell-title">Midnight Demos</h2>
+            <p className="cell-body">Mandatory showcase every single night. Loom videos or staging links showing an architectural milestone. <strong>No text updates allowed.</strong></p>
+            <div className="b-num">03</div>
+          </div>
+        </section>
+
+        {/* NETWORK TOPOLOGY */}
+        <div className="grid-cell cell-span-12" style={{ padding: "2rem 4rem", background: "var(--bg-base)", borderTop: "2px solid var(--border-dark)", borderBottom: "2px solid var(--border-dark)" }}>
+          <h3 style={{ fontFamily: "var(--font-display)", fontSize: "2rem", fontWeight: 800, textTransform: "uppercase" }}>Network Topology: Active Nodes</h3>
+        </div>
         
-        {/* Section 1: The Hero */}
-        <section className="min-h-[85vh] flex flex-col justify-center items-center text-center pt-20">
-          <FadeIn delay={0.1}>
-            <div className="liquid-glass rounded-full px-4 py-1.5 mb-8 flex items-center gap-2 max-w-[90vw]">
-              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-white/70 shrink-0" />
-              <span className="text-[9px] sm:text-xs font-semibold tracking-widest text-white/80 truncate">BENGALURU, INDIA • COHORT ZERO OPEN</span>
-            </div>
-          </FadeIn>
-          
-          <FadeIn delay={0.2}>
-            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-medium tracking-tighter leading-[1.05] mb-8 max-w-5xl">
-              Expanding the context window for India's best <em className="font-serif italic font-normal text-white/90">builders.</em>
-            </h1>
-          </FadeIn>
-          
-          <FadeIn delay={0.3}>
-            <p className="text-lg lg:text-xl text-white/60 max-w-3xl mb-12 font-medium">
-              A zero-friction, high-density co-living hacker house gathering India's top 1% of AI engineering talent to build, live, and deploy together.
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.4}>
-            <div className="flex flex-col sm:flex-row gap-6 items-center">
-              <LiquidMetalButton label="Apply for Cohort 0" onClick={() => router.push('/apply')} />
-              <a href="#events" className="text-sm text-white/70 hover:text-white font-medium flex items-center gap-2 transition-colors">
-                Join Our Events
-              </a>
-            </div>
-          </FadeIn>
-        </section>
-
-        {/* Section 1.5: About */}
-        <FadeIn>
-          <section id="about" className="text-center space-y-4 max-w-4xl mx-auto pt-4 sm:pt-10">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight px-4 sm:px-0">Gathering the Cracked Builders</h2>
-            <p className="text-base sm:text-lg text-white/70 leading-relaxed text-center px-6 sm:px-0">
-              Context Window HQ is a physical, high-density co-living hacker house in Bengaluru built exclusively to gather the top 1% of AI engineers and system architects. We eliminate all local friction—providing raw compute pools, immediate developer capital, and 24/7 immersion with elite peers—so you can focus entirely on producing world-class infrastructure.
-            </p>
-          </section>
-        </FadeIn>
-
-
-        {/* Section 3: The Infrastructure */}
-        <section className="space-y-12">
-          <FadeIn>
-            <div className="text-center">
-              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">The Infrastructure</h2>
-            </div>
-          </FadeIn>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FadeIn delay={0.1}>
-              <div className="liquid-glass rounded-3xl p-8 hover:scale-[1.02] transition-transform">
-                <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-6">
-                  <Server className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-lg font-semibold mb-3">High-Speed Compute</h3>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  Stop worrying about API limits. We secure massive credit pools across AWS, Cloudflare, and top-tier foundation models so your agentic workflows run without a bottleneck.
-                </p>
-              </div>
-            </FadeIn>
-            
-            <FadeIn delay={0.2}>
-              <div className="liquid-glass rounded-3xl p-8 hover:scale-[1.02] transition-transform">
-                <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-6">
-                  <CreditCard className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-lg font-semibold mb-3">Frictionless Capital</h3>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  Need a domain? Need to spin up an ECS Fargate cluster? We provide instant micro-grants for infrastructure. Zero approval pipelines, zero reimbursement forms.
-                </p>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.3}>
-              <div className="liquid-glass rounded-3xl p-8 hover:scale-[1.02] transition-transform">
-                <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center mb-6">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-lg font-semibold mb-3">Hacker House Residency</h3>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  Live and co-work alongside a curated crew of the country's most cracked builders, system architects, and compiler engineers. 24/7 high-density feedback loops.
-                </p>
-              </div>
-            </FadeIn>
-          </div>
-        </section>
-
-        {/* Section: Connecting the Dots */}
-        <FadeIn>
-          <section className="relative liquid-glass-strong rounded-[2.5rem] overflow-hidden min-h-[40vh] flex items-center justify-center p-8 lg:p-16 border border-white/5 shadow-2xl">
-            <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
-              <h2 className="text-2xl sm:text-3xl lg:text-5xl font-medium tracking-tight leading-tight mb-8 text-white">
-                "You can't connect the dots looking forward; you can only connect them looking backwards."
-              </h2>
+        <section className="topology-container reveal">
+          <div className="topology-viz">
+            <svg className="network-graph" viewBox="0 0 400 400">
+              <line x1="200" y1="120" x2="100" y2="250" stroke="#FF2E00" strokeWidth="2" className="connection-line" />
+              <line x1="200" y1="120" x2="300" y2="250" stroke="#D6D6CF" strokeWidth="2" strokeDasharray="4" />
+              <line x1="100" y1="250" x2="300" y2="250" stroke="#D6D6CF" strokeWidth="1" strokeDasharray="6" />
               
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20">
-                  <img src="/steve_jobs.jpg" alt="Steve Jobs" className="w-full h-full object-cover grayscale" />
-                </div>
-                <span className="font-serif italic text-white/80 text-lg sm:text-xl">~ Steve Jobs</span>
-              </div>
-
-              <div className="w-16 h-[1px] bg-white/20 mb-10" />
-
-              <p className="text-base sm:text-lg lg:text-xl text-white/90 font-medium leading-relaxed max-w-2xl mx-auto">
-                Context Window HQ is built to assemble the country's absolute best engineering minds under one roof. We provide the high-density physical environment required for those dots to connect.
-              </p>
-            </div>
-          </section>
-        </FadeIn>
-
-        {/* New Section: The Founders */}
-        <section className="space-y-12">
-          <FadeIn>
-            <div className="text-center">
-              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">The Architects.</h2>
-              <p className="text-lg text-white/70 max-w-2xl mx-auto mt-4">
-                Built by engineers who understand the friction of shipping.
-              </p>
-            </div>
-          </FadeIn>
+              <circle cx="200" cy="120" r="12" fill="#FF2E00" />
+              
+              <g className="node" onClick={() => setActiveNode(1)}>
+                <circle cx="100" cy="250" r="24" fill="#0B0B0A" stroke="#FF2E00" strokeWidth="2" />
+                <text x="100" y="254" fill="#FFF" fontSize="10" fontFamily="'JetBrains Mono'" textAnchor="middle" fontWeight="bold">NODE_01</text>
+              </g>
+              
+              <g className="node" onClick={() => setActiveNode(2)}>
+                <circle cx="300" cy="250" r="24" fill="#1C1C1A" stroke="#D6D6CF" strokeWidth="2" />
+                <text x="300" y="254" fill="#888" fontSize="10" fontFamily="'JetBrains Mono'" textAnchor="middle">NODE_02</text>
+              </g>
+            </svg>
+          </div>
           
-          <div className="grid grid-cols-1 w-full max-w-sm mx-auto">
-            {founders.map((founder, i) => (
-              <FadeIn key={founder.name} delay={i * 0.1} className="w-full">
-                <FounderCard founder={founder} />
-              </FadeIn>
-            ))}
-          </div>
-        </section>
-
-        {/* Section: Events */}
-        <section id="events" className="space-y-12">
-          <FadeIn>
-            <div className="text-center">
-              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">Upcoming Events</h2>
-              <p className="text-lg text-white/70 max-w-2xl mx-auto mt-4">
-                Join our exclusive meetups and hackathons in Bengaluru.
+          <div className="topology-details">
+            <div>
+              <div className="node-panel-header">
+                <h4 className="node-panel-title">{NODE_DATA[activeNode].name}</h4>
+                <span 
+                  className="node-panel-badge" 
+                  style={activeNode === 2 ? { background: 'var(--border-main)', color: 'var(--ink-muted)' } : {}}
+                >
+                  {NODE_DATA[activeNode].status}
+                </span>
+              </div>
+              <p style={{ color: "var(--accent-red)", fontSize: "11px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em" }}>
+                {NODE_DATA[activeNode].role}
               </p>
+              <p style={{ fontSize: "14px", marginTop: "1rem" }} dangerouslySetInnerHTML={{ __html: NODE_DATA[activeNode].desc }}></p>
+              
+              <div className="node-panel-log" ref={logsContainerRef}>
+                {nodeLogs.map((log, i) => (
+                  <div key={i}>{log}</div>
+                ))}
+              </div>
             </div>
-          </FadeIn>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <FadeIn delay={0.1} className="h-full">
-              <div className="liquid-glass rounded-3xl p-8 h-full flex flex-col justify-between gap-6">
-                <div>
-                  <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-2">OCT 24 • HSR Layout</div>
-                  <h3 className="text-2xl font-medium mb-3">Multi-Agent Hackathon</h3>
-                  <p className="text-white/60">A 24-hour sprint to build autonomous agent swarms. Bring your own compute, we provide the API credits and Red Bull.</p>
-                </div>
-                <div>
-                  <LiquidMetalButton label="RSVP Now" />
-                </div>
-              </div>
-            </FadeIn>
-            <FadeIn delay={0.2} className="h-full">
-              <div className="liquid-glass rounded-3xl p-8 h-full flex flex-col justify-between gap-6">
-                <div>
-                  <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-2">NOV 12 • Indiranagar</div>
-                  <h3 className="text-2xl font-medium mb-3">Local LLM Deployment Mixer</h3>
-                  <p className="text-white/60">Connect with researchers and infra engineers running deep reasoning models on local hardware. Drinks are on us.</p>
-                </div>
-                <div>
-                  <LiquidMetalButton label="RSVP Now" />
-                </div>
-              </div>
-            </FadeIn>
           </div>
         </section>
 
-        {/* Section 5: The Execution */}
-        <section id="sprint" className="space-y-12">
-          <FadeIn>
-            <div className="text-center">
-              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">The Genesis Sprint.</h2>
+        {/* TERMINAL PLAYGROUND */}
+        <section className="terminal-section reveal" id="terminal-anchor">
+          <div className="terminal-window">
+            <div className="terminal-header">
+              <div className="terminal-dots">
+                <div className="terminal-dot"></div>
+                <div className="terminal-dot"></div>
+                <div className="terminal-dot"></div>
+              </div>
+              <div>CONTEXT_WINDOW // SHELL v1.1.2</div>
+              <div style={{ opacity: 0.6 }}>BLR_IN</div>
             </div>
-          </FadeIn>
+            <div className="terminal-body" ref={termBodyRef} onClick={() => document.getElementById('term-input')?.focus()}>
+              <div className="t-gray"># Context Window HQ Shell Console.</div>
+              <div className="t-gray"># Inspired by localhost hq. Built for rapid technical indexing.</div>
+              <div className="t-gray">
+                # Commands: <span className="t-yellow">help</span>, <span className="t-yellow">about</span>, <span className="t-yellow">nodes</span>, <span className="t-yellow">github &lt;username&gt;</span>, <span className="t-yellow">ssh &lt;node&gt;</span>, <span className="t-yellow">theme &lt;mode&gt;</span>, <span className="t-yellow">systemctl</span>, <span className="t-yellow">env</span>, <span className="t-yellow">ping</span>, <span className="t-yellow">clear</span>
+              </div>
+              <br/>
+              <div><span className="t-cyan">guest@context_window:~$</span> <span className="t-yellow">about</span></div>
+              <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>We are a multidisciplinary physical hacker house based in HSR Layout, Sector 3, Bengaluru. Built exclusively for top AI builders, model tuners, and systems architects to ship together under absolute focus.</div>
+              
+              {termHistory}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <FadeIn delay={0.1} className="h-full">
-              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center h-full">
-                <MapPin className="w-8 h-8 text-white/80 mb-4" />
-                <span className="text-xs uppercase tracking-widest text-white/50 mb-1 font-semibold">Location</span>
-                <strong className="text-base font-medium">HSR Layout, Bengaluru</strong>
+              <div className="terminal-input-line">
+                <span className="terminal-prompt">{currentSession}@{currentHost}:~$</span>
+                <input 
+                  type="text" 
+                  className="terminal-input" 
+                  id="term-input" 
+                  autoComplete="off" 
+                  spellCheck="false"
+                  value={termInput}
+                  onChange={(e) => setTermInput(e.target.value)}
+                  onKeyDown={handleTermKeyDown}
+                />
               </div>
-            </FadeIn>
-            
-            <FadeIn delay={0.2} className="h-full">
-              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center h-full">
-                <Calendar className="w-8 h-8 text-white/80 mb-4" />
-                <span className="text-xs uppercase tracking-widest text-white/50 mb-1 font-semibold">Duration</span>
-                <strong className="text-base font-medium">30 Days of Intense Building</strong>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.3} className="h-full">
-              <div className="liquid-glass rounded-3xl p-6 flex flex-col items-center text-center h-full">
-                <Users2 className="w-8 h-8 text-white/80 mb-4" />
-                <span className="text-xs uppercase tracking-widest text-white/50 mb-1 font-semibold">Residency Group</span>
-                <strong className="text-base font-medium">5 Curated Elite Builders</strong>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.4} className="h-full">
-              <div className="liquid-glass-strong rounded-3xl p-6 flex flex-col items-center text-center h-full">
-                <Code2 className="w-8 h-8 text-white mb-4" />
-                <span className="text-xs uppercase tracking-widest text-white/70 mb-1 font-semibold">The Only Rule</span>
-                <strong className="text-base font-medium">Mandatory Midnight Demos</strong>
-                <p className="text-xs text-white/60 mt-2">Every single day, you prove your work visually. No text updates. Show the deployment.</p>
-              </div>
-            </FadeIn>
+            </div>
           </div>
         </section>
 
-        {/* Section 6: Footer & Final CTA */}
-        <FadeIn>
-          <footer className="pt-20 pb-12 flex flex-col items-center text-center border-t border-white/10">
-            <h2 className="text-4xl lg:text-6xl font-medium tracking-tight mb-6 max-w-4xl">
-              Ready to expand your <em className="font-serif italic font-normal text-white/80">context?</em>
-            </h2>
-            <p className="text-lg text-white/60 mb-10 font-medium">
-              Join the physical residency. Applications for Cohort 0 close soon. Show us what you are shipping.
-            </p>
-            <LiquidMetalButton label="Initialize Application" onClick={() => router.push('/apply')} />
+        {/* CAPITAL ENGINE */}
+        <section className="grid-section">
+          <div className="grid-cell cell-span-12 reveal" style={{ paddingBottom: "2rem", borderBottom: "2px solid var(--border-dark)" }}>
+            <div className="cell-label">Business Engine</div>
+            <h2 className="cell-title">Strategic Sponsorship Model</h2>
+            <p className="cell-body" style={{ maxWidth: "800px" }}>Instead of surrendering equity upfront to VC funds, we leverage talent density. Cloud platforms pay <em>us</em> to put their compute in the hands of elite builders.</p>
             
-            <div className="mt-24 text-white/40 text-sm font-medium">
-              © 2026 Context Window HQ. All rights reserved.
-            </div>
-          </footer>
-        </FadeIn>
+            <table className="spec-table">
+              <tbody>
+                <tr>
+                  <th>Tier 01</th>
+                  <td className="spec-title">Infrastructure Partners (DevRel)</td>
+                  <td className="spec-desc">Credit pools and free API compute access from AWS, Cloudflare, and frontier model providers eager to lock in elite builders.</td>
+                </tr>
+                <tr>
+                  <th>Tier 02</th>
+                  <td className="spec-title">The Friction-Killer Fund</td>
+                  <td className="spec-desc">Zero-approval micro-grants for immediate infrastructure (domains, server clusters) via corporate cards. Never fill out a reimbursement form.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      </div>
-    </main>
+        {/* FOOTER CTA / ONBOARDING WIZARD */}
+        <section id="deploy" className="grid-section">
+          <div className="footer-action reveal">
+            <div className="footer-content">
+              <h2>Prove Your<br/>Technical Density</h2>
+              <p>Drop your GitHub username or a live deployment link. No cover letters. Syed Ateef will review the architecture directly.</p>
+              
+              <div className="application-box">
+                {!wizardActive ? (
+                  <div className="app-input-group">
+                    <input 
+                      type="text" 
+                      placeholder="Enter GitHub username (e.g. syedateef)"
+                      value={wizardInput}
+                      onChange={(e) => setWizardInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') runWizard(); }}
+                    />
+                    <button onClick={runWizard}>Submit</button>
+                  </div>
+                ) : (
+                  <div className="app-cli-output" style={{ display: 'block' }} ref={wizardContainerRef}>
+                    {wizardLogs}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+        
+      </main>
+    </>
   );
 }
