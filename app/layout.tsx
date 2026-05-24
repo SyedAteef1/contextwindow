@@ -16,9 +16,9 @@ const sourceSerif = Source_Serif_4({
 
 export const metadata: Metadata = {
   title: "Context Window HQ",
-  description: "A zero-friction, high-density hacker house located in Bengaluru, built exclusively for the top 1% of AI engineers.",
+  description: "A physical hacker house in Bangalore (HSR Layout) for emerging AI researchers, systems engineers, and founders.",
   icons: {
-    icon: "/logo_real.png",
+    icon: "/favicon.svg",
   },
 };
 
