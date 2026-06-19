@@ -463,77 +463,60 @@ export default function Home() {
             </div>
           </FadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {/* Starter */}
-            <FadeIn delay={0.1} className="h-full">
-              <div className="liquid-glass rounded-3xl p-8 h-full flex flex-col gap-6">
-                <div>
-                  <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-3">Starter</div>
-                  <div className="flex items-end gap-1 mb-1">
-                    <span className="text-4xl font-medium tracking-tight">$499</span>
-                    <span className="text-white/50 text-sm font-medium mb-1.5">/month</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
+            {[
+              {
+                name: "Starter", price: "$499", per: "/month", popular: false,
+                tagline: "For a single team finding its feet.",
+                cta: "Start Free Trial",
+                features: ["Up to 25 members", "Slack + 2 connectors", "Living memory graph", "/ask answers with sources", "Email support"],
+              },
+              {
+                name: "Growth", price: "$1,499", per: "/month", popular: true,
+                tagline: "For founders who want the full picture.",
+                cta: "Book a Demo",
+                features: ["Up to 100 members", "All connectors", "Proactive daily “today” briefings", "MCP access (Claude, Cursor)", "Audit log & permissions", "Priority support"],
+              },
+              {
+                name: "Enterprise", price: "Custom", per: "", popular: false,
+                tagline: "Your data, your cloud, your rules.",
+                cta: "Talk to Sales",
+                features: ["Unlimited members", "Deploy in your own AWS (pgvector)", "SSO / SAML", "Custom skills & workflows", "Dedicated support & SLA", "Security review & DPA"],
+              },
+            ].map((plan, i) => (
+              <FadeIn key={plan.name} delay={0.1 * (i + 1)} className="h-full">
+                <div className={`rounded-3xl p-8 h-full flex flex-col ${plan.popular ? "liquid-glass-strong border border-[#4ade80]/40 shadow-[0_0_40px_rgba(74,222,128,0.08)]" : "liquid-glass"}`}>
+                  {/* in-flow badge slot — keeps all three plans aligned */}
+                  <div className="h-7 mb-4 flex items-center justify-center">
+                    {plan.popular && (
+                      <span className="bg-[#4ade80] text-black text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full">
+                        Most Popular
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm text-white/60">For a single team finding its feet.</p>
-                </div>
-                <ul className="space-y-3 flex-1">
-                  {["Up to 25 members", "Slack + 2 connectors", "Living memory graph", "/ask answers with sources", "Email support"].map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm text-white/80">
-                      <Check className="w-4 h-4 text-white/70 mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <LiquidMetalButton label="Start Free Trial" onClick={() => router.push('/apply')} />
-              </div>
-            </FadeIn>
 
-            {/* Growth — highlighted */}
-            <FadeIn delay={0.2} className="h-full">
-              <div className="liquid-glass-strong rounded-3xl p-8 h-full flex flex-col gap-6 border border-white/20 relative">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full">
-                  Most Popular
-                </div>
-                <div>
-                  <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-3">Growth</div>
-                  <div className="flex items-end gap-1 mb-1">
-                    <span className="text-4xl font-medium tracking-tight">$1,499</span>
-                    <span className="text-white/50 text-sm font-medium mb-1.5">/month</span>
+                  <div className="flex flex-col gap-6 flex-1">
+                    <div>
+                      <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-3">{plan.name}</div>
+                      <div className="flex items-end gap-1 mb-1">
+                        <span className="text-4xl font-medium tracking-tight">{plan.price}</span>
+                        {plan.per && <span className="text-white/50 text-sm font-medium mb-1.5">{plan.per}</span>}
+                      </div>
+                      <p className="text-sm text-white/60">{plan.tagline}</p>
+                    </div>
+                    <ul className="space-y-3 flex-1">
+                      {plan.features.map((f) => (
+                        <li key={f} className={`flex items-start gap-3 text-sm ${plan.popular ? "text-white/90" : "text-white/80"}`}>
+                          <Check className={`w-4 h-4 mt-0.5 shrink-0 ${plan.popular ? "text-[#4ade80]" : "text-white/70"}`} />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <LiquidMetalButton label={plan.cta} onClick={() => router.push('/apply')} />
                   </div>
-                  <p className="text-sm text-white/60">For founders who want the full picture.</p>
                 </div>
-                <ul className="space-y-3 flex-1">
-                  {["Up to 100 members", "All connectors", "Proactive daily “today” briefings", "MCP access (Claude, Cursor)", "Audit log & permissions", "Priority support"].map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm text-white/90">
-                      <Check className="w-4 h-4 text-white mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <LiquidMetalButton label="Book a Demo" onClick={() => router.push('/apply')} />
-              </div>
-            </FadeIn>
-
-            {/* Enterprise */}
-            <FadeIn delay={0.3} className="h-full">
-              <div className="liquid-glass rounded-3xl p-8 h-full flex flex-col gap-6">
-                <div>
-                  <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-3">Enterprise</div>
-                  <div className="flex items-end gap-1 mb-1">
-                    <span className="text-4xl font-medium tracking-tight">Custom</span>
-                  </div>
-                  <p className="text-sm text-white/60">Your data, your cloud, your rules.</p>
-                </div>
-                <ul className="space-y-3 flex-1">
-                  {["Unlimited members", "Deploy in your own AWS (pgvector)", "SSO / SAML", "Custom skills & workflows", "Dedicated support & SLA", "Security review & DPA"].map((f) => (
-                    <li key={f} className="flex items-start gap-3 text-sm text-white/80">
-                      <Check className="w-4 h-4 text-white/70 mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <LiquidMetalButton label="Talk to Sales" onClick={() => router.push('/apply')} />
-              </div>
-            </FadeIn>
+              </FadeIn>
+            ))}
           </div>
 
           <FadeIn delay={0.4}>
