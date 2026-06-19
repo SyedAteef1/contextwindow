@@ -344,6 +344,70 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Section: How it's different */}
+        <section id="why" className="space-y-12">
+          <FadeIn>
+            <div className="text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">Not another tool to learn</h2>
+              <p className="text-lg text-white/70 mt-4">
+                Most knowledge tools hand you a powerful, complicated dashboard and leave you to figure it out. Context Window is the opposite — it's a <span className="text-[#86efac] font-medium">guide</span> and an <span className="text-[#86efac] font-medium">alerter</span> that lives where you already work. From the day you hear about it, it's simple: connect, and it starts guiding you.
+              </p>
+            </div>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {/* The hard way */}
+            <FadeIn delay={0.1} className="h-full">
+              <div className="liquid-glass rounded-3xl p-8 h-full">
+                <div className="text-white/50 text-sm font-semibold tracking-widest uppercase mb-6">Other tools</div>
+                <ul className="space-y-4">
+                  {[
+                    "Weeks of setup, configuration and admin",
+                    "Yet another dashboard you have to remember to check",
+                    "You only find it if you already know what to search for",
+                    "Steep learning curve — the team needs training",
+                    "Passive: it just sits there until someone digs",
+                  ].map((t) => (
+                    <li key={t} className="flex items-start gap-3 text-sm text-white/55">
+                      <X className="w-4 h-4 text-white/30 mt-0.5 shrink-0" />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </FadeIn>
+
+            {/* The Context Window way */}
+            <FadeIn delay={0.2} className="h-full">
+              <div className="liquid-glass-strong rounded-3xl p-8 h-full border border-[#4ade80]/25">
+                <div className="text-[#86efac] text-sm font-semibold tracking-widest uppercase mb-6 flex items-center gap-2">
+                  <Network className="w-4 h-4" /> Context Window
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    "Live in minutes — connect Slack and you're done",
+                    "No new app: it guides and alerts you right in Slack",
+                    "It surfaces what matters before you even ask",
+                    "Zero learning curve — if you can chat, you can use it",
+                    "Proactive: it briefs you and flags what needs you",
+                  ].map((t) => (
+                    <li key={t} className="flex items-start gap-3 text-sm text-white/90">
+                      <Check className="w-4 h-4 text-[#4ade80] mt-0.5 shrink-0" />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </FadeIn>
+          </div>
+
+          <FadeIn delay={0.3}>
+            <p className="text-center text-sm text-white/40 max-w-2xl mx-auto">
+              Powerful underneath, effortless on top. The intelligence is in the background — all your team sees is a brain that guides them and warns them in time.
+            </p>
+          </FadeIn>
+        </section>
+
         {/* Section: Connecting the Dots */}
         <FadeIn>
           <section className="relative liquid-glass-strong rounded-[2.5rem] overflow-hidden min-h-[40vh] flex items-center justify-center p-8 lg:p-16 border border-white/5 shadow-2xl">
