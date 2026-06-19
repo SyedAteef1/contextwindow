@@ -101,3 +101,42 @@ body {
   color: #fff;
   overflow-x: hidden;
 }
+
+/* --- Connector marquee (infinite horizontal scroll) --- */
+@keyframes cw-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: cw-marquee 45s linear infinite;
+  will-change: transform;
+}
+
+/* Fade the marquee in/out at both edges so icons enter and exit softly. */
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none; }
+}
+
+/* --- Context Window dashboard tokens (ported) --- */
+@theme {
+	--color-fg-primary: #f4faf5;
+	--color-fg-secondary: #dce7df;
+	--color-fg-muted: #c2d2c6;
+	--color-fg-subtle: #a7bcae;
+	--color-fg-faint: #8aa191;
+
+	--color-surface-base: #0a0f0c;
+	--color-surface-card: #0e1611;
+	--color-surface-hover: #121d16;
+	--color-surface-border: #1f2e25;
+
+	--color-brand-accent: #4ade80;
+	--color-brand-accent-soft: #86efac;
+	--color-brand-accent-deep: #22c55e;
+}

@@ -15,8 +15,8 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "Context Window HQ",
-  description: "A zero-friction, high-density hacker house located in Bengaluru, built exclusively for the top 1% of AI engineers.",
+  title: "Context Window — The Company Brain",
+  description: "The invisible brain for your whole company. Context Window lives inside Slack, Claude, your CRM and email — collecting knowledge and serving instant answers and proactive daily briefings.",
   icons: {
     icon: "/logo_real.png",
   },
