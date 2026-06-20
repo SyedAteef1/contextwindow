@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Server, Calendar, Code2, Menu, X, Network, MessageSquareText, Bell, ShieldCheck, Check } from "lucide-react";
+import { Server, Calendar, Code2, Menu, X, Network, MessageSquareText, Bell, ShieldCheck, Check, Rocket, TrendingUp, LifeBuoy, Layers, Megaphone, Users } from "lucide-react";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { ConnectorMarquee } from "@/components/connector-marquee";
 import { SalesDemo } from "@/components/sales-demo";
@@ -162,6 +162,7 @@ export default function Home() {
         <nav className="hidden md:flex items-center justify-center gap-8 justify-self-center">
           <NavLink href="#about">Product</NavLink>
           <NavLink href="#how">How it Works</NavLink>
+          <NavLink href="#features">Features</NavLink>
           <NavLink href="#pricing">Pricing</NavLink>
         </nav>
 
@@ -190,6 +191,7 @@ export default function Home() {
           >
             <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">Product</a>
             <a href="#how" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">How it Works</a>
+            <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">Features</a>
             <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">Pricing</a>
             <div className="mt-8">
               <LiquidMetalButton label="Book a Demo" onClick={() => { setIsMobileMenuOpen(false); router.push('/apply'); }} />
@@ -205,7 +207,6 @@ export default function Home() {
         <section className="min-h-[72vh] flex flex-col justify-center items-center text-center pt-16">
           <FadeIn delay={0.1} className="w-full flex justify-center">
             <div className="liquid-glass rounded-full px-4 py-1.5 mb-8 flex items-center gap-2 max-w-[90vw]">
-              <Network className="w-3 h-3 sm:w-4 sm:h-4 text-[#4ade80] shrink-0" />
               <span className="text-[9px] sm:text-xs font-semibold tracking-widest text-white/80 truncate">THE COMPANY BRAIN • NOW IN PRIVATE BETA</span>
             </div>
           </FadeIn>
@@ -349,8 +350,8 @@ export default function Home() {
           <FadeIn>
             <div className="text-center max-w-3xl mx-auto">
               <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">Not another tool to learn</h2>
-              <p className="text-lg text-white/70 mt-4">
-                Most knowledge tools hand you a powerful, complicated dashboard and leave you to figure it out. Context Window is the opposite — it's a <span className="text-[#86efac] font-medium">guide</span> and an <span className="text-[#86efac] font-medium">alerter</span> that lives where you already work. From the day you hear about it, it's simple: connect, and it starts guiding you.
+              <p className="text-sm text-white/60 mt-4 max-w-xl mx-auto leading-relaxed">
+                Most knowledge tools hand you a complicated dashboard and leave you to figure it out. Context Window does the opposite. It's a <span className="text-[#86efac] font-medium">guide</span> and an <span className="text-[#86efac] font-medium">alerter</span> that lives where you already work, so from day one it's simple. You connect, and it starts guiding you.
               </p>
             </div>
           </FadeIn>
@@ -381,7 +382,7 @@ export default function Home() {
             <FadeIn delay={0.2} className="h-full">
               <div className="liquid-glass-strong rounded-3xl p-8 h-full border border-[#4ade80]/25">
                 <div className="text-[#86efac] text-sm font-semibold tracking-widest uppercase mb-6 flex items-center gap-2">
-                  <Network className="w-4 h-4" /> Context Window
+                  <img src="/logo_real.png" alt="Context Window" className="w-5 h-5 rounded object-cover shrink-0" /> Context Window
                 </div>
                 <ul className="space-y-4">
                   {[
@@ -404,6 +405,143 @@ export default function Home() {
           <FadeIn delay={0.3}>
             <p className="text-center text-sm text-white/40 max-w-2xl mx-auto">
               Powerful underneath, effortless on top. The intelligence is in the background — all your team sees is a brain that guides them and warns them in time.
+            </p>
+          </FadeIn>
+        </section>
+
+        {/* Section: Features by team */}
+        <section id="features" className="space-y-12">
+          <FadeIn>
+            <div className="text-center max-w-3xl mx-auto">
+              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">What it does for every team</h2>
+              <p className="text-lg text-white/70 mt-4">
+                One brain, tailored to whoever's asking. Role-scoped, permission-aware, and always sourced, so each team gets exactly what it needs in the tools they already use.
+              </p>
+            </div>
+          </FadeIn>
+
+          {/* The engine — core capabilities as chips */}
+          <FadeIn>
+            <div className="flex flex-wrap justify-center gap-2.5 max-w-4xl mx-auto">
+              {[
+                "Lifetime institutional memory",
+                "Stays current, never stale",
+                "Escalation → learning loop",
+                "Code-aware",
+                "Sources on every answer",
+                "Role & permission aware",
+                "Proactive briefings & alerts",
+                "Research agent",
+              ].map((cap) => (
+                <span key={cap} className="liquid-glass rounded-full px-3.5 py-1.5 text-xs font-medium text-white/75">
+                  {cap}
+                </span>
+              ))}
+            </div>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {[
+              {
+                icon: Rocket,
+                role: "Founders / CEO",
+                points: [
+                  "A morning briefing: what moved, what's at risk, what needs you",
+                  "Instant recall of past decisions and the context behind them",
+                  "Role-scoped research across internal data and the web",
+                ],
+              },
+              {
+                icon: Code2,
+                role: "CTO / Engineering",
+                points: [
+                  "Architecture and design help grounded in your real stack",
+                  "Code-aware answers: what's shipped, in review, and who owns what",
+                  "Faster onboarding plus auto-drafted release notes",
+                ],
+              },
+              {
+                icon: TrendingUp,
+                role: "Sales",
+                points: [
+                  "Demo guidance on what's live versus still in development",
+                  "The right pricing, deck, or one-pager on demand",
+                  "Follow-up drafts, battlecards, and deal memory",
+                ],
+              },
+              {
+                icon: LifeBuoy,
+                role: "Customer Success",
+                points: [
+                  "Real feature ETAs from engineering, remembered for everyone",
+                  "Answers tickets from past resolutions, routes the hard ones",
+                  "Flags churn risk and preps QBRs with full account history",
+                ],
+              },
+              {
+                icon: Layers,
+                role: "Product / PM",
+                points: [
+                  "Aggregates feature requests from Slack, tickets, and calls",
+                  "\"What did customers say about X?\" with quotes and sources",
+                  "Keeps a living decision log and roadmap status",
+                ],
+              },
+              {
+                icon: Megaphone,
+                role: "Marketing",
+                points: [
+                  "Ongoing competitive analysis, refreshed as things change",
+                  "Consistent messaging and repurposed past content",
+                  "Coordinates launches so nothing is missed",
+                ],
+              },
+              {
+                icon: Users,
+                role: "People / HR & Ops",
+                points: [
+                  "Instant onboarding answers: where's the doc, who owns this",
+                  "Flags slipping start dates, overdue tasks, and bottlenecks",
+                  "Retains a person's context when they leave",
+                ],
+              },
+              {
+                icon: Calendar,
+                role: "Across everyone",
+                points: [
+                  "Reads inboxes, surfaces what matters, drafts replies for approval",
+                  "Creates calendar reminders and nudges before deadlines",
+                  "Points out delays and blockers proactively",
+                ],
+              },
+            ].map((team, i) => {
+              const Icon = team.icon;
+              return (
+                <FadeIn key={team.role} delay={0.05 * (i % 3)} className="h-full">
+                  <div className="liquid-glass rounded-3xl p-7 h-full flex flex-col hover:scale-[1.02] transition-transform">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <h3 className="text-base font-semibold">{team.role}</h3>
+                    </div>
+                    <ul className="space-y-3 flex-1">
+                      {team.points.map((p) => (
+                        <li key={p} className="flex items-start gap-2.5 text-sm text-white/65 leading-relaxed">
+                          <Check className="w-4 h-4 text-[#4ade80] mt-0.5 shrink-0" />
+                          <span>{p}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </FadeIn>
+              );
+            })}
+          </div>
+
+          <FadeIn delay={0.2}>
+            <p className="text-center text-sm text-white/40 max-w-2xl mx-auto">
+              And it keeps expanding: meeting notes, standup summaries, board prep, hiring status, vendor and contract memory, incident response, pre-meeting briefs, and scheduled research reports.
             </p>
           </FadeIn>
         </section>

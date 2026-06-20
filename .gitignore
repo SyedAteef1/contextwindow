@@ -45,3 +45,6 @@ out.log
 pgdata/
 certificates/
 .cache/
+
+# local screenshots (not for repo)
+Screenshot *.png
