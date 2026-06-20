@@ -20,11 +20,12 @@ export async function slackConnForTeam(teamId?: string): Promise<SlackConn | nul
 	return rows[0] ?? null
 }
 
-export async function slackPostMessage(token: string, channel: string, text: string, threadTs?: string) {
+export async function slackPostMessage(token: string, channel: string, text: string, threadTs?: string, blocks?: unknown[]) {
 	const res = await fetch("https://slack.com/api/chat.postMessage", {
 		method: "POST",
 		headers: { authorization: `Bearer ${token}`, "content-type": "application/json; charset=utf-8" },
-		body: JSON.stringify({ channel, text, thread_ts: threadTs, unfurl_links: false }),
+		// `text` is the notification fallback; `blocks` (if given) render the rich layout.
+		body: JSON.stringify({ channel, text, blocks, thread_ts: threadTs, unfurl_links: false }),
 	})
 	return res.json() as Promise<{ ok: boolean; error?: string }>
 }
