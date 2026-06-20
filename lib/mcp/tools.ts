@@ -14,6 +14,8 @@ export type ToolContext = {
 	orgId: string
 	principalId?: string
 	surface: string // "claude" | "slack" | "web" | ...
+	/** Where to reply (e.g. a Slack "channel:thread_ts"). Recorded on escalations for Half-B delivery. */
+	threadRef?: string
 }
 
 export type ToolDef = {
@@ -125,6 +127,7 @@ const escalateToOwner = defineTool({
 			question: args.question,
 			askerPrincipalId: ctx.principalId,
 			surface: ctx.surface,
+			askerThreadRef: ctx.threadRef,
 		})
 		const who = escalation.ownerPrincipalId ?? escalation.routedTo
 		const status = created ? `I've routed your question to ${who}` : `Your question is already with ${who}`
