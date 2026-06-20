@@ -1,57 +1,114 @@
-# Context Window HQ
+# Context Window — the Company Brain
 
-Context Window HQ is a zero-friction, high-density hacker house and launchpad located in Bengaluru, built exclusively for the top 1% of AI engineers.
+An invisible "brain" for a company. It quietly reads the tools a team already uses (Slack,
+Claude/MCP, CRM, email), distills everything into a **living memory** that stays current,
+and serves back **answers with sources** — inside the same tools. No new app to adopt.
 
-It is designed to operate like the active memory of an autonomous agent: if you fill an engineer's environment with noise, friction, and isolation, their output degrades. If you clear their mental cache and fill their immediate surroundings with raw compute, frictionless capital, and elite peers, they produce world-class infrastructure.
+This repo is **two things in one Next.js app**:
+1. **The marketing site** — the landing page + "Book a demo" lead form (`app/page.tsx`, `app/apply`).
+2. **The brain backend** — ingest → memory → search → answer, exposed over a CLI, HTTP API, Slack, and MCP.
 
-We don't manage AI; we manage the human context window.
-
-Here is the exact blueprint of what Context Window HQ is:
-
-## 1. The Core Infrastructure (Cohort Zero)
-- **The Location**: A physical sandbox in Bengaluru (targeting areas like HSR Layout).
-- **The Sprint**: A 30-day intense building phase for 5 hand-selected "Founding Engineers."
-- **The Inputs**: Builders are provided with instant micro-grants for infrastructure and massive pools of API credits (AWS, Cloudflare, local model rigs). Zero red tape. Zero reimbursement forms.
-- **The Outputs**: The only metric that matters is the Midnight Demo Protocol. Every day, builders must drop visual proof of a live deployment or architectural hurdle they cleared. No text updates allowed.
-
-## 2. The Filter (Who is Inside)
-This is not an incubator for "wantrepreneurs" or people who want to attend networking lectures. The house is strictly for high-agency shippers hacking multi-agent orchestration, local LLM pipelines, and deep-tech architecture. The entrance exam isn't a resume; it's a GitHub repo and a live deployment link.
+> Deeper design notes live in [`ARCHITECTURE.md`](./ARCHITECTURE.md). Connector OAuth setup is
+> in [`CONNECTORS.md`](./CONNECTORS.md). The product vision / use-cases are in [`FEATURES.md`](./FEATURES.md).
 
 ---
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## How it works (the data flow)
 
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+                 INGEST                              ASK
+  text / Slack msg                          "what did we decide about X?"
+        │                                            │
+        ▼                                            ▼
+  redact secrets                              runAgent (lib/agent/core.ts)
+        │                                            │  tool loop (non-streaming)
+        ▼                                            ▼
+  chunk → embed (local MiniLM, 384-d)         search_memory tool
+        │                                            │
+        ▼                                            ▼
+  extract durable facts (LLM)                 hybrid vector search (pgvector)
+        │                                            │
+        ▼                                            ▼
+  reconcile into memory graph                 answer with sources (never invents)
+  (dedupe / version / forget)
+        │
+        ▼
+  Postgres + pgvector  (AWS RDS)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**The moat** isn't the search — it's `reconcileMemory()` in `lib/memory/ingest.ts`: when a new
+fact duplicates an old one it reinforces it; when it conflicts it **supersedes** (versions) it;
+stale facts are **forgotten**. That's what keeps the brain *current* instead of a pile of old messages.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Codebase map (what each part does, and why)
 
-## Learn More
+| Path | What / why |
+|---|---|
+| **`app/page.tsx`** | The marketing landing page (hero, connectors marquee, live Slack demo, pricing, FAQ). |
+| **`app/apply/`** | "Book a demo" lead form → posts to `app/api/apply` → saved in MongoDB (`models/Registration.ts`). |
+| **`app/integrations/`** | UI to connect data sources (OAuth). Connect flow redirects here. |
+| **`app/api/agent/`** | HTTP entry to the brain — calls `runAgent`, streams back the answer. |
+| **`app/api/slack/`** | Slack Events + `/ask` endpoint. Verifies signature, ingests channel msgs, answers @mentions/DMs. |
+| **`app/api/connect/`** · **`connections/`** | OAuth start/callback for each connector + the "Sync" trigger. |
+| **`app/api/mcp/`** | MCP over HTTP (so Claude/agents can use the brain as tools). |
+| **`lib/memory/`** | The engine: `ingest.ts` (pipeline + reconcile = the moat), `embeddings.ts` (local model), `extract.ts` (LLM facts), `search.ts` (hybrid retrieval), `chunk.ts`. |
+| **`lib/agent/core.ts`** | The one agent loop every surface calls. Non-streaming tool use (Bedrock-model compatible). |
+| **`lib/llm.ts`** | The LLM provider (AWS Bedrock, strict env-only credentials). |
+| **`lib/mcp/`** | Tool registry (`search_memory`, `add_memory`, …) + transport-agnostic MCP server. |
+| **`lib/connectors/`** | `registry.ts` (each provider's OAuth + sync), `oauth.ts`, `sync.ts`. |
+| **`lib/slack/`** | `handle.ts` (route events → ingest/answer), `client.ts`, `verify.ts` (signature). |
+| **`lib/redact.ts`** | Strips secrets before anything is stored. |
+| **`db/`** | `schema.ts` (Drizzle tables), `index.ts` (connects to Postgres, or local PGlite fallback), `migrations/`. |
+| **`models/Registration.ts`** | Mongoose model for demo-form leads (separate from the brain DB). |
+| **`scripts/`** | `cw.ts` (CLI: `search` / `ask` / `doctor`), `ingest.ts` (push text into the brain), `mcp-stdio.ts`. |
+| **`components/`** | Landing-page UI (`connector-marquee`, `sales-demo`, `integration-icons`, `ui/*`). |
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Current status
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**✅ Working**
+- Storage on **AWS RDS PostgreSQL + pgvector** (falls back to embedded PGlite if `DATABASE_URL` is unset).
+- Ingest pipeline: chunk → **local embeddings** → **LLM fact extraction** → reconcile into the memory graph.
+- Hybrid **search** and the **answer agent** (cites sources, refuses to invent).
+- LLM via **AWS Bedrock** (currently `mistral.mistral-large-2402-v1:0` — see note below).
+- Marketing site + "Book a demo" form.
 
-## Deploy on Vercel
+**⏳ Not done yet**
+- **Slack live ingestion** — connectors are built; needs OAuth connect + a public tunnel for events.
+- **MongoDB** for leads — code is ready, but the configured Atlas cluster is currently unreachable.
+- Proactive "today" briefings; MCP over HTTP (stdio works today).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+> **LLM note:** Anthropic Claude on Bedrock requires an AWS Marketplace subscription, which on
+> **Indian (AISPL) accounts needs a credit card**. Mistral/Llama don't, so we run **Mistral Large**
+> for now. Switch back to Claude by setting `BEDROCK_MODEL_ID` once a card is on the AWS account.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Running it
+
+```bash
+pnpm install            # install deps (this repo uses pnpm)
+
+pnpm dev2               # run the site at https://localhost:3000 (self-signed HTTPS)
+
+# Test the brain from the CLI (uses bun to run the TS scripts):
+bun scripts/ingest.ts "Refunds over \$500 need VP approval." --title "Refund policy"
+bun scripts/cw.ts search "what's the refund rule"
+bun scripts/cw.ts ask    "do refunds need approval?"
+```
+
+## Environment
+
+Copy `.env.example` → `.env` and fill in what you need. The essentials:
+
+| Var | For |
+|---|---|
+| `DATABASE_URL` | AWS RDS Postgres+pgvector (omit → uses local PGlite) |
+| `AWS_BEARER_TOKEN_BEDROCK` + `BEDROCK_AWS_REGION` + `BEDROCK_MODEL_ID` | the LLM |
+| `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` / `SLACK_SIGNING_SECRET` | Slack |
+| `MONGODB_URI` | demo-form leads (separate from the brain) |
+
+Embeddings run **locally** — no key needed. Connector OAuth keys (Notion/Google/etc.) are optional.
