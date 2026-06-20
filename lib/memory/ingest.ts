@@ -44,6 +44,8 @@ export type IngestInput = {
 	type?: (typeof documents.$inferInsert)["type"]
 	containerTag?: string
 	connectionId?: string
+	/** Whose knowledge this is (the expertise/escalation owner signal). NOT defaulted to userId. */
+	authorPrincipalId?: string
 }
 
 export async function ingestDocument(input: IngestInput) {
@@ -76,6 +78,7 @@ export async function ingestDocument(input: IngestInput) {
 		type: input.type ?? "text",
 		status: "chunking",
 		connectionId: input.connectionId ?? null,
+		authorPrincipalId: input.authorPrincipalId ?? null,
 	})
 
 	// Chunk + embed + store.
@@ -105,6 +108,7 @@ export async function ingestDocument(input: IngestInput) {
 			text: fact.memory,
 			isInference: fact.isInference,
 			sourceDocumentId: docId,
+			authorPrincipalId: input.authorPrincipalId,
 		})
 		memoryIds.push(id)
 	}
@@ -125,6 +129,7 @@ type ReconcileInput = {
 	text: string
 	isInference: boolean
 	sourceDocumentId: string
+	authorPrincipalId?: string
 }
 
 /** Version a new fact against the most similar existing latest memory in its space. */
@@ -160,7 +165,12 @@ export async function reconcileMemory(input: ReconcileInput): Promise<string> {
 	if (top && top.similarity >= DUP_THRESHOLD) {
 		await db
 			.update(memories)
-			.set({ sourceCount: sql`${memories.sourceCount} + 1`, updatedAt: now })
+			.set({
+				sourceCount: sql`${memories.sourceCount} + 1`,
+				// Claim previously-anonymous knowledge for this author without clobbering an existing one.
+				authorPrincipalId: sql`coalesce(${memories.authorPrincipalId}, ${input.authorPrincipalId ?? null})`,
+				updatedAt: now,
+			})
 			.where(eq(memories.id, top.id))
 		await linkSource(top.id, input.sourceDocumentId)
 		return top.id
@@ -184,6 +194,7 @@ export async function reconcileMemory(input: ReconcileInput): Promise<string> {
 			rootMemoryId: rootId,
 			memoryRelations: { [top.id]: "updates" },
 			isInference: input.isInference,
+			authorPrincipalId: input.authorPrincipalId ?? null,
 			memoryEmbedding: embedding,
 			memoryEmbeddingModel: EMBEDDING_MODEL,
 		})
@@ -199,6 +210,7 @@ export async function reconcileMemory(input: ReconcileInput): Promise<string> {
 		orgId: input.orgId,
 		userId: input.userId,
 		isInference: input.isInference,
+		authorPrincipalId: input.authorPrincipalId ?? null,
 		memoryEmbedding: embedding,
 		memoryEmbeddingModel: EMBEDDING_MODEL,
 	})

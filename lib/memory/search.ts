@@ -13,6 +13,7 @@ export type SearchResult = {
 	memory: string
 	similarity: number
 	version: number
+	authorPrincipalId: string | null
 	sources: { documentId: string; title: string | null; url: string | null }[]
 }
 
@@ -49,6 +50,7 @@ export async function searchMemories(opts: SearchOptions): Promise<SearchResult[
 			id: memories.id,
 			memory: memories.memory,
 			version: memories.version,
+			authorPrincipalId: memories.authorPrincipalId,
 			similarity,
 		})
 		.from(memories)
@@ -58,12 +60,12 @@ export async function searchMemories(opts: SearchOptions): Promise<SearchResult[
 
 	// Keyword pass merged in (catches exact terms vectors miss).
 	const kw = await db
-		.select({ id: memories.id, memory: memories.memory, version: memories.version })
+		.select({ id: memories.id, memory: memories.memory, version: memories.version, authorPrincipalId: memories.authorPrincipalId })
 		.from(memories)
 		.where(and(liveFilter, ilike(memories.memory, `%${opts.query}%`)))
 		.limit(limit)
 
-	const byId = new Map<string, { id: string; memory: string; version: number; similarity: number }>()
+	const byId = new Map<string, { id: string; memory: string; version: number; authorPrincipalId: string | null; similarity: number }>()
 	for (const r of rows) if (r.similarity >= threshold) byId.set(r.id, r)
 	for (const r of kw) if (!byId.has(r.id)) byId.set(r.id, { ...r, similarity: threshold })
 
@@ -95,6 +97,7 @@ export async function searchMemories(opts: SearchOptions): Promise<SearchResult[
 		memory: t.memory,
 		similarity: t.similarity,
 		version: t.version,
+		authorPrincipalId: t.authorPrincipalId,
 		sources: srcByMem.get(t.id) ?? [],
 	}))
 }

@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm"
 import { z } from "zod"
 import { getDb } from "../../db"
 import { skills } from "../../db/schema"
+import { createPending } from "../escalation/engine"
 import { ingestDocument } from "../memory/ingest"
 import { searchMemories } from "../memory/search"
 
@@ -109,5 +110,27 @@ const whoAmI = defineTool({
 		JSON.stringify({ orgId: ctx.orgId, principalId: ctx.principalId ?? null, surface: ctx.surface }),
 })
 
-export const TOOLS: ToolDef[] = [searchMemory, addMemory, listSkills, whoAmI]
+const escalateToOwner = defineTool({
+	name: "escalate_to_owner",
+	description:
+		"Use ONLY when search_memory returns nothing relevant and you cannot answer from the brain. " +
+		"Routes the question to the right human owner (or owning team) and records it, instead of guessing. " +
+		"Returns a short message to relay to the asker verbatim. NEVER invent an answer when the brain is empty.",
+	schema: z.object({
+		question: z.string().describe("The asker's original question, verbatim."),
+	}),
+	handler: async (args, ctx) => {
+		const { created, escalation } = await createPending({
+			orgId: ctx.orgId,
+			question: args.question,
+			askerPrincipalId: ctx.principalId,
+			surface: ctx.surface,
+		})
+		const who = escalation.ownerPrincipalId ?? escalation.routedTo
+		const status = created ? `I've routed your question to ${who}` : `Your question is already with ${who}`
+		return `I don't have this in memory yet. ${status} (${escalation.tier}). I'll capture their answer and follow up. [ref ${escalation.id}]`
+	},
+})
+
+export const TOOLS: ToolDef[] = [searchMemory, addMemory, listSkills, whoAmI, escalateToOwner]
 export const toolByName = new Map(TOOLS.map((t) => [t.name, t]))

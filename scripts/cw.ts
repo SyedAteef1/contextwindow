@@ -11,10 +11,11 @@
 //   bun run cw connections                    list connections
 //   bun run cw whoami                         show org + Bedrock auth status
 
-import { and, desc, eq } from "drizzle-orm"
+import { desc, eq } from "drizzle-orm"
 import { getDb } from "../db"
 import { connections } from "../db/schema"
 import { runAgent } from "../lib/agent/core"
+import { listOpenEscalations, resolveEscalation, sweepEscalations } from "../lib/escalation/engine"
 import { newId } from "../lib/ids"
 import { BEDROCK_MODEL_ID, hasBedrockCreds } from "../lib/llm"
 import { ingestDocument } from "../lib/memory/ingest"
@@ -68,6 +69,7 @@ async function main() {
 				title: flag("title"),
 				containerTag: flag("tag"),
 				source: "cli",
+				authorPrincipalId: flag("author"),
 			})
 			console.log(res)
 			break
@@ -133,13 +135,51 @@ async function main() {
 			console.log({ org: ORG, surface: "cli", bedrock: { creds: hasBedrockCreds, region, model: BEDROCK_MODEL_ID } })
 			break
 
+		case "pending": {
+			await sweepEscalations(ORG) // lazy time-based backup on every list
+			const rows = await listOpenEscalations(ORG)
+			if (rows.length === 0) console.log("(no open escalations)")
+			for (const e of rows) {
+				const due = e.escalateAfter ? e.escalateAfter.toISOString() : "—"
+				console.log(`${e.id}  [${e.status}/${e.tier}] → ${e.routedTo}  due:${due}\n   Q: "${e.question}"`)
+			}
+			break
+		}
+
+		case "resolve": {
+			const id = positional[0]
+			const answer = positional.slice(1).join(" ").trim()
+			if (!id || !answer) return fail('resolve needs: cw resolve <esc_id> "<answer>" [--by <principal>]')
+			const res = await resolveEscalation(ORG, id, answer, flag("by"))
+			if (res.alreadyClosed) {
+				console.log("(escalation already closed)")
+				break
+			}
+			console.log("captured memory:", res.memoryId)
+			console.log("re-answer to asker:\n" + res.reAnswer)
+			break
+		}
+
+		case "escalations": {
+			if (positional[0] === "sweep") {
+				const n = await sweepEscalations(ORG)
+				console.log(`${n} escalation(s) bumped`)
+			} else {
+				console.log("usage: cw escalations sweep")
+			}
+			break
+		}
+
 		default:
 			console.log(
 				"Context Window CLI\n" +
 					"  cw doctor\n" +
-					'  cw ingest "<text>" [--title T] [--tag G]\n' +
+					'  cw ingest "<text>" [--title T] [--tag G] [--author P]\n' +
 					'  cw search "<query>" [--tag G] [--limit N]\n' +
 					'  cw ask "<question>"\n' +
+					'  cw pending                          list open escalations\n' +
+					'  cw resolve <esc_id> "<answer>" [--by P]   answer an escalation\n' +
+					"  cw escalations sweep                run the time-based backup pass\n" +
 					"  cw connect <provider>\n" +
 					"  cw connections\n" +
 					"  cw whoami",

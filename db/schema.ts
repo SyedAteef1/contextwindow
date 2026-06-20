@@ -16,6 +16,7 @@ import {
 	primaryKey,
 	text,
 	timestamp,
+	uniqueIndex,
 	vector,
 } from "drizzle-orm/pg-core"
 
@@ -40,6 +41,14 @@ export const connectionProvider = pgEnum("connection_provider", [
 export const memoryRelation = pgEnum("memory_relation", ["updates", "extends", "derives"])
 export const visibility = pgEnum("visibility", ["public", "private", "unlisted"])
 export const spaceRole = pgEnum("space_role", ["owner", "admin", "editor", "viewer"])
+// Escalation lifecycle: open → (escalated on timeout) → resolved | denied | expired.
+export const escalationStatus = pgEnum("escalation_status", [
+	"open",
+	"escalated",
+	"resolved",
+	"denied",
+	"expired",
+])
 
 // ---------------------------------------------------------------------------
 // Spaces — containers / projects (a "containerTag" groups memories)
@@ -69,6 +78,8 @@ export const documents = pgTable(
 		orgId: text("org_id").notNull(),
 		userId: text("user_id").notNull(),
 		connectionId: text("connection_id"),
+		// Who this knowledge belongs to (the expertise signal), distinct from userId (who ran the ingest).
+		authorPrincipalId: text("author_principal_id"),
 
 		title: text("title"),
 		content: text("content"),
@@ -94,6 +105,7 @@ export const documents = pgTable(
 	(t) => [
 		index("documents_org_idx").on(t.orgId),
 		index("documents_hash_idx").on(t.contentHash),
+		index("documents_author_idx").on(t.authorPrincipalId),
 	],
 )
 
@@ -136,6 +148,8 @@ export const memories = pgTable(
 		spaceId: text("space_id").notNull().references(() => spaces.id, { onDelete: "cascade" }),
 		orgId: text("org_id").notNull(),
 		userId: text("user_id"),
+		// Whose knowledge this is — drives escalation owner-resolution (the expertise graph).
+		authorPrincipalId: text("author_principal_id"),
 
 		// Version control
 		version: integer("version").default(1).notNull(),
@@ -167,6 +181,7 @@ export const memories = pgTable(
 		index("memories_space_idx").on(t.spaceId),
 		index("memories_org_idx").on(t.orgId),
 		index("memories_latest_idx").on(t.isLatest),
+		index("memories_author_idx").on(t.authorPrincipalId),
 		// HNSW index for fast approximate cosine search over the memory graph.
 		index("memories_embedding_idx").using("hnsw", t.memoryEmbedding.op("vector_cosine_ops")),
 	],
@@ -260,6 +275,55 @@ export const auditLog = pgTable(
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
 	(t) => [index("audit_org_idx").on(t.orgId)],
+)
+
+// Escalations — when the brain can't answer, it routes the question to an owner (person →
+// team → backup), captures their reply as a memory, and re-answers. Idempotent: one OPEN
+// escalation per (org, topic), enforced by the partial unique index below.
+export const escalations = pgTable(
+	"escalations",
+	{
+		id: text("id").primaryKey(),
+		orgId: text("org_id").notNull(),
+
+		// The question being escalated
+		topic: text("topic").notNull(), // normalized key for dedup
+		question: text("question").notNull(), // verbatim original
+		askerPrincipalId: text("asker_principal_id"),
+		askerSurface: text("asker_surface").notNull(),
+		askerThreadRef: text("asker_thread_ref"), // channel/thread to reply into (Slack-later)
+
+		// The 3-tier ladder state
+		tier: text("tier").notNull(), // "person" | "team" | "backup"
+		ownerPrincipalId: text("owner_principal_id"),
+		ownerTeam: text("owner_team"),
+		routedTo: text("routed_to").notNull(), // concrete target: a principalId or a channel
+		reason: text("reason"),
+
+		// Time-based backup (port of supermemory Escalation{afterMinutes,to,thenTo})
+		escalateAfter: timestamp("escalate_after"), // null = terminal (no more hops)
+		thenTo: jsonb("then_to").default(sql`'[]'::jsonb`).notNull(), // [{tier,routedTo,afterMinutes}]
+
+		// Resolution
+		status: escalationStatus("status").default("open").notNull(),
+		answerText: text("answer_text"),
+		resolvedByPrincipalId: text("resolved_by_principal_id"),
+		resultingMemoryId: text("resulting_memory_id"),
+
+		surface: text("surface").notNull(),
+		metadata: jsonb("metadata").default(sql`'{}'::jsonb`).notNull(),
+
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+		updatedAt: timestamp("updated_at").defaultNow().notNull(),
+	},
+	(t) => [
+		index("escalations_org_idx").on(t.orgId),
+		index("escalations_status_idx").on(t.status),
+		// Idempotency: at most one OPEN/ESCALATED escalation per (org, topic).
+		uniqueIndex("escalations_open_topic_idx")
+			.on(t.orgId, t.topic)
+			.where(sql`status in ('open','escalated')`),
+	],
 )
 
 // Short-lived OAuth state (CSRF nonce + PKCE verifier) between authorize and callback.
