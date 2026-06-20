@@ -49,6 +49,8 @@ export const escalationStatus = pgEnum("escalation_status", [
 	"denied",
 	"expired",
 ])
+// Onboarding/access gate for a logged-in identity (e.g. Google sign-in).
+export const identityStatus = pgEnum("identity_status", ["pending", "approved", "denied"])
 
 // ---------------------------------------------------------------------------
 // Spaces — containers / projects (a "containerTag" groups memories)
@@ -241,11 +243,20 @@ export const identities = pgTable(
 		surface: text("surface").notNull(), // "slack" | "claude" | "email" | "web" | ...
 		surfaceUserId: text("surface_user_id").notNull(), // e.g. Slack user id
 		displayName: text("display_name"),
+		email: text("email"),
+		// Access gate for logged-in (Google) identities. Default approved so existing
+		// CLI/Slack principals are unaffected; the login flow sets pending/approved explicitly.
+		status: identityStatus("status").default("approved").notNull(),
+		approvedBy: text("approved_by"),
+		approvedAt: timestamp("approved_at"),
 		roles: text("roles").array().default(sql`'{}'::text[]`).notNull(),
 		metadata: jsonb("metadata"),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},
-	(t) => [index("identities_surface_idx").on(t.surface, t.surfaceUserId)],
+	(t) => [
+		index("identities_surface_idx").on(t.surface, t.surfaceUserId),
+		index("identities_email_idx").on(t.email),
+	],
 )
 
 // Compiled executable skills (SKILL.md packages) extracted from memory.
