@@ -12,7 +12,8 @@ import { slackPostMessage } from "../slack/client"
 const ORG = process.env.DEFAULT_ORG_ID ?? "demo-org"
 // Auto-approve emails on this domain. Blank/unset = no auto-approve (every login needs Slack approval).
 const ALLOWED_DOMAIN = (process.env.AUTH_ALLOWED_DOMAIN ?? "").trim().toLowerCase()
-const APPROVALS_CHANNEL = process.env.SLACK_DEMO_CHANNEL ?? "C0BC27G9YDS"
+// Dedicated approvals channel (separate from demo leads). Invite the bot to it.
+const APPROVALS_CHANNEL = process.env.SLACK_APPROVALS_CHANNEL ?? "C0BBY65C2DU"
 // Optional: a Slack user id to @-mention on each request, e.g. SLACK_APPROVER=U0ABC123.
 const APPROVER_TAG = process.env.SLACK_APPROVER ? `<@${process.env.SLACK_APPROVER}> ` : ""
 
