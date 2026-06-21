@@ -52,6 +52,9 @@ export const escalationStatus = pgEnum("escalation_status", [
 // Onboarding/access gate for a logged-in identity (e.g. Google sign-in).
 export const identityStatus = pgEnum("identity_status", ["pending", "approved", "denied"])
 
+// Who/what produced an episodic turn (raw conversation log; see `episodes`).
+export const episodeRole = pgEnum("episode_role", ["user", "assistant", "system", "event"])
+
 // ---------------------------------------------------------------------------
 // Spaces — containers / projects (a "containerTag" groups memories)
 // ---------------------------------------------------------------------------
@@ -334,6 +337,46 @@ export const escalations = pgTable(
 		uniqueIndex("escalations_open_topic_idx")
 			.on(t.orgId, t.topic)
 			.where(sql`status in ('open','escalated')`),
+	],
+)
+
+// ---------------------------------------------------------------------------
+// EPISODIC MEMORY — the raw, dated conversation log (the bottom-right of the memory
+// architecture diagram). Every agent turn is appended here; a cheap "summariser" agent
+// later consolidates unconsolidated episodes into durable facts in `memories` (semantic).
+// This store keeps verbatim history (who said what, when) for recency + RAG-over-history;
+// `memories` keeps the distilled, deduped knowledge. Org-wide brain, with per-person
+// attribution via principalId.
+// ---------------------------------------------------------------------------
+export const episodes = pgTable(
+	"episodes",
+	{
+		id: text("id").primaryKey(),
+		orgId: text("org_id").notNull(),
+		sessionId: text("session_id").notNull(), // groups one conversation/thread
+		principalId: text("principal_id"), // who (attribution); null for system/events
+		surface: text("surface"), // cli | slack | web | email
+		role: episodeRole("role").notNull(),
+		content: text("content").notNull(),
+
+		embedding: vector("embedding", { dimensions: EMBEDDING_DIM }),
+		embeddingModel: text("embedding_model"),
+
+		// Consolidation bookkeeping — set true once distilled into semantic `memories`.
+		consolidated: boolean("consolidated").default(false).notNull(),
+		consolidatedAt: timestamp("consolidated_at"),
+		consolidationMemoryIds: jsonb("consolidation_memory_ids"), // memories produced
+
+		metadata: jsonb("metadata"),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		index("episodes_org_idx").on(t.orgId),
+		index("episodes_session_idx").on(t.sessionId),
+		// Fast "what hasn't been consolidated yet" scan for the summariser.
+		index("episodes_unconsolidated_idx").on(t.orgId, t.consolidated),
+		// HNSW for RAG-over-history (top-k similar past turns/events).
+		index("episodes_embedding_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
 	],
 )
 

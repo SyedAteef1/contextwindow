@@ -3,7 +3,7 @@
 
 import { generateObject } from "ai"
 import { z } from "zod"
-import { chatModel } from "../llm"
+import { chatModel, cheapChatModel } from "../llm"
 import { log } from "../log"
 
 const FactsSchema = z.object({
@@ -30,11 +30,15 @@ function naiveExtract(content: string): ExtractedFact[] {
 		.map((memory) => ({ memory, isInference: false }))
 }
 
-export async function extractFacts(content: string, context?: string): Promise<ExtractedFact[]> {
+export async function extractFacts(
+	content: string,
+	context?: string,
+	opts?: { cheap?: boolean },
+): Promise<ExtractedFact[]> {
 	const trimmed = content.slice(0, 24000)
 	try {
 		const { object } = await generateObject({
-			model: chatModel(),
+			model: opts?.cheap ? cheapChatModel() : chatModel(),
 			schema: FactsSchema,
 			system:
 				"You are building a company brain. Extract durable, reusable knowledge: how the company " +

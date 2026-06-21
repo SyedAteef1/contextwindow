@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import Registration from '@/models/Registration';
 import { slackPostMessage } from '@/lib/slack/client';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 export const runtime = 'nodejs';
 
@@ -80,6 +81,18 @@ export async function POST(req: Request) {
   const [slackOk, dbOk] = await Promise.all([notifySlack(body), saveToMongo(body)]);
 
   if (slackOk || dbOk) {
+    const ph = getPostHogClient();
+    ph.capture({
+      distinctId: body.email ?? "anonymous",
+      event: "demo_lead_captured",
+      properties: {
+        company: body.company,
+        team_size: body.teamSize,
+        source: body.source ?? "book-a-demo",
+        slack_notified: slackOk,
+        db_saved: dbOk,
+      },
+    });
     return NextResponse.json({ success: true, slack: slackOk, db: dbOk }, { status: 201 });
   }
   return NextResponse.json(

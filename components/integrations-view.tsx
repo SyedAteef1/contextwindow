@@ -6,6 +6,7 @@
 
 import { Loader, RefreshCw } from "lucide-react"
 import { type ReactNode, useCallback, useEffect, useState } from "react"
+import posthog from "posthog-js"
 import {
 	Gmail,
 	GenericConnector,
@@ -75,6 +76,7 @@ export function IntegrationsView() {
 			if (!sub) return
 			url += `?subdomain=${encodeURIComponent(sub)}`
 		}
+		posthog.capture("integration_connect_clicked", { provider: p.id })
 		window.location.href = url // real OAuth redirect to the provider
 	}
 
@@ -83,6 +85,7 @@ export function IntegrationsView() {
 		setBusy(p.id)
 		try {
 			await fetch(`/api/connections?id=${p.connectionId}`, { method: "DELETE" })
+			posthog.capture("integration_disconnected", { provider: p.id })
 			await load()
 		} finally {
 			setBusy(null)
@@ -100,11 +103,13 @@ export function IntegrationsView() {
 				body: JSON.stringify({ id: p.connectionId }),
 			})
 			const data = await res.json()
-			setBanner(
-				res.ok
-					? { kind: "ok", text: `${p.label}: synced ${data.docs} documents` }
-					: { kind: "err", text: `${p.label} sync failed: ${data.error}` },
-			)
+			if (res.ok) {
+				posthog.capture("integration_synced", { provider: p.id, docs_synced: data.docs })
+				setBanner({ kind: "ok", text: `${p.label}: synced ${data.docs} documents` })
+			} else {
+				posthog.captureException(new Error(data.error ?? "sync failed"), { provider: p.id })
+				setBanner({ kind: "err", text: `${p.label} sync failed: ${data.error}` })
+			}
 		} finally {
 			setBusy(null)
 		}
@@ -128,6 +133,23 @@ export function IntegrationsView() {
 					Refresh
 				</button>
 			</header>
+
+			{/* How to use integrations effectively */}
+			<div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+				{[
+					{ n: "1", t: "Connect", d: "Click Connect on a source and approve access. Providers showing “Setup required” need OAuth keys in .env first." },
+					{ n: "2", t: "Sync", d: "Hit Sync to pull that source’s docs into the brain. Re-sync any time to pick up new content." },
+					{ n: "3", t: "Ask", d: "Go back Home and ask — answers now cite these sources, and the brain can reply right inside Slack." },
+				].map((s) => (
+					<div key={s.n} className="rounded-lg border border-surface-border bg-surface-card px-4 py-3">
+						<div className="flex items-center gap-2">
+							<span className="flex size-5 items-center justify-center rounded-full bg-brand-accent/15 text-brand-accent text-xs font-semibold">{s.n}</span>
+							<span className="text-fg-primary text-sm font-semibold">{s.t}</span>
+						</div>
+						<p className="text-fg-faint text-xs mt-1.5 leading-relaxed">{s.d}</p>
+					</div>
+				))}
+			</div>
 
 			{banner ? (
 				<div

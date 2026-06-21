@@ -53,3 +53,12 @@ export const BEDROCK_MODEL_ID =
 export const hasBedrockCreds = Boolean(apiKey || (accessKeyId && secretAccessKey))
 
 export const chatModel = () => provider()(BEDROCK_MODEL_ID)
+
+// A cheaper/faster model for high-volume background work (the "Summariser Agent" in the
+// memory architecture: consolidating episodic logs into facts). Defaults to the SAME model
+// as the agent so it always works with whatever creds/region are configured; set
+// BEDROCK_CHEAP_MODEL_ID to opt into an actually-cheaper model (e.g. a Haiku/Mistral-Small
+// inference profile) once you've confirmed it's enabled in your account.
+export const BEDROCK_CHEAP_MODEL_ID = process.env.BEDROCK_CHEAP_MODEL_ID?.trim() || BEDROCK_MODEL_ID
+
+export const cheapChatModel = () => provider()(BEDROCK_CHEAP_MODEL_ID)

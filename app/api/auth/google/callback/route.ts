@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { upsertLoginIdentity } from "../../../../../lib/auth/approval";
 import { setSession } from "../../../../../lib/auth/session";
 import { log } from "../../../../../lib/log";
+import { getPostHogClient } from "../../../../../lib/posthog-server";
 
 export const runtime = "nodejs";
 const APP_URL = process.env.APP_URL ?? "https://localhost:3000";
@@ -48,6 +49,16 @@ export async function GET(req: Request) {
 
     const row = await upsertLoginIdentity({ surface: "google", surfaceUserId: claims.sub, email: claims.email, displayName: claims.name });
     await setSession(row.principalId);
+
+    const isNew = Date.now() - row.createdAt.getTime() < 10_000;
+    const ph = getPostHogClient();
+    ph.identify({ distinctId: row.principalId, properties: { email: claims.email, name: claims.name } });
+    ph.capture({
+      distinctId: row.principalId,
+      event: isNew ? "user_signed_up" : "user_signed_in",
+      properties: { email: claims.email, auth_provider: "google", approval_status: row.status },
+    });
+
     return NextResponse.redirect(new URL(row.status === "approved" ? "/app" : "/pending", APP_URL));
   } catch (err) {
     log.error("auth", "google callback error", err instanceof Error ? err.message : err);

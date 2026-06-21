@@ -7,6 +7,7 @@ import { connections, oauthStates } from "../../../../../db/schema"
 import { clientCreds, CONNECTORS, type Provider } from "../../../../../lib/connectors/registry"
 import { newId } from "../../../../../lib/ids"
 import { log } from "../../../../../lib/log"
+import { getPostHogClient } from "../../../../../lib/posthog-server"
 
 export const runtime = "nodejs"
 
@@ -74,6 +75,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ provider
 		}
 
 		log.info("connect", `connected ${cfg.id} org=${row.orgId} (real token stored)`)
+		const ph = getPostHogClient();
+		ph.capture({
+			distinctId: row.userId ?? row.orgId,
+			event: "integration_connected",
+			properties: { provider: cfg.id, org_id: row.orgId, is_reconnect: !!existing },
+		});
 		return back(`connected=${cfg.id}`)
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err)

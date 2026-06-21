@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 
 const TEAM_SIZES = ["1–10", "11–50", "51–200", "200+"];
 
@@ -62,9 +63,18 @@ export default function ApplyPage() {
       });
       const data = await res.json();
       if (!res.ok || data.success === false) throw new Error(data.error || "Submission failed");
+      posthog.identify(form.email, { name: form.name, company: form.company });
+      posthog.capture("demo_requested", {
+        company: form.company,
+        team_size: form.teamSize,
+        source: "book-a-demo",
+      });
       setSubmitted(true);
     } catch (err) {
-      setTopError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      posthog.capture("demo_request_failed", { error: message });
+      posthog.captureException(err);
+      setTopError(message);
     } finally {
       setIsSubmitting(false);
     }

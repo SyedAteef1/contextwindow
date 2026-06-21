@@ -48,3 +48,4 @@ certificates/
 
 # local screenshots (not for repo)
 Screenshot *.png
+.env.local

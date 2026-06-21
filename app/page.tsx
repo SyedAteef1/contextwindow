@@ -9,6 +9,7 @@ import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { ConnectorMarquee } from "@/components/connector-marquee";
 import { SalesDemo } from "@/components/sales-demo";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 
 const TwitterIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -116,6 +117,11 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const router = useRouter();
 
+  const handleDemoCta = (location: string) => {
+    posthog.capture("demo_cta_clicked", { location });
+    router.push("/apply");
+  };
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
@@ -169,9 +175,9 @@ export default function Home() {
         {/* Right Side: Menu Button and Apply Button */}
         <div className="flex items-center gap-6 justify-self-end">
           <div className="hidden md:block">
-            <LiquidMetalButton label="Book a Demo" onClick={() => router.push('/apply')} />
+            <LiquidMetalButton label="Book a Demo" onClick={() => handleDemoCta("nav")} />
           </div>
-          <button 
+          <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden liquid-glass flex items-center justify-center w-10 h-10 rounded-full hover:scale-105 transition-transform active:scale-95"
           >
@@ -194,7 +200,7 @@ export default function Home() {
             <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">Features</a>
             <a href="#pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-3xl font-serif text-white/80 hover:text-white transition-colors">Pricing</a>
             <div className="mt-8">
-              <LiquidMetalButton label="Book a Demo" onClick={() => { setIsMobileMenuOpen(false); router.push('/apply'); }} />
+              <LiquidMetalButton label="Book a Demo" onClick={() => { setIsMobileMenuOpen(false); handleDemoCta("nav_mobile"); }} />
             </div>
           </motion.div>
         )}
@@ -219,13 +225,13 @@ export default function Home() {
 
           <FadeIn delay={0.3} className="w-full">
             <p className="text-base sm:text-lg lg:text-xl text-white/60 mx-auto max-w-2xl mb-12 font-medium px-2">
-              It quietly follows every step your team takes and makes sense of the chaos in the background — intelligently surfacing what matters, so founders stay ahead without chasing a single update.
+              It quietly follows every step your team takes and makes sense of the chaos in the background, surfacing what matters so founders stay ahead without chasing a single update.
             </p>
           </FadeIn>
 
           <FadeIn delay={0.4} className="w-full">
             <div className="flex flex-col sm:flex-row gap-6 items-center justify-center">
-              <LiquidMetalButton label="Book a Demo" onClick={() => router.push('/apply')} />
+              <LiquidMetalButton label="Book a Demo" onClick={() => handleDemoCta("hero")} />
               <a href="#pricing" className="text-sm text-white/70 hover:text-white font-medium flex items-center gap-2 transition-colors">
                 See Pricing
               </a>
@@ -249,7 +255,7 @@ export default function Home() {
             <div className="text-center max-w-3xl mx-auto">
               <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">See it in action</h2>
               <p className="text-lg text-white/70 mt-4">
-                Your team just asks in Slack. When the brain isn't sure, it quietly asks the right engineer — then remembers the answer so no one is interrupted twice.
+                Your team just asks in Slack. When the brain isn't sure, it quietly asks the right engineer, then remembers the answer so no one is interrupted twice.
               </p>
             </div>
 
@@ -267,7 +273,7 @@ export default function Home() {
                 <ul className="space-y-4 text-sm text-white/75 flex-1">
                   <li className="flex gap-3">
                     <span className="text-emerald-400 mt-0.5">▲</span>
-                    <span><span className="text-white font-medium">Acme renewal</span> moved to legal — closing this week.</span>
+                    <span><span className="text-white font-medium">Acme renewal</span> moved to legal, closing this week.</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="text-amber-400 mt-0.5">●</span>
@@ -275,11 +281,50 @@ export default function Home() {
                   </li>
                   <li className="flex gap-3">
                     <span className="text-sky-400 mt-0.5">◆</span>
-                    <span><span className="text-white font-medium">Hiring</span> — 2 senior eng candidates reached final round.</span>
+                    <span><span className="text-white font-medium">Hiring:</span> 2 senior eng candidates reached final round.</span>
                   </li>
                 </ul>
                 <p className="text-[11px] text-white/40 mt-5 pt-4 border-t border-white/10">Delivered to founders every morning. No dashboards to check.</p>
               </div>
+            </div>
+          </section>
+        </FadeIn>
+
+        {/* Section: Founding partners / momentum */}
+        <FadeIn>
+          <section className="relative liquid-glass-strong rounded-[2.5rem] overflow-hidden p-8 sm:p-12 lg:p-16 border border-[#4ade80]/20 shadow-2xl">
+            <div className="relative z-10 max-w-3xl mx-auto text-center flex flex-col items-center">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#4ade80] opacity-60 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#4ade80]" />
+                </span>
+                <span className="text-[10px] sm:text-xs font-semibold tracking-[0.2em] uppercase text-[#86efac]">
+                  Private Beta · Founding Partners
+                </span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight leading-tight mb-5">
+                Built with our first teams, not for a faceless market
+              </h2>
+              <p className="text-base sm:text-lg text-white/70 leading-relaxed max-w-2xl mb-8">
+                We're live in private beta with a small group of design partners, and the waitlist is filling with teams who want a brain for their company. Founding partners help shape the roadmap and lock in launch pricing before we open the doors.
+              </p>
+
+              <div className="flex flex-wrap justify-center gap-2.5 mb-10">
+                {[
+                  "Design partners onboarding now",
+                  "Waitlist open",
+                  "Roadmap shaped by founding teams",
+                ].map((chip) => (
+                  <span key={chip} className="liquid-glass rounded-full px-3.5 py-1.5 text-xs font-medium text-white/80">
+                    {chip}
+                  </span>
+                ))}
+              </div>
+
+              <LiquidMetalButton label="Request Founding Access" onClick={() => handleDemoCta("founding_access")} />
+              <p className="text-xs text-white/40 mt-4">Limited spots while we onboard each team properly.</p>
             </div>
           </section>
         </FadeIn>
@@ -289,7 +334,7 @@ export default function Home() {
           <section id="about" className="text-center space-y-4 max-w-4xl mx-auto pt-4 sm:pt-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-medium tracking-tight px-4 sm:px-0">One brain for everything your team knows</h2>
             <p className="text-base sm:text-lg text-white/70 leading-relaxed text-center px-6 sm:px-0">
-              Knowledge in a company is scattered across Slack threads, docs, tickets, and people's heads — and it goes stale the moment it's written down. Context Window continuously reads from every tool, distills it into a living memory that versions itself and forgets what's outdated, and intelligently surfaces what matters — with its sources — the moment you need it. No new app to adopt, no dashboards to babysit. Just a brain that stays current.
+              Knowledge in a company is scattered across Slack threads, docs, tickets, and people's heads, and it goes stale the moment it's written down. Context Window continuously reads from every tool, distills it into a living memory that versions itself and forgets what's outdated, and surfaces what matters, with its sources, the moment you need it. No new app to adopt, no dashboards to babysit. Just a brain that stays current.
             </p>
           </section>
         </FadeIn>
@@ -314,7 +359,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-lg font-semibold mb-3">1. Collects from every tool</h3>
                 <p className="text-sm text-white/60 leading-relaxed">
-                  One-click connectors for Slack, Claude/MCP, your CRM, email, Drive and more. Context Window reads what's happening in the background — secrets redacted — so nothing has to be copied or re-entered.
+                  One-click connectors for Slack, Claude/MCP, your CRM, email, Drive and more. Context Window reads what's happening in the background, secrets redacted, so nothing has to be copied or re-entered.
                 </p>
               </div>
             </FadeIn>
@@ -326,7 +371,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-lg font-semibold mb-3">2. Remembers what matters</h3>
                 <p className="text-sm text-white/60 leading-relaxed">
-                  Raw chatter becomes durable, versioned memory. When a fact changes, the brain supersedes the old one; when it goes stale, it forgets. That's the moat — knowledge that stays true, not a pile of old messages.
+                  Raw chatter becomes durable, versioned memory. When a fact changes, the brain supersedes the old one; when it goes stale, it forgets. That's the moat: knowledge that stays true, not a pile of old messages.
                 </p>
               </div>
             </FadeIn>
@@ -338,7 +383,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-lg font-semibold mb-3">3. Answers & briefs you</h3>
                 <p className="text-sm text-white/60 leading-relaxed">
-                  Ask in Slack — @mention, DM, or <span className="font-mono text-white/80">/ask</span> — and get a grounded answer with sources. Every morning it pushes a proactive "today" briefing so founders see what's moving across the team.
+                  Ask in Slack (@mention, DM, or <span className="font-mono text-white/80">/ask</span>) and get a grounded answer with sources. Every morning it pushes a proactive "today" briefing so founders see what's moving across the team.
                 </p>
               </div>
             </FadeIn>
@@ -366,7 +411,7 @@ export default function Home() {
                     "Weeks of setup, configuration and admin",
                     "Yet another dashboard you have to remember to check",
                     "You only find it if you already know what to search for",
-                    "Steep learning curve — the team needs training",
+                    "Steep learning curve that needs team training",
                     "Passive: it just sits there until someone digs",
                   ].map((t) => (
                     <li key={t} className="flex items-start gap-3 text-sm text-white/55">
@@ -386,10 +431,10 @@ export default function Home() {
                 </div>
                 <ul className="space-y-4">
                   {[
-                    "Live in minutes — connect Slack and you're done",
+                    "Live in minutes: connect Slack and you're done",
                     "No new app: it guides and alerts you right in Slack",
                     "It surfaces what matters before you even ask",
-                    "Zero learning curve — if you can chat, you can use it",
+                    "Zero learning curve: if you can chat, you can use it",
                     "Proactive: it briefs you and flags what needs you",
                   ].map((t) => (
                     <li key={t} className="flex items-start gap-3 text-sm text-white/90">
@@ -404,7 +449,7 @@ export default function Home() {
 
           <FadeIn delay={0.3}>
             <p className="text-center text-sm text-white/40 max-w-2xl mx-auto">
-              Powerful underneath, effortless on top. The intelligence is in the background — all your team sees is a brain that guides them and warns them in time.
+              Powerful underneath, effortless on top. The intelligence is in the background, and all your team sees is a brain that guides them and warns them in time.
             </p>
           </FadeIn>
         </section>
@@ -426,7 +471,7 @@ export default function Home() {
               {[
                 "Lifetime institutional memory",
                 "Stays current, never stale",
-                "Escalation → learning loop",
+                "Learns from every escalation",
                 "Code-aware",
                 "Sources on every answer",
                 "Role & permission aware",
@@ -564,7 +609,7 @@ export default function Home() {
               <div className="w-16 h-[1px] bg-white/20 mb-10" />
 
               <p className="text-base sm:text-lg lg:text-xl text-white/90 font-medium leading-relaxed max-w-2xl mx-auto">
-                Every decision your team makes is a dot. Context Window is the memory that connects them — so the context behind today's work is never lost, and your company gets smarter the longer it runs.
+                Every decision your team makes is a dot. Context Window is the memory that connects them, so the context behind today's work is never lost, and your company gets smarter the longer it runs.
               </p>
             </div>
           </section>
@@ -650,7 +695,7 @@ export default function Home() {
                         </li>
                       ))}
                     </ul>
-                    <LiquidMetalButton label={plan.cta} onClick={() => router.push('/apply')} />
+                    <LiquidMetalButton label={plan.cta} onClick={() => handleDemoCta(`pricing_${plan.name.toLowerCase()}`)} />
                   </div>
                 </div>
               </FadeIn>
@@ -659,7 +704,7 @@ export default function Home() {
 
           <FadeIn delay={0.4}>
             <p className="text-center text-sm text-white/40 max-w-2xl mx-auto">
-              All plans include redaction of secrets at ingest, provenance on every answer, and memory that versions and forgets to stay current. 14-day free trial — no credit card required.
+              All plans include redaction of secrets at ingest, provenance on every answer, and memory that versions and forgets to stay current. 14-day free trial, no credit card required.
             </p>
           </FadeIn>
         </section>
@@ -720,7 +765,7 @@ export default function Home() {
             {[
               {
                 q: "Where does our data live?",
-                a: "Your call. Use our managed cloud, or deploy entirely inside your own AWS account on your own Postgres + pgvector — nothing leaves your infrastructure. Enterprise plans run fully in your VPC.",
+                a: "Your call. Use our managed cloud, or deploy entirely inside your own AWS account on your own Postgres + pgvector, so nothing leaves your infrastructure. Enterprise plans run fully in your VPC.",
               },
               {
                 q: "Is it secure? What about secrets?",
@@ -732,15 +777,15 @@ export default function Home() {
               },
               {
                 q: "How do we trust the answers?",
-                a: "Every answer ships with its sources, so anyone can verify in one click. When a fact changes, the brain supersedes the old version; when it goes stale, it forgets — so you're never quoted yesterday's truth.",
+                a: "Every answer ships with its sources, so anyone can verify in one click. When a fact changes, the brain supersedes the old version; when it goes stale, it forgets, so you're never quoted yesterday's truth.",
               },
               {
                 q: "Will it spam our channels?",
-                a: "No. It's answer-only — it replies only when @mentioned, sent a DM, or asked via /ask. The one proactive touch is the optional morning briefing, sent privately to whoever opts in.",
+                a: "No. It's answer-only: it replies only when @mentioned, sent a DM, or asked via /ask. The one proactive touch is the optional morning briefing, sent privately to whoever opts in.",
               },
               {
                 q: "What does it run on?",
-                a: "A living memory graph with hybrid vector + keyword retrieval, exposed over MCP so it works in Claude, Cursor, and any MCP client — not just Slack.",
+                a: "A living memory graph with hybrid vector + keyword retrieval, exposed over MCP so it works in Claude, Cursor, and any MCP client, not just Slack.",
               },
             ].map((item) => (
               <FadeIn key={item.q}>
@@ -765,7 +810,7 @@ export default function Home() {
             <p className="text-lg text-white/60 mb-10 font-medium">
               See it read your Slack and answer your team's hardest questions in a 20-minute demo.
             </p>
-            <LiquidMetalButton label="Book a Demo" onClick={() => router.push('/apply')} />
+            <LiquidMetalButton label="Book a Demo" onClick={() => handleDemoCta("footer")} />
 
             <div className="mt-24 text-white/40 text-sm font-medium">
               © 2026 Context Window. All rights reserved.

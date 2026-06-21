@@ -15,9 +15,12 @@ import { desc, eq } from "drizzle-orm"
 import { getDb } from "../db"
 import { connections } from "../db/schema"
 import { runAgent } from "../lib/agent/core"
+import { listRoles } from "../lib/agent/roles"
 import { listOpenEscalations, resolveEscalation, sweepEscalations } from "../lib/escalation/engine"
 import { newId } from "../lib/ids"
 import { BEDROCK_MODEL_ID, hasBedrockCreds } from "../lib/llm"
+import { consolidateEpisodes } from "../lib/memory/consolidate"
+import { countUnconsolidated, recentEpisodes } from "../lib/memory/episodic"
 import { ingestDocument } from "../lib/memory/ingest"
 import { searchMemories } from "../lib/memory/search"
 
@@ -29,6 +32,7 @@ const flag = (n: string) => {
 	const i = rest.indexOf(`--${n}`)
 	return i >= 0 ? rest[i + 1] : undefined
 }
+const hasFlag = (n: string) => rest.includes(`--${n}`)
 const positional = rest.filter((a, i) => !a.startsWith("--") && !rest[i - 1]?.startsWith("--"))
 const region = process.env.BEDROCK_AWS_REGION ?? "ap-south-1"
 
@@ -97,12 +101,61 @@ async function main() {
 			if (!query) return fail('ask needs a question: cw ask "<question>"')
 			if (!hasBedrockCreds) return fail("No Bedrock credentials in env — cannot run the agent.")
 			try {
-				const result = runAgent({ ctx: { orgId: ORG, surface: "cli" }, query })
+				const result = runAgent({ ctx: { orgId: ORG, surface: "cli" }, query, role: flag("role") })
 				for await (const chunk of result.textStream) process.stdout.write(chunk)
 				process.stdout.write("\n")
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err)
 				return fail(`Agent failed: ${msg}\n(If 'Forbidden', the Bedrock token is expired — refresh AWS_BEARER_TOKEN_BEDROCK.)`)
+			}
+			break
+		}
+
+		case "chat": {
+			// Like `ask`, but with EPISODIC memory: history is recalled, the turn is logged,
+			// and consolidation fires once enough turns accumulate. Use --session to continue one.
+			const query = positional.join(" ").trim()
+			if (!query) return fail('chat needs a message: cw chat "<message>" [--session S] [--as P]')
+			if (!hasBedrockCreds) return fail("No Bedrock credentials in env — cannot run the agent.")
+			const sessionId = flag("session") ?? "cli-default"
+			const principalId = flag("as")
+			const result = runAgent({
+				ctx: { orgId: ORG, surface: "cli" },
+				query,
+				session: { id: sessionId, principalId },
+				role: flag("role"),
+			})
+			for await (const chunk of result.textStream) process.stdout.write(chunk)
+			process.stdout.write(`\n— session:${sessionId} (pending to consolidate: ${await countUnconsolidated(ORG)})\n`)
+			break
+		}
+
+		case "roles": {
+			console.log("Available roles (use --role <id> with ask/chat):")
+			for (const r of listRoles()) console.log(`  ${r.id.padEnd(12)} ${r.label} — ${r.description}`)
+			break
+		}
+
+		case "consolidate": {
+			// The summariser pass: distill episodic turns into semantic memory.
+			const res = await consolidateEpisodes(ORG, { sessionId: flag("session"), force: hasFlag("force") })
+			if (!res.ran) {
+				console.log(`(nothing consolidated — ${res.pending} pending, threshold ${res.threshold}; use --force to run anyway)`)
+			} else {
+				console.log(`consolidated ${res.consolidated} episode(s) → ${res.memoryIds.length} memory/ies`)
+				for (const id of res.memoryIds) console.log(`  + ${id}`)
+			}
+			break
+		}
+
+		case "episodes": {
+			const sessionId = flag("session") ?? "cli-default"
+			const limit = flag("limit") ? Number(flag("limit")) : 20
+			const rows = await recentEpisodes(ORG, sessionId, limit)
+			console.log(`session:${sessionId}  (${rows.length} recent, ${await countUnconsolidated(ORG, sessionId)} pending)`)
+			for (const r of rows) {
+				const who = r.role === "user" ? r.principalId ?? "user" : r.role
+				console.log(`  [${r.createdAt.toISOString()}] ${who}: ${r.content.slice(0, 120)}`)
 			}
 			break
 		}
@@ -176,7 +229,11 @@ async function main() {
 					"  cw doctor\n" +
 					'  cw ingest "<text>" [--title T] [--tag G] [--author P]\n' +
 					'  cw search "<query>" [--tag G] [--limit N]\n' +
-					'  cw ask "<question>"\n' +
+					'  cw ask "<question>" [--role R]\n' +
+					"  cw roles                                     list answer personas\n" +
+					'  cw chat "<message>" [--session S] [--as P] [--role R]   ask WITH episodic memory\n' +
+					"  cw episodes [--session S] [--limit N]        show the conversation log\n" +
+					"  cw consolidate [--session S] [--force]       distill episodes → semantic memory\n" +
 					'  cw pending                          list open escalations\n' +
 					'  cw resolve <esc_id> "<answer>" [--by P]   answer an escalation\n' +
 					"  cw escalations sweep                run the time-based backup pass\n" +

@@ -46,6 +46,8 @@ export type IngestInput = {
 	connectionId?: string
 	/** Whose knowledge this is (the expertise/escalation owner signal). NOT defaulted to userId. */
 	authorPrincipalId?: string
+	/** Use the cheaper model for fact extraction (background/high-volume jobs, e.g. consolidation). */
+	useCheapModel?: boolean
 }
 
 export async function ingestDocument(input: IngestInput) {
@@ -98,7 +100,7 @@ export async function ingestDocument(input: IngestInput) {
 	}
 
 	// Extract durable facts -> reconcile into the memory graph.
-	const facts = await extractFacts(input.content, input.title)
+	const facts = await extractFacts(input.content, input.title, { cheap: input.useCheapModel })
 	const memoryIds: string[] = []
 	for (const fact of facts) {
 		const id = await reconcileMemory({
