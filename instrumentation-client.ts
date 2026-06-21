@@ -17,6 +17,14 @@ if (KEY) {
     defaults: "2026-01-30",
     capture_exceptions: true,
     person_profiles: "identified_only",
+    // Session replay. The recorder.js script and snapshot uploads go through the SAME
+    // /ingest reverse proxy (api_host), so ad-blockers can't drop them. Recording still
+    // also has to be toggled ON in PostHog → Settings → Project → Session Replay.
+    disable_session_recording: false,
+    session_recording: {
+      maskAllInputs: true, // privacy: never capture typed input values
+      maskTextSelector: "[data-ph-mask]", // opt-in masking for sensitive text
+    },
   })
 }
 // Note: `defaults: "2025-05-24"` already auto-captures pageviews on App Router history
