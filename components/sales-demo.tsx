@@ -10,13 +10,14 @@
 
 import { useEffect, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { CornerDownRight, Sparkles, BrainCircuit, UserRound } from "lucide-react"
+import { CornerDownRight, Sparkles, BrainCircuit } from "lucide-react"
 import { Slack as SlackIcon } from "@/components/integration-icons"
 
 type Scene = {
 	channel: string
 	initials: string
 	avatar: string // tailwind gradient classes
+	emoji: string // cartoon avatar face
 	name: string
 	time: string
 	question: React.ReactNode
@@ -31,6 +32,7 @@ const SCENES: Scene[] = [
 		channel: "sales",
 		initials: "SR",
 		avatar: "from-emerald-400 to-teal-600",
+		emoji: "👩‍💼",
 		name: "Sarah",
 		time: "9:41 AM",
 		question: <>where did we land on Acme's renewal pricing?</>,
@@ -45,6 +47,7 @@ const SCENES: Scene[] = [
 		channel: "product",
 		initials: "JK",
 		avatar: "from-green-400 to-emerald-600",
+		emoji: "👨‍💻",
 		name: "Jack",
 		time: "10:02 AM",
 		question: <>what's still blocking the mobile release?</>,
@@ -59,6 +62,7 @@ const SCENES: Scene[] = [
 		channel: "sales",
 		initials: "RY",
 		avatar: "from-teal-400 to-green-600",
+		emoji: "🧑‍💼",
 		name: "Ryan",
 		time: "2:14 PM",
 		question: <>does our API support webhook retries? customer's asking.</>,
@@ -82,6 +86,7 @@ const SCENES: Scene[] = [
 		channel: "sales",
 		initials: "EM",
 		avatar: "from-emerald-500 to-green-700",
+		emoji: "👩‍🦰",
 		name: "Emma",
 		time: "Next week",
 		question: <>do our webhooks retry on failure?</>,
@@ -148,8 +153,8 @@ export function SalesDemo() {
 					>
 						{/* Asker */}
 						<div className="flex gap-3 mb-4">
-							<div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${s.avatar} ring-1 ring-white/20 flex items-center justify-center text-white shrink-0 shadow-lg`} aria-label={s.name}>
-								<UserRound className="w-[18px] h-[18px]" strokeWidth={2.2} />
+							<div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${s.avatar} ring-1 ring-white/20 flex items-center justify-center text-lg leading-none shrink-0 shadow-lg select-none`} aria-label={s.name}>
+								<span aria-hidden>{s.emoji}</span>
 							</div>
 							<div>
 								<div className="flex items-baseline gap-2">

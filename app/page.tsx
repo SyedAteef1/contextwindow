@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Server, Calendar, Code2, Menu, X, Network, MessageSquareText, Bell, ShieldCheck, Check, Rocket, TrendingUp, LifeBuoy, Layers, Megaphone, Users } from "lucide-react";
+import { Server, Calendar, Code2, Menu, X, Network, MessageSquareText, Bell, ShieldCheck, Check, Rocket, TrendingUp, LifeBuoy, Layers, Megaphone, Users, Lock, KeyRound, FileCheck2, EyeOff } from "lucide-react";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { ConnectorMarquee } from "@/components/connector-marquee";
 import { SalesDemo } from "@/components/sales-demo";
@@ -225,7 +225,7 @@ export default function Home() {
 
           <FadeIn delay={0.3} className="w-full">
             <p className="text-base sm:text-lg lg:text-xl text-white/60 mx-auto max-w-2xl mb-12 font-medium px-2">
-              It quietly follows every step your team takes and makes sense of the chaos in the background, surfacing what matters so founders stay ahead without chasing a single update.
+              It quietly follows your team&apos;s every move and turns the chaos into clarity — so you stay ahead, without chasing a single update.
             </p>
           </FadeIn>
 
@@ -396,7 +396,7 @@ export default function Home() {
             <div className="text-center max-w-3xl mx-auto">
               <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">Not another tool to learn</h2>
               <p className="text-sm text-white/60 mt-4 max-w-xl mx-auto leading-relaxed">
-                Most knowledge tools hand you a complicated dashboard and leave you to figure it out. Context Window does the opposite. It's a <span className="text-[#86efac] font-medium">guide</span> and an <span className="text-[#86efac] font-medium">alerter</span> that lives where you already work, so from day one it's simple. You connect, and it starts guiding you.
+                Most tools hand you a dashboard and walk away. Context Window feels like <span className="text-[#86efac] font-medium">your own brain</span> — living where your team already works, thinking alongside you from day one. You just connect it, and it gets you.
               </p>
             </div>
           </FadeIn>
@@ -415,7 +415,9 @@ export default function Home() {
                     "Passive: it just sits there until someone digs",
                   ].map((t) => (
                     <li key={t} className="flex items-start gap-3 text-sm text-white/55">
-                      <X className="w-4 h-4 text-white/30 mt-0.5 shrink-0" />
+                      <span className="mt-0.5 shrink-0 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white/[0.04] ring-1 ring-white/10">
+                        <X className="w-2.5 h-2.5 text-white/35" strokeWidth={3} />
+                      </span>
                       <span>{t}</span>
                     </li>
                   ))}
@@ -438,7 +440,9 @@ export default function Home() {
                     "Proactive: it briefs you and flags what needs you",
                   ].map((t) => (
                     <li key={t} className="flex items-start gap-3 text-sm text-white/90">
-                      <Check className="w-4 h-4 text-[#4ade80] mt-0.5 shrink-0" />
+                      <span className="mt-0.5 shrink-0 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#4ade80]/12 ring-1 ring-[#4ade80]/30">
+                        <Check className="w-2.5 h-2.5 text-[#4ade80]" strokeWidth={3} />
+                      </span>
                       <span>{t}</span>
                     </li>
                   ))}
@@ -449,7 +453,7 @@ export default function Home() {
 
           <FadeIn delay={0.3}>
             <p className="text-center text-sm text-white/40 max-w-2xl mx-auto">
-              Powerful underneath, effortless on top. The intelligence is in the background, and all your team sees is a brain that guides them and warns them in time.
+              Powerful underneath, effortless on top. Your team just feels a brain that has their back.
             </p>
           </FadeIn>
         </section>
@@ -573,7 +577,9 @@ export default function Home() {
                     <ul className="space-y-3 flex-1">
                       {team.points.map((p) => (
                         <li key={p} className="flex items-start gap-2.5 text-sm text-white/65 leading-relaxed">
-                          <Check className="w-4 h-4 text-[#4ade80] mt-0.5 shrink-0" />
+                          <span className="mt-0.5 shrink-0 flex h-4 w-4 items-center justify-center rounded-full bg-[#4ade80]/12 ring-1 ring-[#4ade80]/25">
+                            <Check className="w-2.5 h-2.5 text-[#4ade80]" strokeWidth={3} />
+                          </span>
                           <span>{p}</span>
                         </li>
                       ))}
@@ -750,6 +756,43 @@ export default function Home() {
                 <p className="text-xs text-white/60 mt-2">It versions facts when they change and forgets what's stale. Every answer ships with its sources.</p>
               </div>
             </FadeIn>
+          </div>
+        </section>
+
+        {/* Section: Data safety / compliance */}
+        <section id="security" className="space-y-10">
+          <FadeIn>
+            <div className="text-center max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#4ade80]/10 ring-1 ring-[#4ade80]/20 px-4 py-1.5 mb-5">
+                <ShieldCheck className="w-4 h-4 text-[#4ade80]" />
+                <span className="text-xs font-semibold tracking-wide text-[#86efac] uppercase">Security &amp; Privacy</span>
+              </div>
+              <h2 className="text-3xl lg:text-4xl font-medium tracking-tight">Your data is yours. Full stop.</h2>
+              <p className="text-sm text-white/60 mt-4 leading-relaxed">
+                We guard your company&apos;s knowledge like it&apos;s our own. It&apos;s never sold, never used to train models, and never leaves your control.
+              </p>
+            </div>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            {[
+              { icon: Server, title: "Runs in your own cloud", body: "Deploy fully inside your AWS, on your own Postgres + pgvector. Nothing ever leaves your infrastructure." },
+              { icon: Lock, title: "Secrets stripped at ingest", body: "Tokens, keys and secrets are redacted before anything is stored. We never keep what we shouldn't." },
+              { icon: Users, title: "Scoped to each person", body: "Everyone only sees what they're allowed to. The brain never answers beyond someone's permissions." },
+              { icon: FileCheck2, title: "Audited & sourced", body: "Every answer carries its sources and every action is logged. You can verify anything in one click." },
+              { icon: KeyRound, title: "SSO, SAML & DPA", body: "Enterprise SSO, SAML and a signed DPA — built to sail through your security review." },
+              { icon: EyeOff, title: "Never trained on, never sold", body: "Your knowledge is never used to train models and never shared with anyone. It stays yours, period." },
+            ].map((c, i) => (
+              <FadeIn key={c.title} delay={0.05 * i} className="h-full">
+                <div className="liquid-glass rounded-3xl p-6 h-full">
+                  <div className="w-10 h-10 rounded-2xl bg-[#4ade80]/10 ring-1 ring-[#4ade80]/20 flex items-center justify-center mb-4">
+                    <c.icon className="w-5 h-5 text-[#4ade80]" />
+                  </div>
+                  <h3 className="text-base font-semibold">{c.title}</h3>
+                  <p className="text-sm text-white/55 mt-1.5 leading-relaxed">{c.body}</p>
+                </div>
+              </FadeIn>
+            ))}
           </div>
         </section>
 

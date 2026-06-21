@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { AppNav } from "@/components/app-nav";
 import { BrainSearch } from "@/components/brain-search";
+import { CanvasDots } from "@/components/ui/canvas-dots";
 import { getIdentityByPrincipal } from "@/lib/auth/approval";
 import { getSessionPrincipal } from "@/lib/auth/session";
 
@@ -36,10 +37,11 @@ export default async function AppPage() {
   if (id.status !== "approved") redirect("/pending");
 
   return (
-    <main className="relative min-h-screen w-full text-white font-sans"
+    <main className="relative min-h-screen w-full text-white font-sans overflow-hidden"
       style={{ background: "radial-gradient(120% 90% at 50% 0%, #0a1f14 0%, #050a07 55%, #000 100%)" }}>
+      <CanvasDots />
       <AppNav active="home" />
-      <div className="pt-28 pb-20 px-6 max-w-3xl mx-auto">
+      <div className="relative z-10 pt-28 pb-20 px-6 max-w-3xl mx-auto">
         <h1 className="text-3xl font-medium tracking-tight">Welcome, {id.displayName ?? id.email} 👋</h1>
         <p className="text-sm text-white/55 mt-2">Ask your company brain anything — it answers from your team&apos;s real knowledge, with sources.</p>
 

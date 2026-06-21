@@ -1,4 +1,5 @@
 // Sign-in page. Google is the real path; the dev link only renders in development.
+import { CanvasDots } from "@/components/ui/canvas-dots";
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5">
@@ -12,9 +13,10 @@ const GoogleIcon = () => (
 export default function LoginPage() {
   const isDev = process.env.NODE_ENV !== "production";
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-white font-sans"
+    <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-white font-sans overflow-hidden"
       style={{ background: "radial-gradient(120% 90% at 50% 0%, #0a1f14 0%, #050a07 55%, #000 100%)" }}>
-      <div className="liquid-glass-strong rounded-3xl p-10 w-full max-w-sm text-center border border-white/10">
+      <CanvasDots />
+      <div className="relative z-10 liquid-glass-strong rounded-3xl p-10 w-full max-w-sm text-center border border-white/10">
         <div className="w-12 h-12 rounded-xl bg-[#4ade80]/10 border border-[#4ade80]/20 flex items-center justify-center mx-auto mb-6">
           <span className="text-[#4ade80] text-xl">🧠</span>
         </div>
