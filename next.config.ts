@@ -16,6 +16,13 @@ const nextConfig: NextConfig = {
 	},
 	// PostHog's API uses trailing-slash-sensitive routes; don't let Next redirect them.
 	skipTrailingSlashRedirect: true,
+
+	// Send the site root to the new public research landing page (app/landing).
+	// Additive only — the previous homepage code is untouched and still lives at
+	// app/page.tsx. Remove this entry to restore the old root.
+	async redirects() {
+		return [{ source: "/", destination: "/landing", permanent: false }]
+	},
 }
 
 export default nextConfig
