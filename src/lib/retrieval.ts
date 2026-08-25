@@ -5,12 +5,13 @@
  * is the whole isolation story: retrieval is scoped in the WHERE clause, not by
  * hoping the model behaves.
  */
-import { and, cosineDistance, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { and, cosineDistance, desc, eq, gt, gte, isNull, lte, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { embeddings, playbookSnippets, type PlaybookAudience, type SourceType } from "@/db/schema";
 import {
   chunkText,
+  chunkTranscript,
   embedForIndex,
   embedForSearch,
   sparseEnabled,
@@ -40,7 +41,9 @@ export type IndexInput = {
  * doesn't leave the previous version's text retrievable.
  */
 export async function indexDocument(input: IndexInput): Promise<number> {
-  const chunks = chunkText(input.content);
+  // Transcripts split on speaker turns; everything else is prose.
+  const chunks =
+    input.sourceType === "transcript" ? chunkTranscript(input.content) : chunkText(input.content);
   if (chunks.length === 0) return 0;
 
   const vectors = await embedForIndex(chunks.map((chunk) => chunk.content));
@@ -120,7 +123,19 @@ export type RetrievalScope = {
 export async function retrieveForAccount(
   scope: string | RetrievalScope,
   query: string,
-  options: { topK?: number; minSimilarity?: number; sourceTypes?: SourceType[] } = {},
+  options: {
+    topK?: number;
+    minSimilarity?: number;
+    sourceTypes?: SourceType[];
+    /**
+     * Widen each hit to its neighbouring chunks from the same source. Costs one
+     * extra query and makes answers markedly less clipped, so it is on by
+     * default; the live in-call lane turns it off to protect latency.
+     */
+    expandNeighbours?: boolean;
+    /** Weight recent calls above old ones at equal relevance. On by default. */
+    recencyBias?: boolean;
+  } = {},
 ): Promise<RetrievedChunk[]> {
   // A bare string stays valid so every existing call site keeps working; it
   // simply searches the account alone, as it always did.
@@ -139,14 +154,113 @@ export async function retrieveForAccount(
     limit: embedded.sparse ? topK * 3 : topK,
   });
 
-  if (!embedded.sparse || !sparseEnabled()) return dense;
+  if (!embedded.sparse || !sparseEnabled()) {
+    // Similarity is the ranking score on this path.
+    const ranked = dense.map((chunk) => ({ chunk, score: chunk.similarity }));
+    return finish(ranked, topK, options);
+  }
 
   const sparse = await sparseSearch({ accountId, workspaceId }, toSparseLiteral(embedded.sparse), {
     limit: topK * 3,
     sourceTypes: options.sourceTypes,
   });
 
-  return fuseByReciprocalRank(dense, sparse, topK);
+  return finish(fuseByReciprocalRank(dense, sparse), topK, options);
+}
+
+/** A chunk plus whatever score the ranking that produced it assigned. */
+type Ranked = { chunk: RetrievedChunk; score: number };
+
+/**
+ * Everything that happens after ranking: weight by age, cut to topK, widen.
+ *
+ * Both paths hand their own score in — similarity for dense-only, the fused
+ * score for hybrid — so recency multiplies the real ranking signal rather than
+ * a position. Position would make this useless: rank 1 scores half of rank 0,
+ * and a boost capped at 15% could never express "these are equally relevant,
+ * prefer the newer one", which is the entire intent.
+ *
+ * Kept separate from the rankings themselves so the two paths cannot drift.
+ */
+async function finish(
+  ranked: Ranked[],
+  topK: number,
+  options: { expandNeighbours?: boolean; recencyBias?: boolean },
+): Promise<RetrievedChunk[]> {
+  if (ranked.length === 0) return [];
+
+  const weighted =
+    options.recencyBias === false
+      ? ranked
+      : ranked.map((r) => ({ ...r, score: r.score * recencyMultiplier(r.chunk) }));
+
+  const hits = [...weighted]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK)
+    .map((r) => r.chunk);
+
+  if (options.expandNeighbours === false) return hits;
+  return expandWithNeighbours(hits);
+}
+
+/**
+ * Pull the chunks either side of each hit and stitch them in.
+ *
+ * Small chunks retrieve precisely and read badly: the winning chunk often ends
+ * mid-exchange, and the sentence that gives it meaning sits in the neighbour.
+ * One query fetches those neighbours, and each hit's content is replaced by the
+ * stitched passage — the hit keeps its own rank and similarity, so precision is
+ * unaffected and only the text handed to the model gets wider.
+ */
+async function expandWithNeighbours(hits: RetrievedChunk[]): Promise<RetrievedChunk[]> {
+  const wanted = hits.map((hit) => ({
+    sourceId: hit.sourceId,
+    from: Math.max(hit.chunkIndex - 1, 0),
+    to: hit.chunkIndex + 1,
+  }));
+
+  const rows = await db
+    .select({
+      sourceId: embeddings.sourceId,
+      chunkIndex: embeddings.chunkIndex,
+      content: embeddings.content,
+    })
+    .from(embeddings)
+    .where(
+      or(
+        ...wanted.map((w) =>
+          and(
+            eq(embeddings.sourceId, w.sourceId),
+            gte(embeddings.chunkIndex, w.from),
+            lte(embeddings.chunkIndex, w.to),
+          ),
+        ),
+      ),
+    );
+
+  const bySource = new Map<string, Map<number, string>>();
+  for (const row of rows) {
+    if (!bySource.has(row.sourceId)) bySource.set(row.sourceId, new Map());
+    bySource.get(row.sourceId)!.set(row.chunkIndex, row.content);
+  }
+
+  return hits.map((hit) => {
+    const neighbours = bySource.get(hit.sourceId);
+    if (!neighbours) return hit;
+
+    const parts: string[] = [];
+    for (let i = hit.chunkIndex - 1; i <= hit.chunkIndex + 1; i++) {
+      const content = neighbours.get(i);
+      if (!content) continue;
+      // Chunks overlap by design, so a neighbour usually repeats the edge of
+      // its sibling. Drop the neighbour when it is already contained.
+      if (parts.some((part) => part.includes(content))) continue;
+      parts.push(content);
+    }
+
+    const stitched = parts.join("\n");
+    return stitched.length > hit.content.length ? { ...hit, content: stitched } : hit;
+  });
 }
 
 /** Cosine-distance search over the dense column. */
@@ -262,11 +376,7 @@ async function sparseSearch(
  * dominate. RRF throws the magnitudes away and combines *ranks*, which needs no
  * per-corpus tuning — the reason it is the standard choice for this.
  */
-function fuseByReciprocalRank(
-  dense: RetrievedChunk[],
-  sparse: RetrievedChunk[],
-  topK: number,
-): RetrievedChunk[] {
+function fuseByReciprocalRank(dense: RetrievedChunk[], sparse: RetrievedChunk[]): Ranked[] {
   const k = env().HYBRID_RRF_K;
   const scores = new Map<string, number>();
   const chunks = new Map<string, RetrievedChunk>();
@@ -280,10 +390,33 @@ function fuseByReciprocalRank(
   }
 
   return [...scores.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, topK)
-    .map(([id]) => chunks.get(id)!)
-    .filter(Boolean);
+    .filter(([id]) => chunks.has(id))
+    .map(([id, score]) => ({ chunk: chunks.get(id)!, score }));
+}
+
+/** Six months to decay from 1.15 to 1.0. Enough to break ties, not to bury. */
+const RECENCY_HALFLIFE_DAYS = 180;
+const RECENCY_MAX_BOOST = 0.15;
+
+/**
+ * A gentle thumb on the scale for recent calls.
+ *
+ * What someone committed to last week usually matters more than the same
+ * sentence from six months ago, and at equal relevance the newer chunk should
+ * win. The boost is capped at 15% precisely because it must not outrank a
+ * genuinely better match — this breaks ties, it does not re-rank.
+ *
+ * Workspace material carries no date and is never penalised: pricing policy is
+ * not stale because it was written a year ago.
+ */
+function recencyMultiplier(chunk: RetrievedChunk): number {
+  const raw = chunk.meta?.scheduledAt;
+  if (typeof raw !== "string") return 1;
+  const when = Date.parse(raw);
+  if (Number.isNaN(when)) return 1;
+
+  const ageDays = Math.max(0, (Date.now() - when) / 86_400_000);
+  return 1 + RECENCY_MAX_BOOST * Math.exp(-ageDays / RECENCY_HALFLIFE_DAYS);
 }
 
 /** Drop everything indexed for one source (e.g. when a meeting is deleted). */

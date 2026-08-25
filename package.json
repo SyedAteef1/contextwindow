@@ -21,7 +21,9 @@
     "try:bot": "tsx scripts/try-bot.ts",
     "join": "tsx scripts/join-meeting.ts",
     "audio-bridge": "tsx scripts/audio-bridge.ts",
-    "stats": "tsx scripts/stats.ts"
+    "stats": "tsx scripts/stats.ts",
+    "demo": "tsx scripts/demo-account.ts",
+    "reindex": "tsx scripts/reindex.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

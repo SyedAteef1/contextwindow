@@ -1,7 +1,7 @@
 /** Pure logic: no database, no network. */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { chunkText } from "@/lib/embeddings";
+import { chunkText, chunkTranscript } from "@/lib/embeddings";
 import {
   classifyExternalMeeting,
   companyNameFromDomain,
@@ -40,6 +40,52 @@ describe("chunkText", () => {
     const text = `${"a".repeat(180)}. ${"b".repeat(180)}. ${"c".repeat(180)}.`;
     const chunks = chunkText(text, { size: 200, overlap: 0 });
     expect(chunks[0].content.endsWith(".")).toBe(true);
+  });
+});
+
+describe("chunkTranscript", () => {
+  const call = [
+    "Priya Raman: We can't sign anything without a current SOC 2 Type II report.",
+    "Sam Okonkwo: We have Type II, renewed in March. I can share it under NDA today.",
+    "Priya Raman: Today would be good. That's the gate for me.",
+    "Sam Okonkwo: Understood. What does the rest of your process look like?",
+    "Marcus Webb: Security review takes about two weeks, then it goes to the board.",
+  ].join("\n");
+
+  it("never splits a speaker turn across chunks", () => {
+    const chunks = chunkTranscript(call, { size: 120 });
+    for (const chunk of chunks) {
+      for (const line of chunk.content.split("\n")) {
+        // Every line must still begin with a speaker, i.e. no severed turn.
+        expect(line).toMatch(/^[A-Z][^:]*: /);
+      }
+    }
+  });
+
+  it("keeps every turn, and repeats one across the boundary for context", () => {
+    const chunks = chunkTranscript(call, { size: 120 });
+    expect(chunks.length).toBeGreaterThan(1);
+
+    const seen = chunks.flatMap((c) => c.content.split("\n"));
+    for (const turn of call.split("\n")) expect(seen).toContain(turn);
+
+    // A question and its answer must not be separated with nothing in common.
+    for (let i = 1; i < chunks.length; i++) {
+      const previous = chunks[i - 1].content.split("\n");
+      const current = chunks[i].content.split("\n");
+      expect(current[0]).toBe(previous[previous.length - 1]);
+    }
+  });
+
+  it("falls back to prose chunking when there are no speaker labels", () => {
+    const prose = "There are no speakers here, just a wall of text about pricing.";
+    expect(chunkTranscript(prose)).toEqual([{ index: 0, content: prose }]);
+  });
+
+  it("keeps a single over-long turn rather than dropping it", () => {
+    const long = "Dana Whitfield: " + "the migration took nine months ".repeat(20);
+    const chunks = chunkTranscript(long, { size: 100 });
+    expect(chunks.map((c) => c.content).join("")).toContain("nine months");
   });
 });
 
@@ -87,6 +133,30 @@ describe("classifyExternalMeeting", () => {
       },
       "acme.com",
       "rep@acme.com",
+    );
+    expect(result).toBeNull();
+  });
+
+  it("treats another free-mail attendee as external when the rep is on free mail too", () => {
+    // Two gmail.com addresses are not colleagues. Classifying by domain would
+    // call this internal and silently drop every meeting a solo seller books.
+    const result = classifyExternalMeeting(
+      {
+        ...base,
+        attendees: [{ email: "rep@gmail.com", self: true }, { email: "buyer@gmail.com" }],
+      },
+      "gmail.com",
+      "rep@gmail.com",
+    );
+    expect(result).not.toBeNull();
+    expect(result?.attendees.filter((a) => a.external)).toHaveLength(1);
+  });
+
+  it("still ignores a free-mail rep's own solo hold", () => {
+    const result = classifyExternalMeeting(
+      { ...base, attendees: [{ email: "rep@gmail.com", self: true }] },
+      "gmail.com",
+      "rep@gmail.com",
     );
     expect(result).toBeNull();
   });

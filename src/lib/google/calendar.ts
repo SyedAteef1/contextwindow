@@ -178,20 +178,29 @@ export function classifyExternalMeeting(
   userEmail: string,
 ): ExternalMeetingInfo | null {
   const home = userDomain.toLowerCase();
+  const me = userEmail.toLowerCase();
   const attendees = (event.attendees ?? []).filter((a) => a.email && !a.resource);
 
   // A solo hold or a self-only event is not a sales call.
   if (attendees.length < 2) return null;
 
+  // Domain is the right test for a company address — colleagues share one, so
+  // an internal standup is correctly ignored. It is the wrong test for a rep
+  // signed in with free mail: two gmail.com addresses are not colleagues, and
+  // treating them as such silently drops every meeting a solo seller books.
+  // For those accounts the only insider is the rep themselves.
+  const homeIsConsumer = isConsumerDomain(home);
+
   const mapped = attendees.map((a) => {
     const email = a.email!.toLowerCase();
+    const self = Boolean(a.self) || email === me;
     return {
       email,
       displayName: a.displayName ?? null,
       organizer: Boolean(a.organizer),
-      self: Boolean(a.self) || email === userEmail.toLowerCase(),
+      self,
       responseStatus: a.responseStatus ?? null,
-      external: domainOf(email) !== home,
+      external: homeIsConsumer ? !self : domainOf(email) !== home,
     };
   });
 

@@ -125,3 +125,110 @@ describe("workspace retrieval", () => {
     expect(hits).toHaveLength(0);
   });
 });
+
+describe("retrieval quality", () => {
+  it("finds one exchange inside a long call rather than the whole call", async () => {
+    const { workspace, account } = await seedWorkspace("northstar.io");
+
+    // A full-length call covering three unrelated subjects. Chunked as one
+    // blob its embedding is close to all of them and precise about none.
+    const call = [
+      "Priya Raman: Thanks for making time. Reporting takes days when it should take minutes, and that is really what started all of this for us internally.",
+      "Sam Okonkwo: That is a common place to start. How many people would actually be on the new system day to day?",
+      "Priya Raman: Around a hundred and twenty across sales and customer success, and probably more once next year's hiring plan lands.",
+      "Sam Okonkwo: And who else needs to be comfortable with the decision besides yourself?",
+      "Priya Raman: Marcus in finance, and security will certainly have a view on it. I own the evaluation but I do not sign anything.",
+      "Dana Whitfield: Before we go any further I want to raise something. Is SAML SSO available today? We run Okta and everything we buy has to sit behind it.",
+      "Sam Okonkwo: SAML SSO ships in Q4, and importantly it is included at your tier rather than priced as a separate line item.",
+      "Dana Whitfield: Included is the part I care about. The last vendor we looked at wanted twelve thousand a year just for that one feature.",
+      "Sam Okonkwo: That is a fairly common pattern in this market and it is one of the things we deliberately do differently.",
+      "Marcus Webb: Separately, and I would rather say this now than at the end, we cannot sign anything without a current SOC 2 Type II report.",
+      "Sam Okonkwo: We have Type II, renewed in March, and I can share it under NDA today if that helps you move.",
+      "Marcus Webb: Today would be good. Our last audit flagged vendor management so this is a genuine gate for me rather than a preference.",
+    ].join("\n");
+
+    await indexDocument({
+      workspaceId: workspace.id,
+      accountId: account.id,
+      sourceType: "transcript",
+      sourceId: crypto.randomUUID(),
+      content: call,
+    });
+
+    // Asserted without expansion: the claim here is about what the *index*
+    // isolates. Expansion deliberately widens a hit again, and on a short call
+    // with few chunks that legitimately rebuilds most of it.
+    const hits = await retrieveForAccount(
+      { accountId: account.id, workspaceId: workspace.id },
+      "SSO Okta available tier",
+      { expandNeighbours: false },
+    );
+
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].content).toContain("SSO");
+    // The point of small chunks: the winning passage is the SSO exchange, not
+    // the entire call with the seat count and the SOC 2 gate attached.
+    expect(hits[0].content).not.toContain("SOC 2 Type II report");
+  });
+
+  it("widens a hit to its neighbouring chunks", async () => {
+    const { workspace, account } = await seedWorkspace("northstar.io");
+    const call = [
+      "Priya Raman: Can you put the parallel run in writing?",
+      "Sam Okonkwo: Yes, I will send a migration outline this week.",
+      "Dana Whitfield: That matters because the last vendor overran by months.",
+      "Sam Okonkwo: Understood, the existing system stays authoritative.",
+    ].join("\n");
+
+    await indexDocument({
+      workspaceId: workspace.id,
+      accountId: account.id,
+      sourceType: "transcript",
+      sourceId: crypto.randomUUID(),
+      content: call,
+    });
+
+    const wide = await retrieveForAccount(
+      { accountId: account.id, workspaceId: workspace.id },
+      "migration outline writing",
+    );
+    const narrow = await retrieveForAccount(
+      { accountId: account.id, workspaceId: workspace.id },
+      "migration outline writing",
+      { expandNeighbours: false },
+    );
+
+    expect(wide.length).toBeGreaterThan(0);
+    expect(wide[0].content.length).toBeGreaterThanOrEqual(narrow[0].content.length);
+    // Ranking is unaffected — only the text handed to the model gets wider.
+    expect(wide[0].id).toBe(narrow[0].id);
+  });
+
+  it("prefers a recent call over an old one saying the same thing", async () => {
+    const { workspace, account } = await seedWorkspace("northstar.io");
+    const claim = "Sam Okonkwo: The discount needs approval from the VP of Sales.";
+
+    const old = new Date();
+    old.setDate(old.getDate() - 400);
+    const recent = new Date();
+    recent.setDate(recent.getDate() - 2);
+
+    for (const [when, id] of [[old, "old"], [recent, "recent"]] as const) {
+      await indexDocument({
+        workspaceId: workspace.id,
+        accountId: account.id,
+        sourceType: "summary",
+        sourceId: crypto.randomUUID(),
+        content: claim,
+        meta: { scheduledAt: when.toISOString(), label: id },
+      });
+    }
+
+    const hits = await retrieveForAccount(
+      { accountId: account.id, workspaceId: workspace.id },
+      "who approves the discount",
+    );
+    expect(hits.length).toBeGreaterThan(1);
+    expect(hits[0].meta?.label).toBe("recent");
+  });
+});

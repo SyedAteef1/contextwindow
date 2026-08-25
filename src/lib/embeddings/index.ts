@@ -9,7 +9,14 @@ import { env } from "@/lib/env";
 import { embed } from "./providers";
 import { embedSparse, sparseEnabled, sparseUnavailableReason, type SparseVector } from "./sparse";
 
-export { chunkText, CHUNK_CHARS, CHUNK_OVERLAP_CHARS, type Chunk } from "./chunking";
+export {
+  chunkText,
+  chunkTranscript,
+  CHUNK_CHARS,
+  CHUNK_OVERLAP_CHARS,
+  TRANSCRIPT_CHUNK_CHARS,
+  type Chunk,
+} from "./chunking";
 export {
   EMBEDDING_MODELS,
   specFor,

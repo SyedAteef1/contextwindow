@@ -58,14 +58,14 @@ services:
     command:
       - |
         # The app has to finish booting before the first sync, or the first
-        # quarter-hour is wasted on a connection refused.
+        # interval is wasted on a connection refused.
         sleep 30
         while true; do
           curl -fsS --max-time 300 \
             -H "Authorization: Bearer $${CRON_SECRET}" \
             http://app:3000/api/cron/sync-calendar \
             && echo " <- sync ok" || echo "sync failed"
-          sleep 900
+          sleep $${SYNC_INTERVAL_SECONDS:-300}
         done
 
   # The embedding model, serving BGE-M3 to the app.
