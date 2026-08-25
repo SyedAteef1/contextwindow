@@ -1,0 +1,21 @@
+# Serves the app.
+#
+# `SITE_ADDRESS` decides whether the public site is plain HTTP on an IP or real
+# TLS on a hostname. Set it to the domain once DNS points here and Caddy obtains
+# a Let's Encrypt certificate on its own; leave it unset and the site answers on
+# :80, which is enough to check a deployment but NOT enough for Google OAuth
+# (which refuses non-HTTPS redirect URIs, and refuses bare IPs entirely).
+{$SITE_ADDRESS::80} {
+	reverse_proxy app:3000
+}
+
+# The internal address, for services on this host talking to the app.
+#
+# Naming a hostname above makes Caddy redirect *everything* else on :80 to
+# https, including the bot provider posting webhooks to the private IP — where
+# the certificate does not match, so delivery fails after three attempts and
+# transcripts never arrive. The `http://` prefix pins this block to plain HTTP
+# and suppresses that redirect.
+http://{$SITE_INTERNAL:localhost} {
+	reverse_proxy app:3000
+}

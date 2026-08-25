@@ -1,0 +1,92 @@
+# Production stack for the sales-intel host.
+#
+# Postgres is already running as a standalone container from the instance
+# bootstrap, so this joins it by host networking rather than redeclaring it —
+# redeclaring would orphan the existing volume.
+services:
+  app:
+    # Pre-built by the deploy script, not built here. Compose's build path needs
+    # buildx, which the host doesn't carry, and rebuilding an image we already
+    # made would only cost time.
+    image: sales-intel:latest
+    restart: unless-stopped
+    env_file: .env.production
+    ports:
+      # Caddy terminates TLS in front; the app itself only listens locally.
+      - "127.0.0.1:3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # TLS and HTTP->HTTPS, with certificates obtained automatically. Bot webhook
+  # providers refuse plain http, so this is required rather than optional.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Empty means ":80". Set DEPLOY_DOMAIN when deploying to turn on TLS.
+      - SITE_ADDRESS=${SITE_ADDRESS:-}
+      # The private address host-local services reach the app on, over plain
+      # HTTP so webhook delivery is not redirected to a certificate that
+      # cannot match a bare IP.
+      - SITE_INTERNAL=${SITE_INTERNAL:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  # Calendar sync on a real cadence.
+  #
+  # A brief is only useful if it exists before the call, and a rep can book a
+  # meeting for this afternoon. The daily `vercel.json` cron is a backstop for
+  # the Vercel deployment; on this host the sync runs every 15 minutes so
+  # research starts within minutes of a meeting appearing on the calendar.
+  #
+  # Repeat work is cheap: the sync skips any meeting that already has a brief,
+  # so a quiet quarter-hour costs one Google Calendar call per user.
+  scheduler:
+    image: curlimages/curl:8.11.1
+    restart: unless-stopped
+    env_file: .env.production
+    depends_on:
+      - app
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        # The app has to finish booting before the first sync, or the first
+        # quarter-hour is wasted on a connection refused.
+        sleep 30
+        while true; do
+          curl -fsS --max-time 300 \
+            -H "Authorization: Bearer $${CRON_SECRET}" \
+            http://app:3000/api/cron/sync-calendar \
+            && echo " <- sync ok" || echo "sync failed"
+          sleep 900
+        done
+
+  # The embedding model, serving BGE-M3 to the app.
+  #
+  # `OLLAMA_KEEP_ALIVE=-1` is the setting that matters. Ollama unloads a model
+  # after about five minutes idle, and reloading BGE-M3 costs ~4 seconds — which
+  # would land on the *first question of a call*, the one moment the whole
+  # precomputed cache exists to make instant. Pinning it resident costs ~1.2 GB
+  # and removes that cliff.
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  caddy_data:
+  caddy_config:
+  # Declared external so the 1.2 GB model already pulled on the host is reused
+  # rather than downloaded again under a compose-prefixed name.
+  ollama:
+    external: true

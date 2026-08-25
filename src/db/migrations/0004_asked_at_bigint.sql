@@ -1,0 +1,1 @@
+ALTER TABLE "live_answers" ALTER COLUMN "asked_at_ms" SET DATA TYPE bigint;

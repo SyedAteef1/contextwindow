@@ -1,0 +1,795 @@
+@import url("https://fonts.googleapis.com/css2?family=Audiowide&family=DM+Mono:wght@400;500&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Hedvig+Letters+Serif:opsz@12..24&family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Manrope:wght@400;500;600;700&family=Monda:wght@400;500;600;700&family=Outfit:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;1,700&family=Red+Hat+Display:wght@400;500;600;700&family=Rethink+Sans:wght@400;500;600;700&family=Tillana:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+@import "./originkit-section-themes.css";
+@import "./originkit-section-theme.css";
+
+/* ==========================================================================
+   Tokens
+
+   Colour is semantic here, not decorative. Amber means buying-signal strength,
+   rose means an objection or risk, green means a bot is live in a call. Nothing
+   else is coloured, so when something is, it means something.
+   ========================================================================== */
+
+@theme {
+  /*
+   * One palette, dark.
+   *
+   * The app used to render light while the marketing page was dark, so signing
+   * in threw you from one product into what looked like another. These are
+   * semantic tokens, so re-pointing them here turns every screen at once —
+   * which is the only reason a change this broad is a small diff.
+   *
+   * `ink` is the foreground and is now *light*: anything that paired `bg-ink`
+   * with `text-white` had to become `text-ground`, or it would be white on
+   * white.
+   */
+  --color-ink: #fafafa;
+  --color-ink-soft: #d4d4d8;
+  --color-muted: #a1a1aa;
+  --color-faint: #71717a;
+  --color-ground: #09090b;
+  --color-surface: #131316;
+  --color-sunken: #1c1c20;
+  --color-rule: #2a2a30;
+  --color-rule-soft: #202024;
+
+  /* Semantic accents — each reserved for one meaning, brightened for a dark
+     ground where the old print-weight tones went muddy. */
+  --color-signal: #fbbf24;
+  --color-signal-soft: #2c2008;
+  --color-flag: #fb7185;
+  --color-flag-soft: #2e1218;
+  --color-live: #34d399;
+  --color-live-soft: #06301f;
+
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* The display face carries the personality: expanded, tight, confident. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.022em;
+    line-height: 1.12;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: var(--color-signal-soft);
+    color: var(--color-ink);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Eyebrow — small mono labels that title a region without shouting.
+   -------------------------------------------------------------------------- */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+/* --------------------------------------------------------------------------
+   The time rail — the signature.
+
+   A vertical spine with meetings as nodes on it, and a dashed NOW line cutting
+   across. Above the line the call has happened; below it hasn't.
+   -------------------------------------------------------------------------- */
+.rail {
+  position: relative;
+  padding-left: 4.75rem;
+}
+
+.rail::before {
+  content: "";
+  position: absolute;
+  left: 3.5rem;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  width: 1px;
+  background: var(--color-rule);
+}
+
+.rail-node {
+  position: relative;
+}
+
+/* The clock time, set in mono and hung in the gutter beside the spine. */
+.rail-time {
+  position: absolute;
+  left: -4.75rem;
+  top: 1.4rem;
+  width: 3rem;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}
+
+/* The node itself, sitting on the spine. */
+.rail-node::before {
+  content: "";
+  position: absolute;
+  left: -1.31rem;
+  top: 1.55rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-faint);
+  z-index: 1;
+}
+
+.rail-node[data-state="done"]::before {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+}
+
+.rail-node[data-state="live"]::before {
+  background: var(--color-live);
+  border-color: var(--color-live);
+  box-shadow: 0 0 0 4px var(--color-live-soft);
+}
+
+.rail-node[data-state="blocked"]::before {
+  background: var(--color-sunken);
+  border-color: var(--color-rule);
+}
+
+/* The NOW line. Dashed so it reads as a moving boundary, not a divider. */
+.rail-now {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.35rem 0 0.35rem -4.75rem;
+  padding-left: 0.75rem;
+}
+
+.rail-now::after {
+  content: "";
+  flex: 1;
+  height: 0;
+  border-top: 1px dashed var(--color-signal);
+  opacity: 0.55;
+}
+
+/* --------------------------------------------------------------------------
+   Signal meter — buying interest as four segments. Content-derived, not decor.
+   -------------------------------------------------------------------------- */
+.meter {
+  display: inline-flex;
+  gap: 2px;
+  vertical-align: middle;
+}
+
+.meter span {
+  width: 4px;
+  height: 11px;
+  border-radius: 1px;
+  background: var(--color-rule);
+}
+
+.meter span[data-on="true"] {
+  background: var(--color-signal);
+}
+
+/* --------------------------------------------------------------------------
+   Prose — briefs and summaries arrive as markdown.
+   -------------------------------------------------------------------------- */
+.prose-brief {
+  font-size: 14.5px;
+  line-height: 1.68;
+  color: var(--color-ink-soft);
+}
+
+.prose-brief > * + * {
+  margin-top: 0.85rem;
+}
+
+.prose-brief h1,
+.prose-brief h2,
+.prose-brief h3 {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--color-ink);
+  margin-top: 1.6rem;
+}
+
+.prose-brief h1:first-child,
+.prose-brief h2:first-child,
+.prose-brief h3:first-child {
+  margin-top: 0;
+}
+
+.prose-brief strong {
+  color: var(--color-ink);
+  font-weight: 640;
+}
+
+.prose-brief ul,
+.prose-brief ol {
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.prose-brief ul {
+  list-style: none;
+  padding-left: 0.95rem;
+}
+
+.prose-brief ul > li {
+  position: relative;
+}
+
+.prose-brief ul > li::before {
+  content: "";
+  position: absolute;
+  left: -0.95rem;
+  top: 0.62em;
+  width: 4px;
+  height: 1px;
+  background: var(--color-faint);
+}
+
+.prose-brief ol {
+  list-style: decimal;
+}
+
+.prose-brief a {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--color-rule);
+  text-underline-offset: 2px;
+}
+
+.prose-brief a:hover {
+  text-decoration-color: var(--color-signal);
+}
+
+.prose-brief blockquote {
+  border-left: 2px solid var(--color-rule);
+  padding-left: 0.9rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.prose-brief code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-sunken);
+  padding: 0.1em 0.34em;
+  border-radius: 3px;
+}
+
+.prose-brief table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  display: block;
+  overflow-x: auto;
+}
+
+.prose-brief th,
+.prose-brief td {
+  border-bottom: 1px solid var(--color-rule-soft);
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose-brief th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   The page timeline — the rail motif at page scale.
+
+   This product is entirely about time around one meeting: research happens
+   before it, answers during it, the recap after it. So the marketing page is
+   built on a single unbroken spine with each moment hung off it at its real
+   offset. The mono stamps in the gutter are the section headings; there is no
+   other numbering, because time is the sequence.
+   -------------------------------------------------------------------------- */
+.tl {
+  --tl-gutter: 7rem;
+  --tl-line: var(--color-rule);
+  position: relative;
+  padding-left: var(--tl-gutter);
+}
+
+.tl::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--tl-gutter) - 3.5rem);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--tl-line);
+}
+
+.tl-node {
+  position: relative;
+  padding-block: 3.25rem;
+}
+
+/* The stamp hangs in the gutter and titles the moment. */
+.tl-stamp {
+  position: absolute;
+  left: calc(var(--tl-gutter) * -1);
+  top: 3.25rem;
+  width: 5.25rem;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+.tl-node::before {
+  content: "";
+  position: absolute;
+  left: -3.84rem;
+  top: 3.55rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-faint);
+  z-index: 1;
+}
+
+.tl-node[data-state="done"]::before {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+}
+
+.tl-node[data-state="live"]::before {
+  background: var(--color-live);
+  border-color: var(--color-live);
+  box-shadow: 0 0 0 5px var(--color-live-soft);
+}
+
+/*
+ * Night.
+ *
+ * The page inverts for exactly one section: the call itself. Everything above
+ * is preparation and everything below is record, but this is the only part the
+ * rep actually lives through. Re-pointing the colour tokens rather than
+ * restyling means every component inside re-tones on its own.
+ */
+.night {
+  --color-surface: #171e28;
+  --color-sunken: #1f2733;
+  --color-ink: #f2f5f8;
+  --color-ink-soft: #d3dae2;
+  --color-muted: #97a3b1;
+  --color-faint: #6d7a89;
+  --color-rule: #2c3644;
+  --color-rule-soft: #232c38;
+  --color-live-soft: #06301f;
+  --color-signal: #f0a35a;
+  --tl-line: #2c3644;
+  background: #10161e;
+  color: var(--color-ink);
+}
+
+@media (max-width: 640px) {
+  /* The gutter costs too much width on a phone, so the stamp moves inline. */
+  .tl {
+    --tl-gutter: 1.5rem;
+  }
+
+  .tl::before {
+    left: 3px;
+  }
+
+  .tl-stamp {
+    position: static;
+    display: block;
+    width: auto;
+    text-align: left;
+    margin-bottom: 0.6rem;
+  }
+
+  .tl-node::before {
+    left: -1.5rem;
+    top: 3.4rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Landing-page furniture.
+
+   Structure follows the Tailark blocks: raked light streaks behind the hero, a
+   framed product shot veiled from the top, and feature cards marked by corner
+   brackets rather than rounded borders. Re-toned to this palette — the streaks
+   carry the amber that means "signal" everywhere else in the product, so even
+   the decoration is saying something.
+   -------------------------------------------------------------------------- */
+
+/*
+ * Raked light, top-left.
+ *
+ * Three overlapping ellipses rotated -45deg. Kept faint: on a light ground this
+ * reads as a shaft of light rather than the glow-on-black these blocks assume.
+ */
+.streaks {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  isolation: isolate;
+  contain: strict;
+  opacity: 0.85;
+}
+
+.streaks > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 9999px;
+  rotate: -45deg;
+}
+
+.streaks > :nth-child(1) {
+  width: 35rem;
+  height: 80rem;
+  translate: 0 -350px;
+  background: radial-gradient(
+    68% 68% at 55% 31%,
+    color-mix(in oklab, var(--color-signal) 10%, transparent) 0,
+    color-mix(in oklab, var(--color-signal) 3%, transparent) 50%,
+    transparent 80%
+  );
+}
+
+.streaks > :nth-child(2) {
+  width: 14rem;
+  height: 80rem;
+  translate: 5% -50%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in oklab, var(--color-ink) 6%, transparent) 0,
+    transparent 80%
+  );
+}
+
+.streaks > :nth-child(3) {
+  width: 14rem;
+  height: 80rem;
+  translate: 0 -350px;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in oklab, var(--color-live) 6%, transparent) 0,
+    transparent 80%
+  );
+}
+
+/* Settles the streaks into the page instead of letting them run to the fold. */
+.hero-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background: radial-gradient(125% 125% at 50% 100%, transparent 0%, var(--color-ground) 75%);
+}
+
+/* The big product shot: a ring, a soft lift, and a veil over the top edge. */
+.shot-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--color-rule);
+  background: var(--color-surface);
+  padding: 0.6rem;
+  box-shadow:
+    0 1px 2px rgba(16, 21, 28, 0.04),
+    0 18px 40px -12px rgba(16, 21, 28, 0.14),
+    0 60px 120px -30px rgba(16, 21, 28, 0.18);
+}
+
+.shot-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent 35%, var(--color-ground) 100%);
+}
+
+/*
+ * Corner brackets.
+ *
+ * Square cards with four L-marks instead of a rounded border. The marks are
+ * amber so a feature card is visibly part of the same system as the signal
+ * meter and the drafted follow-up.
+ */
+.bracket-card {
+  position: relative;
+  border: 1px solid var(--color-rule);
+  background: var(--color-surface);
+}
+
+.bracket-card::before,
+.bracket-card::after,
+.bracket-card > .bracket-b::before,
+.bracket-card > .bracket-b::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: var(--color-signal);
+  border-style: solid;
+  border-width: 0;
+}
+
+.bracket-card::before {
+  top: -1px;
+  left: -1px;
+  border-top-width: 2px;
+  border-left-width: 2px;
+}
+
+.bracket-card::after {
+  top: -1px;
+  right: -1px;
+  border-top-width: 2px;
+  border-right-width: 2px;
+}
+
+.bracket-card > .bracket-b::before {
+  bottom: -1px;
+  left: -1px;
+  border-bottom-width: 2px;
+  border-left-width: 2px;
+}
+
+.bracket-card > .bracket-b::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
+}
+
+/*
+ * Diagonal hatching, from the comparison block.
+ *
+ * Marks the bars that are *not* the good outcome, so the one solid bar reads as
+ * the answer without needing a colour that means something else.
+ */
+.candy-stripe {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-sunken) 25%,
+    transparent 25.5%,
+    transparent 50%,
+    var(--color-sunken) 50.5%,
+    var(--color-sunken) 75%,
+    transparent 75.5%,
+    transparent
+  );
+  background-size: 10px 10px;
+  background-color: color-mix(in oklab, var(--color-sunken) 45%, transparent);
+}
+
+/* Masks a card's illustration so it dissolves rather than stopping at an edge. */
+.card-fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    125% 125% at 50% 0%,
+    transparent 40%,
+    var(--color-surface) 100%
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Motion — one orchestrated entrance, and nothing else.
+   -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   Dark landing page: spotlight and edge glow.
+
+   Depth here comes from light, not from shadow. A drop shadow on a near-black
+   ground is invisible; a radial gradient bleeding out of the top of the screen
+   is what makes the surface read as lit.
+   -------------------------------------------------------------------------- */
+
+/*
+ * The time rail, in the dark.
+ *
+ * This product is entirely about time around one meeting: research before it,
+ * answers during it, a recap after. The rail draws that literally — a spine with
+ * each moment pinned at its real offset — and it is the one thing on the page
+ * that could not have been designed for anything else.
+ */
+.rail-dark {
+  position: relative;
+  padding-left: 7rem;
+}
+
+.rail-dark::before {
+  content: "";
+  position: absolute;
+  left: 4.5rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.22) 8%,
+    rgba(255, 255, 255, 0.22) 92%,
+    transparent
+  );
+}
+
+/* The stamp sits in the gutter and titles the moment. */
+.rail-stamp {
+  position: absolute;
+  left: -7rem;
+  top: 0;
+  width: 3.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rail-dot {
+  position: absolute;
+  /* Straddles the spine: the line is at 3.5rem of a 5.5rem gutter, so the dot
+     sits 2rem back from the content edge, less half its own 9px width. */
+  left: calc(-2.5rem - 4.5px);
+  top: 0.45rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #09090b;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.rail-dot[data-live="true"] {
+  background: #34d399;
+  border-color: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+}
+
+@media (max-width: 640px) {
+  .rail-dark {
+    padding-left: 1.75rem;
+  }
+  .rail-dark::before {
+    left: 3px;
+  }
+  .rail-stamp {
+    position: static;
+    display: block;
+    width: auto;
+    text-align: left;
+    margin-bottom: 0.35rem;
+  }
+  .rail-dot {
+    left: -1.75rem;
+  }
+}
+
+/*
+ * The landing page entrance.
+ *
+ * CSS rather than a motion library, deliberately. The obvious implementation
+ * server-renders every child at `opacity: 0` and waits for JavaScript to reveal
+ * it, so a slow bundle or a hydration error leaves a blank page — which is
+ * exactly what happened. A keyframe with `both` fill runs without JavaScript
+ * and cannot strand content: worst case the animation is skipped and the text
+ * is simply there.
+ */
+@keyframes appear-blur {
+  from {
+    opacity: 0;
+    filter: blur(12px);
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+
+.appear-blur {
+  animation: appear-blur 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* Bars grow from the axis once the chart is reached. */
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.grow-y {
+  transform-origin: bottom;
+  animation: grow-y 0.9s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.42s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.pulse-live {
+  animation: pulse-live 1.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+
+# Env & secrets
+# `.env.production` is generated on the host from real keys and must never be
+# committable, even by accident. `.env.example` and `.env.test` are safe:
+# placeholders and a localhost URL respectively.
+.env
+.env.local
+.env.*.local
+.env.production
+.env.*.production
+*.pem
+service-account*.json
+
+# Infra
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+.originkit/

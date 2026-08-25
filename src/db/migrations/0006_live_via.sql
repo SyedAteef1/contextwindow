@@ -1,0 +1,1 @@
+ALTER TABLE "live_answers" ADD COLUMN "via" text;
