@@ -8,8 +8,9 @@
 import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { authEvents, oauthCredentials, users } from "@/db/schema";
+import { authEvents, oauthCredentials, users, workspaces } from "@/db/schema";
 import { decrypt, encrypt } from "@/lib/crypto";
+import { isConsumerDomain } from "@/lib/google/calendar";
 import { env, requireEnv } from "@/lib/env";
 
 const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -147,6 +148,26 @@ export async function upsertUserAndCredentials(
   });
   const isNewUser = !priorUser;
 
+  /*
+   * The workspace, derived rather than created by hand.
+   *
+   * Everyone at the same email domain lands in the same one, so the second rep
+   * from a company inherits its material instead of starting empty. Consumer
+   * domains would collapse every gmail user into one shared workspace, so those
+   * get their own keyed on the full address.
+   */
+  const workspaceDomain = isConsumerDomain(emailDomain)
+    ? profile.email.toLowerCase()
+    : emailDomain;
+  const [workspace] = await db
+    .insert(workspaces)
+    .values({
+      domain: workspaceDomain,
+      name: workspaceDomain.split(".")[0].replace(/^./, (c) => c.toUpperCase()),
+    })
+    .onConflictDoUpdate({ target: workspaces.domain, set: { updatedAt: new Date() } })
+    .returning();
+
   const [user] = await db
     .insert(users)
     .values({
@@ -155,6 +176,7 @@ export async function upsertUserAndCredentials(
       pictureUrl: profile.picture ?? null,
       googleSub: profile.sub,
       emailDomain,
+      workspaceId: workspace.id,
     })
     .onConflictDoUpdate({
       target: users.email,
@@ -163,6 +185,7 @@ export async function upsertUserAndCredentials(
         pictureUrl: profile.picture ?? null,
         googleSub: profile.sub,
         emailDomain,
+        workspaceId: workspace.id,
         updatedAt: new Date(),
       },
     })

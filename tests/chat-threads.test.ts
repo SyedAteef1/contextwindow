@@ -10,7 +10,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 
 const { db, sqlClient } = await import("@/db");
-const { accounts, users } = await import("@/db/schema");
+const { accounts, users, workspaces } = await import("@/db/schema");
 const {
   appendMessage,
   createThread,
@@ -21,7 +21,7 @@ const {
 } = await import("@/lib/chat-threads");
 
 beforeEach(async () => {
-  await db.execute(sql`truncate table ${users} restart identity cascade`);
+  await db.execute(sql`truncate table ${users}, ${workspaces} restart identity cascade`);
 });
 
 afterAll(async () => {

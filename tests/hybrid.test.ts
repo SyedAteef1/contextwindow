@@ -24,7 +24,7 @@ vi.mock("@/lib/embeddings", async () => {
 });
 
 const { db, sqlClient } = await import("@/db");
-const { accounts, users } = await import("@/db/schema");
+const { accounts, users, workspaces } = await import("@/db/schema");
 const { indexDocument, retrieveForAccount } = await import("@/lib/retrieval");
 
 const DIM = 1024;
@@ -49,9 +49,18 @@ async function seedAccount() {
     .insert(users)
     .values({ email: "rep@northstar.io", emailDomain: "northstar.io" })
     .returning();
+  const [workspace] = await db
+    .insert(workspaces)
+    .values({ name: "Northstar", domain: "northstar.io" })
+    .returning();
   const [account] = await db
     .insert(accounts)
-    .values({ ownerUserId: rep.id, companyName: "Cobalt", domain: "cobalt.io" })
+    .values({
+      ownerUserId: rep.id,
+      workspaceId: workspace.id,
+      companyName: "Cobalt",
+      domain: "cobalt.io",
+    })
     .returning();
   return account;
 }
@@ -60,7 +69,7 @@ beforeEach(async () => {
   embedForIndex.mockReset();
   embedForSearch.mockReset();
   sparseEnabled.mockReturnValue(true);
-  await db.execute(sql`truncate table ${users} restart identity cascade`);
+  await db.execute(sql`truncate table ${users}, ${workspaces} restart identity cascade`);
 });
 
 afterAll(async () => {
@@ -81,6 +90,7 @@ describe("hybrid retrieval", () => {
       { dense: blend(0, 1, 0.1), sparse: { indices: [7], values: [0.8] } },
     ]);
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "summary",
       sourceId: crypto.randomUUID(),
@@ -91,6 +101,7 @@ describe("hybrid retrieval", () => {
       { dense: axisVector(500), sparse: { indices: [4242], values: [0.95] } },
     ]);
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "transcript",
       sourceId: crypto.randomUUID(),
@@ -125,6 +136,7 @@ describe("hybrid retrieval", () => {
       { dense: axisVector(3), sparse: { indices: [0, 9], values: [0.5, 0.25] } },
     ]);
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "brief",
       sourceId: crypto.randomUUID(),
@@ -144,6 +156,7 @@ describe("hybrid retrieval", () => {
 
     embedForIndex.mockResolvedValue([{ dense: axisVector(3), sparse: null }]);
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "brief",
       sourceId: crypto.randomUUID(),
@@ -172,6 +185,7 @@ describe("hybrid retrieval", () => {
       { dense: axisVector(500), sparse: { indices: [4242], values: [0.95] } },
     ]);
     await indexDocument({
+      workspaceId: other.workspaceId!,
       accountId: other.id,
       sourceType: "transcript",
       sourceId: crypto.randomUUID(),

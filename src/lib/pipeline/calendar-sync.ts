@@ -67,10 +67,16 @@ async function upsertAccount(input: {
   });
   if (existing) return { id: existing.id, companyName: existing.companyName };
 
+  // The account inherits the rep's workspace, so the company's own material —
+  // pricing, security answers, case studies — is in scope for it from the
+  // first meeting rather than only after someone re-indexes.
+  const owner = await db.query.users.findFirst({ where: eq(users.id, input.ownerUserId) });
+
   const [created] = await db
     .insert(accounts)
     .values({
       ownerUserId: input.ownerUserId,
+      workspaceId: owner?.workspaceId ?? null,
       companyName: companyNameFromDomain(input.domain),
       domain: input.domain,
     })

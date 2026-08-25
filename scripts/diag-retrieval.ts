@@ -1,17 +1,19 @@
 import "dotenv/config";
 import { sql } from "drizzle-orm";
 import { db, sqlClient } from "@/db";
-import { users, accounts } from "@/db/schema";
+import { users, accounts, workspaces } from "@/db/schema";
 import { indexDocument, retrieveForAccount } from "@/lib/retrieval";
 
 async function main() {
   await db.execute(sql`truncate table ${users} restart identity cascade`);
   const [rep] = await db.insert(users).values({ email: "d@x.com", emailDomain: "x.com" }).returning();
-  const [acct] = await db.insert(accounts).values({ ownerUserId: rep.id, companyName: "C", domain: "c.io" }).returning();
+  const [ws] = await db.insert(workspaces).values({ name: "X", domain: "x.com" })
+    .onConflictDoUpdate({ target: workspaces.domain, set: { updatedAt: new Date() } }).returning();
+  const [acct] = await db.insert(accounts).values({ ownerUserId: rep.id, workspaceId: ws.id, companyName: "C", domain: "c.io" }).returning();
 
-  await indexDocument({ accountId: acct.id, sourceType: "summary", sourceId: crypto.randomUUID(),
+  await indexDocument({ workspaceId: ws.id, accountId: acct.id, sourceType: "summary", sourceId: crypto.randomUUID(),
     content: "Pricing was discussed at length; they pushed back on the per-seat model." });
-  await indexDocument({ accountId: acct.id, sourceType: "brief", sourceId: crypto.randomUUID(),
+  await indexDocument({ workspaceId: ws.id, accountId: acct.id, sourceType: "brief", sourceId: crypto.randomUUID(),
     content: "The company builds industrial monitoring software for manufacturers." });
 
   for (const q of [

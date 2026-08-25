@@ -13,13 +13,13 @@ vi.mock("@/lib/google/gmail", () => ({ sendEmail, bodyToHtml: (s: string) => s }
 vi.mock("@/lib/google/oauth", () => ({ getAccessTokenForUser: async () => "token" }));
 
 const { db, sqlClient } = await import("@/db");
-const { accounts, meetingBriefs, meetings, users } = await import("@/db/schema");
+const { accounts, meetingBriefs, meetings, users, workspaces } = await import("@/db/schema");
 const { sendBriefEmail, briefToPlainText } = await import("@/lib/brief-email");
 
 beforeEach(async () => {
   sendEmail.mockReset();
   sendEmail.mockResolvedValue({ id: "msg_1", threadId: "thr_1" });
-  await db.execute(sql`truncate table ${users} restart identity cascade`);
+  await db.execute(sql`truncate table ${users}, ${workspaces} restart identity cascade`);
 });
 
 afterAll(async () => {

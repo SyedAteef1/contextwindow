@@ -16,6 +16,7 @@ import {
   transcripts,
   usage,
   users,
+  workspaces,
   type SpeakerSegment,
 } from "@/db/schema";
 import { indexDocument, loadPlaybookSnippets, retrieveForAccount } from "@/lib/retrieval";
@@ -23,7 +24,7 @@ import { canProcessMeeting, currentPeriodStart, getUsage, incrementUsage, setFre
 
 async function resetDatabase() {
   // Cascades through every dependent table.
-  await db.execute(sql`truncate table ${users} restart identity cascade`);
+  await db.execute(sql`truncate table ${users}, ${workspaces} restart identity cascade`);
 }
 
 async function makeRep(email = "rep@northstar.io") {
@@ -35,9 +36,18 @@ async function makeRep(email = "rep@northstar.io") {
 }
 
 async function makeAccount(ownerUserId: string, companyName: string, domain: string) {
+  // Accounts belong to a workspace now; the fixture makes one per rep domain.
+  const [workspace] = await db
+    .insert(workspaces)
+    .values({ name: "Northstar", domain: `ws-${ownerUserId}.io` })
+    .onConflictDoNothing()
+    .returning();
+  const resolved =
+    workspace ??
+    (await db.query.workspaces.findFirst({ where: eq(workspaces.domain, `ws-${ownerUserId}.io`) }))!;
   const [account] = await db
     .insert(accounts)
-    .values({ ownerUserId, companyName, domain })
+    .values({ ownerUserId, workspaceId: resolved.id, companyName, domain })
     .returning();
   return account;
 }
@@ -68,6 +78,7 @@ describe("retrieval isolation", () => {
     const meridian = await makeAccount(rep.id, "Meridian Health", "meridian.org");
 
     await indexDocument({
+      workspaceId: cobalt.workspaceId!,
       accountId: cobalt.id,
       sourceType: "transcript",
       sourceId: crypto.randomUUID(),
@@ -75,6 +86,7 @@ describe("retrieval isolation", () => {
         "Marcus said they cannot sign without a current SOC 2 Type II report. Finance is worried about the migration timeline after a nine month overrun.",
     });
     await indexDocument({
+      workspaceId: meridian.workspaceId!,
       accountId: meridian.id,
       sourceType: "transcript",
       sourceId: crypto.randomUUID(),
@@ -109,12 +121,14 @@ describe("retrieval isolation", () => {
     const account = await makeAccount(rep.id, "Cobalt", "cobalt.io");
 
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "summary",
       sourceId: crypto.randomUUID(),
       content: "Pricing was discussed at length; they pushed back on the per-seat model.",
     });
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "brief",
       sourceId: crypto.randomUUID(),
@@ -134,6 +148,7 @@ describe("retrieval isolation", () => {
     const account = await makeAccount(rep.id, "Cobalt", "cobalt.io");
 
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "summary",
       sourceId: crypto.randomUUID(),
@@ -152,12 +167,14 @@ describe("retrieval isolation", () => {
     const sourceId = crypto.randomUUID();
 
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "summary",
       sourceId,
       content: "First version of the summary mentioning apples.",
     });
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "summary",
       sourceId,
@@ -181,12 +198,14 @@ describe("retrieval isolation", () => {
     const account = await makeAccount(rep.id, "Cobalt", "cobalt.io");
 
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "transcript",
       sourceId: crypto.randomUUID(),
       content: "Transcript content about pricing negotiations.",
     });
     await indexDocument({
+      workspaceId: account.workspaceId!,
       accountId: account.id,
       sourceType: "brief",
       sourceId: crypto.randomUUID(),

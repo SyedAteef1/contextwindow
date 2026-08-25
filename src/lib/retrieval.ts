@@ -19,7 +19,14 @@ import {
 import { env } from "./env";
 
 export type IndexInput = {
-  accountId: string;
+  /** The selling company. Required: every chunk belongs to one. */
+  workspaceId: string;
+  /**
+   * The prospect this chunk is about, when it is about one. Null for the
+   * seller's own material — product, pricing, positioning — which belongs to
+   * the workspace and should surface for every account.
+   */
+  accountId?: string | null;
   sourceType: SourceType;
   sourceId: string;
   content: string;
@@ -49,7 +56,8 @@ export async function indexDocument(input: IndexInput): Promise<number> {
 
   await db.insert(embeddings).values(
     chunks.map((chunk, i) => ({
-      accountId: input.accountId,
+      workspaceId: input.workspaceId,
+      accountId: input.accountId ?? null,
       sourceType: input.sourceType,
       sourceId: input.sourceId,
       chunkIndex: chunk.index,
@@ -88,24 +96,42 @@ export type RetrievedChunk = {
   meta: Record<string, unknown> | null;
 };
 
+export type RetrievalScope = {
+  /** The prospect's own history. */
+  accountId: string;
+  /**
+   * The seller's material, searched alongside it.
+   *
+   * Passing this is what lets "what do we usually offer at this stage" work:
+   * without it retrieval can only see what was said *to* this buyer, which is
+   * half of what a rep needs mid-call.
+   */
+  workspaceId?: string | null;
+};
+
 /**
- * Top-k chunks for a query within one account.
+ * Top-k chunks for a query, across one account and its workspace.
  *
- * `minSimilarity` keeps unrelated chunks out of the prompt: on a question the
- * account history simply can't answer, it is better to retrieve nothing and let
- * the agent say so than to hand it the least-bad match.
+ * `minSimilarity` keeps unrelated chunks out of the prompt: on a question
+ * neither the account history nor the workspace can answer, it is better to
+ * retrieve nothing and let the agent say so than to hand it the least-bad
+ * match.
  */
 export async function retrieveForAccount(
-  accountId: string,
+  scope: string | RetrievalScope,
   query: string,
   options: { topK?: number; minSimilarity?: number; sourceTypes?: SourceType[] } = {},
 ): Promise<RetrievedChunk[]> {
+  // A bare string stays valid so every existing call site keeps working; it
+  // simply searches the account alone, as it always did.
+  const accountId = typeof scope === "string" ? scope : scope.accountId;
+  const workspaceId = typeof scope === "string" ? null : (scope.workspaceId ?? null);
   const topK = options.topK ?? env().RETRIEVAL_TOP_K;
   const minSimilarity = options.minSimilarity ?? defaultMinSimilarity();
 
   const embedded = await embedForSearch(query);
 
-  const dense = await denseSearch(accountId, embedded.dense, {
+  const dense = await denseSearch({ accountId, workspaceId }, embedded.dense, {
     topK,
     minSimilarity,
     sourceTypes: options.sourceTypes,
@@ -115,7 +141,7 @@ export async function retrieveForAccount(
 
   if (!embedded.sparse || !sparseEnabled()) return dense;
 
-  const sparse = await sparseSearch(accountId, toSparseLiteral(embedded.sparse), {
+  const sparse = await sparseSearch({ accountId, workspaceId }, toSparseLiteral(embedded.sparse), {
     limit: topK * 3,
     sourceTypes: options.sourceTypes,
   });
@@ -125,7 +151,7 @@ export async function retrieveForAccount(
 
 /** Cosine-distance search over the dense column. */
 async function denseSearch(
-  accountId: string,
+  scope: { accountId: string; workspaceId: string | null },
   queryVector: number[],
   options: {
     topK: number;
@@ -149,8 +175,15 @@ async function denseSearch(
     .from(embeddings)
     .where(
       and(
-        // The isolation boundary.
-        eq(embeddings.accountId, accountId),
+        // The isolation boundary: this prospect's chunks, plus the seller's own
+        // material, which carries no account and belongs to everyone in the
+        // workspace. Another account's chunks match neither.
+        scope.workspaceId
+          ? or(
+              eq(embeddings.accountId, scope.accountId),
+              and(isNull(embeddings.accountId), eq(embeddings.workspaceId, scope.workspaceId)),
+            )
+          : eq(embeddings.accountId, scope.accountId),
         gt(similarity, options.minSimilarity),
         options.sourceTypes?.length
           ? or(...options.sourceTypes.map((type) => eq(embeddings.sourceType, type)))
@@ -171,7 +204,7 @@ async function denseSearch(
  * filter is bound as a parameter, exactly as in the dense path.
  */
 async function sparseSearch(
-  accountId: string,
+  scope: { accountId: string; workspaceId: string | null },
   querySparse: string,
   options: { limit: number; sourceTypes?: SourceType[] },
 ): Promise<RetrievedChunk[]> {
@@ -199,7 +232,11 @@ async function sparseSearch(
            meta,
            (sparse_vector <#> ${querySparse}::sparsevec) * -1 as score
       from embeddings
-     where account_id = ${accountId}
+     where ${
+       scope.workspaceId
+         ? sql`(account_id = ${scope.accountId} or (account_id is null and workspace_id = ${scope.workspaceId}))`
+         : sql`account_id = ${scope.accountId}`
+     }
        and sparse_vector is not null
        ${typeFilter}
      order by sparse_vector <#> ${querySparse}::sparsevec

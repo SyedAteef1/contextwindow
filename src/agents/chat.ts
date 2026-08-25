@@ -18,6 +18,7 @@ import {
   retrieveForAccount,
   type RetrievedChunk,
 } from "@/lib/retrieval";
+import { workspaceIdForAccount } from "@/lib/workspace";
 import { CHAT_SYSTEM } from "./prompts";
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
@@ -116,9 +117,14 @@ async function prepare(input: {
   const recent = (input.history ?? []).slice(-4).map((turn) => turn.content);
   const retrievalQuery = [...recent, input.question].join("\n");
 
-  const chunks = await retrieveForAccount(input.accountId, retrievalQuery, {
-    topK: input.topK ?? env().RETRIEVAL_TOP_K,
-  });
+  // Both sides: this buyer's history, and what we sell. Searching the account
+  // alone was the ceiling on every answer — a rep could ask what they said, but
+  // never what we offer.
+  const chunks = await retrieveForAccount(
+    { accountId: input.accountId, workspaceId: await workspaceIdForAccount(input.accountId) },
+    retrievalQuery,
+    { topK: input.topK ?? env().RETRIEVAL_TOP_K },
+  );
 
   const playbook = owner
     ? formatPlaybook(

@@ -85,6 +85,7 @@ export const deliverableTypeEnum = pgEnum("deliverable_type", [
 ]);
 
 export const sourceTypeEnum = pgEnum("source_type", [
+  "workspace_doc",
   "transcript",
   "brief",
   "summary",
@@ -103,6 +104,66 @@ export const proposalStatusEnum = pgEnum("proposal_status", [
 // --------------------------------------------------------------------------
 
 /** A sales rep. Their email domain defines what counts as an *external* attendee. */
+/**
+ * The company doing the selling.
+ *
+ * Everything above this point belonged to an individual rep, which meant the
+ * seller's own material — what you sell, how it is priced, how you position it
+ * — had nowhere to live that a second rep could share. It also meant retrieval
+ * could only ever find what was said *to* a prospect, never anything about the
+ * product being sold.
+ *
+ * Derived from the email domain on first sign-in, so nobody has to create one.
+ */
+export const workspaces = pgTable(
+  "workspaces",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    /** The email domain that maps to this workspace: `contravault.com`. */
+    domain: text("domain").notNull(),
+    /** What this company sells, in their own words. Indexed for retrieval. */
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("uq_workspaces_domain").on(t.domain)],
+);
+
+export const workspaceDocKindEnum = pgEnum("workspace_doc_kind", [
+  "product",
+  "pricing",
+  "positioning",
+  "case_study",
+  "objection",
+  "other",
+]);
+
+/**
+ * The seller's own material.
+ *
+ * Distinct from `playbook_snippets`, which are short instructions injected into
+ * prompts wholesale. These are documents: long enough to need retrieving from,
+ * and indexed into the same vector store as call history so one question can
+ * draw on both what you sell and what this buyer already said.
+ */
+export const workspaceDocuments = pgTable(
+  "workspace_documents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    kind: workspaceDocKindEnum("kind").notNull().default("other"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("ix_workspace_docs").on(t.workspaceId, t.isActive)],
+);
+
 export const users = pgTable(
   "users",
   {
@@ -113,6 +174,8 @@ export const users = pgTable(
     googleSub: text("google_sub"),
     /** Cached from the email; classifies attendees as internal vs external. */
     emailDomain: text("email_domain").notNull(),
+    /** The selling company this rep belongs to. */
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
     defaultDeliverableType: deliverableTypeEnum("default_deliverable_type")
       .notNull()
       .default("plain_summary"),
@@ -154,6 +217,14 @@ export const accounts = pgTable(
   "accounts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    /**
+     * Denormalised from the owner's workspace.
+     *
+     * Every indexing path already holds an account; making them each join
+     * through the owner to find the workspace would put a query in front of
+     * every write for a value that never changes.
+     */
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
     ownerUserId: uuid("owner_user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -373,9 +444,14 @@ export const embeddings = pgTable(
   "embeddings",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    accountId: uuid("account_id")
-      .notNull()
-      .references(() => accounts.id, { onDelete: "cascade" }),
+    /**
+     * Every chunk belongs to a workspace. Only chunks about a prospect belong
+     * to an account — which is the change that lets the seller's own material
+     * be embedded at all. While this was `NOT NULL`, retrieval could only ever
+     * find what was said *to* one company, never anything about the product.
+     */
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }),
     sourceType: sourceTypeEnum("source_type").notNull(),
     sourceId: uuid("source_id").notNull(),
     chunkIndex: integer("chunk_index").notNull().default(0),
@@ -734,3 +810,6 @@ export type ChatThread = typeof chatThreads.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 
 export type AuthEvent = typeof authEvents.$inferSelect;
+
+export type Workspace = typeof workspaces.$inferSelect;
+export type WorkspaceDocument = typeof workspaceDocuments.$inferSelect;

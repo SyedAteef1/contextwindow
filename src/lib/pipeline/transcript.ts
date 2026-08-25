@@ -11,6 +11,7 @@ import { db } from "@/db";
 import { meetings, transcripts, type SpeakerSegment } from "@/db/schema";
 import { botProvider, segmentsToRawText } from "@/lib/bots";
 import { indexDocument } from "@/lib/retrieval";
+import { workspaceIdForAccount } from "@/lib/workspace";
 import { canProcessMeeting } from "@/lib/usage";
 import { runWrapup } from "@/agents/wrapup";
 
@@ -81,6 +82,7 @@ export async function ingestTranscript(input: {
     .where(eq(meetings.id, meeting.id));
 
   const chunksIndexed = await indexDocument({
+    workspaceId: await workspaceIdForAccount(meeting.accountId),
     accountId: meeting.accountId,
     sourceType: "transcript",
     sourceId: transcript.id,

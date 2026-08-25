@@ -18,6 +18,7 @@ import {
 } from "@/db/schema";
 import { runText } from "@/lib/llm";
 import { formatPlaybook, indexDocument, loadPlaybookSnippets } from "@/lib/retrieval";
+import { workspaceIdForAccount } from "@/lib/workspace";
 import { RESEARCH_SYSTEM } from "./prompts";
 import { sendBriefEmail } from "@/lib/brief-email";
 import { precomputeAnswers } from "./precompute";
@@ -190,6 +191,7 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
   let chunksIndexed = 0;
   try {
     chunksIndexed = await indexDocument({
+      workspaceId: await workspaceIdForAccount(account.id),
       accountId: account.id,
       sourceType: "brief",
       sourceId: brief.id,

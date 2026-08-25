@@ -40,6 +40,7 @@ const {
   meetings,
   transcripts,
   users,
+  workspaces,
 } = await import("@/db/schema");
 const { runWrapup } = await import("@/agents/wrapup");
 const { generateMeetingBrief } = await import("@/agents/research");
@@ -144,7 +145,7 @@ async function seedTranscript(meetingId: string) {
 beforeEach(async () => {
   runText.mockReset();
   runStructured.mockReset();
-  await db.execute(sql`truncate table ${users} restart identity cascade`);
+  await db.execute(sql`truncate table ${users}, ${workspaces} restart identity cascade`);
 });
 
 afterAll(async () => {

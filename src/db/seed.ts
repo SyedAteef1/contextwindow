@@ -23,6 +23,7 @@ import {
   transcripts,
   usage,
   users,
+  workspaces,
   type IntentSignals,
   type SpeakerSegment,
 } from "./schema";
@@ -174,10 +175,23 @@ No public information was found on their current vendor landscape or on recent p
 async function main() {
   console.log("Seeding…");
 
+  // The selling company. Everything else hangs off it.
+  const [workspace] = await db
+    .insert(workspaces)
+    .values({
+      name: "Northstar",
+      domain: "northstar.io",
+      description:
+        "Northstar sells a revenue-intelligence platform to mid-market sales teams. Priced per seat, annual contracts, with a security review typically required above 50 seats.",
+    })
+    .onConflictDoUpdate({ target: workspaces.domain, set: { updatedAt: new Date() } })
+    .returning();
+
   const [rep] = await db
     .insert(users)
     .values({
       email: REP_EMAIL,
+      workspaceId: workspace.id,
       name: "Sam Okonkwo",
       emailDomain: "northstar.io",
       defaultDeliverableType: "plain_summary",
@@ -399,6 +413,7 @@ async function main() {
   // --- Index everything so the chat agent has something to retrieve --------
   let chunks = 0;
   chunks += await indexDocument({
+    workspaceId: workspace.id,
     accountId: cobalt.id,
     sourceType: "transcript",
     sourceId: transcript.id,
@@ -406,6 +421,7 @@ async function main() {
     meta: { meetingId: pastMeeting.id, scheduledAt: pastMeeting.scheduledAt.toISOString(), label: `Transcript — ${pastMeeting.scheduledAt.toISOString().slice(0, 10)}` },
   });
   chunks += await indexDocument({
+    workspaceId: workspace.id,
     accountId: cobalt.id,
     sourceType: "summary",
     sourceId: summary.id,
@@ -418,6 +434,7 @@ async function main() {
     [meridianBrief, meridian.id, meridianMeeting],
   ] as const) {
     chunks += await indexDocument({
+      workspaceId: workspace.id,
       accountId,
       sourceType: "brief",
       sourceId: brief.id,

@@ -28,6 +28,7 @@ import {
 } from "@/db/schema";
 import { runStructured, runText } from "@/lib/llm";
 import { formatPlaybook, indexDocument, loadPlaybookSnippets } from "@/lib/retrieval";
+import { workspaceIdForAccount } from "@/lib/workspace";
 import { incrementUsage } from "@/lib/usage";
 import {
   FOLLOWUP_EMAIL_SYSTEM,
@@ -298,6 +299,7 @@ export async function runWrapup(meetingId: string): Promise<WrapupResult> {
     .returning();
 
   const chunksIndexed = await indexDocument({
+    workspaceId: await workspaceIdForAccount(account.id),
     accountId: account.id,
     sourceType: "summary",
     sourceId: summaryRow.id,

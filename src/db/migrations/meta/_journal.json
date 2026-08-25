@@ -78,6 +78,13 @@
       "when": 1787481099553,
       "tag": "0010_brief_emailed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787481099554,
+      "tag": "0011_workspaces",
+      "breakpoints": true
     }
   ]
 }
