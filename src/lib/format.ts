@@ -12,9 +12,10 @@ import type { DealStage, MeetingStatus } from "@/db/schema";
 /** Fixed so server and client produce byte-identical strings. */
 const LOCALE = "en-GB";
 
-export function clockTime(date: Date | string): string {
+export function clockTime(date: Date | string, timeZone?: string | null): string {
   const value = typeof date === "string" ? new Date(date) : date;
   return value.toLocaleTimeString(LOCALE, {
+    timeZone: timeZone || undefined,
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -27,16 +28,44 @@ export function dateTime(date: Date | string): string {
   return `${shortDate(value)}, ${clockTime(value)}`;
 }
 
-export function dayLabel(date: Date | string): string {
+/**
+ * The calendar day a meeting falls on, in the reader's timezone.
+ *
+ * `YYYY-MM-DD`, which sorts lexically and is unambiguous. This has to agree
+ * with the clock time shown beside it: the server runs in UTC, so grouping by
+ * its own idea of the date files an 04:00 call under the previous day and
+ * prints 04:00 next to it, which is what makes a list look shuffled.
+ */
+export function dayKey(date: Date | string, timeZone?: string | null): string {
   const value = typeof date === "string" ? new Date(date) : date;
-  const today = new Date();
-  const tomorrow = new Date(today.getTime() + 86_400_000);
+  // en-CA is ISO-ordered, so this is a date key rather than a formatted date.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: timeZone || undefined,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(value);
+}
 
-  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-  if (sameDay(value, today)) return "Today";
-  if (sameDay(value, tomorrow)) return "Tomorrow";
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+export function dayLabel(date: Date | string, timeZone?: string | null): string {
+  // A bare `YYYY-MM-DD` is already the calendar date we want to name, so it is
+  // formatted in UTC rather than converted again. Round-tripping it through a
+  // timestamp would shift the date in zones beyond UTC+12.
+  const isKey = typeof date === "string" && DATE_KEY.test(date);
+  const value = isKey ? new Date(`${date}T00:00:00Z`) : typeof date === "string" ? new Date(date) : date;
+  const zone = isKey ? "UTC" : timeZone || undefined;
+  const key = isKey ? date : dayKey(value, timeZone);
+
+  // "Today" is relative to the reader too, not to the server.
+  const now = new Date();
+  if (key === dayKey(now, timeZone)) return "Today";
+  if (key === dayKey(new Date(now.getTime() + 86_400_000), timeZone)) return "Tomorrow";
+  if (key === dayKey(new Date(now.getTime() - 86_400_000), timeZone)) return "Yesterday";
 
   return value.toLocaleDateString(LOCALE, {
+    timeZone: zone,
     weekday: "long",
     day: "numeric",
     month: "long",

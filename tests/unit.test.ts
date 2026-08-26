@@ -14,7 +14,7 @@ import { currentPeriodStart } from "@/lib/usage";
 import { mapAttendeeState } from "@/lib/bots/attendee";
 import { decrypt, encrypt, timingSafeEqualString } from "@/lib/crypto";
 import { ConfigurationError, requireEnv, resetEnvCache } from "@/lib/env";
-import { signalStrength, nodeState, relativeDay, trimCompanyPrefix } from "@/lib/format";
+import { clockTime, dayKey, dayLabel, signalStrength, nodeState, relativeDay, trimCompanyPrefix } from "@/lib/format";
 
 describe("chunkText", () => {
   it("returns a single chunk for short text", () => {
@@ -382,6 +382,34 @@ describe("relativeDay", () => {
   it("counts further out in both directions", () => {
     expect(relativeDay(new Date("2026-08-28T09:00:00"), now)).toBe("in 7 days");
     expect(relativeDay(new Date("2026-08-14T09:00:00"), now)).toBe("7 days ago");
+  });
+});
+
+describe("day grouping across timezones", () => {
+  // 22:30 UTC on the 21st is 04:00 on the 22nd in Kolkata. The heading and the
+  // clock time beside it have to agree, or the list reads as shuffled.
+  const lateUtc = "2026-08-21T22:30:00Z";
+
+  it("files a call under the reader's date, not the server's", () => {
+    expect(dayKey(lateUtc, "UTC")).toBe("2026-08-21");
+    expect(dayKey(lateUtc, "Asia/Kolkata")).toBe("2026-08-22");
+  });
+
+  it("shows a clock time that matches the day it was filed under", () => {
+    expect(clockTime(lateUtc, "Asia/Kolkata")).toBe("04:00");
+    expect(dayKey(lateUtc, "Asia/Kolkata")).toBe("2026-08-22");
+  });
+
+  it("names a bare date key without shifting it", () => {
+    // The key is already the right calendar date; converting it again would
+    // move it in zones beyond UTC+12.
+    expect(dayLabel("2026-08-22", "Pacific/Kiritimati")).toContain("22 August");
+    expect(dayLabel("2026-08-22", "Pacific/Midway")).toContain("22 August");
+  });
+
+  it("still says Today in the reader's zone", () => {
+    const now = new Date();
+    expect(dayLabel(dayKey(now, "Asia/Kolkata"), "Asia/Kolkata")).toBe("Today");
   });
 });
 

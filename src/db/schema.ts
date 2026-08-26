@@ -187,6 +187,15 @@ export const users = pgTable(
     googleSub: text("google_sub"),
     /** Cached from the email; classifies attendees as internal vs external. */
     emailDomain: text("email_domain").notNull(),
+    /**
+     * The rep's IANA timezone, captured from their browser.
+     *
+     * Needed because the server renders in UTC: without it, grouping calls by
+     * day files a 04:00 meeting under the previous date while still printing
+     * 04:00, which reads as jumbled. Also what makes "tomorrow at 10:30" in an
+     * email mean their tomorrow rather than the server's.
+     */
+    timezone: text("timezone"),
     /** The selling company this rep belongs to. */
     workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
     defaultDeliverableType: deliverableTypeEnum("default_deliverable_type")

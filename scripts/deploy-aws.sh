@@ -158,14 +158,20 @@ echo "    written to the host"
 step "Building the image on the host"
 # Built on the host so the architecture matches; building here would produce
 # arm64 for an x86 machine.
-remote 'set -eux; cd /opt/sales-intel/app && docker build -t sales-intel:latest .'
+# BuildKit is what makes the cache mounts in the Dockerfile work; without it
+# they are silently ignored and every build reinstalls from scratch.
+remote 'set -eux; cd /opt/sales-intel/app && DOCKER_BUILDKIT=1 docker build -t sales-intel:latest .'
 
 step "Applying database migrations"
 # Run from the build stage, which still has the full dependency tree and tsx.
 # The runtime image deliberately does not — it only carries what the app needs
 # to serve requests.
+#
+# Tagged out of the same build as the app image rather than built again: every
+# layer is already in the cache, but a second `docker build` still re-resolves
+# the whole graph, which is minutes on a 2-vCPU host.
 remote 'set -eux; cd /opt/sales-intel/app \
-  && docker build --target build -t sales-intel:build . \
+  && DOCKER_BUILDKIT=1 docker build --target build -t sales-intel:build . \
   && docker run --rm --network host \
        -e DATABASE_URL="postgres://sales:sales@localhost:5432/sales_intel" \
        sales-intel:build npx tsx src/db/migrate.ts'

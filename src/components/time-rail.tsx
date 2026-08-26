@@ -10,7 +10,7 @@ import { Fragment } from "react";
 import Link from "next/link";
 
 import { Pill, LiveDot, SignalMeter } from "./ui";
-import { clockTime, dayLabel, nodeState, statusLabel, trimCompanyPrefix } from "@/lib/format";
+import { clockTime, dayKey, dayLabel, nodeState, statusLabel, trimCompanyPrefix } from "@/lib/format";
 import type { DealStage, MeetingStatus } from "@/db/schema";
 
 export type RailMeeting = {
@@ -36,14 +36,20 @@ function statusTone(status: MeetingStatus) {
   return "quiet" as const;
 }
 
-function MeetingNode({ meeting }: { meeting: RailMeeting }) {
+function MeetingNode({
+  meeting,
+  timeZone,
+}: {
+  meeting: RailMeeting;
+  timeZone?: string | null;
+}) {
   const state = nodeState(meeting.status);
   const isPast = meeting.hasSummary || meeting.status === "processed";
 
   return (
     <li className="rail-node" data-state={state}>
       <time className="rail-time" dateTime={meeting.scheduledAt}>
-        {clockTime(meeting.scheduledAt)}
+        {clockTime(meeting.scheduledAt, timeZone)}
       </time>
 
       <Link
@@ -110,14 +116,23 @@ function NowMarker({ at }: { at: Date }) {
  * Group meetings by calendar day, then drop the NOW marker into today's group
  * at the point the current time falls.
  */
-export function TimeRail({ meetings, now }: { meetings: RailMeeting[]; now: Date }) {
+export function TimeRail({
+  meetings,
+  now,
+  timeZone,
+}: {
+  meetings: RailMeeting[];
+  now: Date;
+  /** The reader's zone. Without it the server groups by its own, which is UTC. */
+  timeZone?: string | null;
+}) {
   const days = new Map<string, RailMeeting[]>();
   for (const meeting of meetings) {
-    const key = new Date(meeting.scheduledAt).toDateString();
+    const key = dayKey(meeting.scheduledAt, timeZone);
     days.set(key, [...(days.get(key) ?? []), meeting]);
   }
 
-  const todayKey = now.toDateString();
+  const todayKey = dayKey(now, timeZone);
 
   return (
     <div className="space-y-10">
@@ -132,7 +147,7 @@ export function TimeRail({ meetings, now }: { meetings: RailMeeting[]; now: Date
           <section key={key} className="rise" style={{ animationDelay: `${dayIndex * 55}ms` }}>
             <div className="mb-3.5 flex items-baseline gap-3">
               <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.08em] text-ink">
-                {dayLabel(key)}
+                {dayLabel(key, timeZone)}
               </h2>
               <span className="h-px flex-1 bg-rule" aria-hidden />
               <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-faint">
@@ -144,7 +159,7 @@ export function TimeRail({ meetings, now }: { meetings: RailMeeting[]; now: Date
               {dayMeetings.map((meeting, index) => (
                 <Fragment key={meeting.id}>
                   {index === nowIndex && <NowMarker at={now} />}
-                  <MeetingNode meeting={meeting} />
+                  <MeetingNode meeting={meeting} timeZone={timeZone} />
                 </Fragment>
               ))}
               {/* Every call today is already behind us. */}

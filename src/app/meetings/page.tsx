@@ -4,6 +4,7 @@ import { Page, PageHead } from "@/components/chrome";
 import { MeetingsSidebar } from "@/components/meetings-sidebar";
 import { SyncButton } from "@/components/sync-button";
 import { TimeRail } from "@/components/time-rail";
+import { TimezoneSync } from "@/components/timezone-sync";
 import { Empty, Pill } from "@/components/ui";
 import {
   currentUser,
@@ -33,6 +34,8 @@ export default async function MeetingsPage() {
 
   return (
     <Page current="meetings" sidebar={<MeetingsSidebar companies={split.companies} />}>
+      {/* Renders nothing; tells the server which zone to group days in. */}
+      <TimezoneSync current={user.timezone} />
       <PageHead
         eyebrow={`Signed in as ${user.email}`}
         title="Your calls"
@@ -119,7 +122,7 @@ export default async function MeetingsPage() {
           checked. Each one gets a brief before the call and a summary after it.
         </Empty>
       ) : (
-        <TimeRail meetings={ordered} now={now} />
+        <TimeRail meetings={ordered} now={now} timeZone={user.timezone} />
       )}
 
       {ordered.length > 0 && (
