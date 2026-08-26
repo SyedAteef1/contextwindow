@@ -67,8 +67,10 @@ export function bodyToHtml(body: string): string {
 export type SendEmailInput = {
   to: string[];
   subject: string;
-  /** Plain text. The HTML alternative is derived from it. */
+  /** Plain text. Always sent, and all some clients will render. */
   body: string;
+  /** The HTML alternative. Derived from `body` when not supplied. */
+  html?: string;
   cc?: string[];
   /** Set to keep the recap in an existing Gmail thread. */
   threadId?: string;
@@ -106,7 +108,7 @@ export async function sendEmail(
     `--${boundary}`,
     "Content-Type: text/html; charset=UTF-8",
     "",
-    bodyToHtml(input.body),
+    input.html ?? bodyToHtml(input.body),
     "",
     `--${boundary}--`,
   ].join("\r\n");

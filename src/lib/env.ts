@@ -169,6 +169,30 @@ const schema = z.object({
     .default("true")
     .transform((value) => value === "true"),
 
+  // --- Outbound mail -----------------------------------------------------
+  /**
+   * Who the mail comes from.
+   *
+   * `gmail` sends through the rep's own mailbox using their OAuth grant, so a
+   * reply reaches a human and the message sits in their Sent folder. `smtp`
+   * sends from a company address instead, which is what you want for anything
+   * that should look like it came from the business rather than a person.
+   */
+  MAIL_PROVIDER: z.enum(["gmail", "smtp"]).default("gmail"),
+  /** e.g. `Context Window <sales@contextwindowhq.com>`. Required for smtp. */
+  MAIL_FROM: z.string().optional(),
+  /** Where replies should land, when that is not the From address. */
+  MAIL_REPLY_TO: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(465),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  /** Implicit TLS on 465; STARTTLS on 587. Derived from the port by default. */
+  SMTP_SECURE: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === "true")),
+
   CALENDAR_LOOKAHEAD_DAYS: z.coerce.number().int().positive().default(14),
 
   // --- Meeting bot -------------------------------------------------------

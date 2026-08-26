@@ -14,8 +14,8 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { accounts, meetingBriefs, meetings, users } from "@/db/schema";
 import { env } from "@/lib/env";
-import { sendEmail } from "@/lib/google/gmail";
-import { getAccessTokenForUser } from "@/lib/google/oauth";
+import { sendMail } from "@/lib/mail";
+import { markdownToBlocks, renderEmail } from "@/lib/mail/template";
 
 /**
  * Markdown, flattened for mail.
@@ -112,11 +112,24 @@ export async function sendBriefEmail(meetingId: string): Promise<BriefEmailResul
   if (!claimed) return { sent: false, reason: "already emailed" };
 
   try {
-    const accessToken = await getAccessTokenForUser(owner.id);
-    const message = await sendEmail(accessToken, {
+    const when = whenLine(meeting.scheduledAt);
+    const message = await sendMail(owner.id, {
       to: [owner.email],
-      subject: `Brief — ${company}, ${whenLine(meeting.scheduledAt)}`,
-      body,
+      subject: `Brief — ${company}, ${when}`,
+      text: body,
+      html: renderEmail({
+        eyebrow: "Ready before the call",
+        title: `${company} — ${when}`,
+        // The inbox preview should say what is in the brief, not repeat the
+        // subject line the reader has already read.
+        preheader: `Everything we know about ${company} before you dial in.`,
+        blocks: markdownToBlocks(brief.content),
+        action: {
+          label: "Open the brief",
+          url: `${env().APP_URL}/meetings/${meeting.id}`,
+        },
+        footer: `Sent because a brief was written for your call with ${company}. Nothing here has been sent to anyone at ${company}.`,
+      }),
     });
     return { sent: true, messageId: message.id };
   } catch (error) {

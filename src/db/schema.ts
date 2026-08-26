@@ -154,6 +154,16 @@ export const workspaceDocuments = pgTable(
     workspaceId: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
+    /**
+     * The company this document is about, when it is about one.
+     *
+     * Null means it is the seller's own material and applies to every prospect
+     * — pricing, security, positioning. Set means it belongs to one account:
+     * their org chart, their procurement rules, the notes from a site visit.
+     * Retrieval already unions the two, so the same document store serves both
+     * "what do we sell" and "what do we know about them".
+     */
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
     content: text("content").notNull(),
     kind: workspaceDocKindEnum("kind").notNull().default("other"),
@@ -161,7 +171,10 @@ export const workspaceDocuments = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("ix_workspace_docs").on(t.workspaceId, t.isActive)],
+  (t) => [
+    index("ix_workspace_docs").on(t.workspaceId, t.isActive),
+    index("ix_workspace_docs_account").on(t.accountId, t.isActive),
+  ],
 );
 
 export const users = pgTable(

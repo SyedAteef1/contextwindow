@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AccountKnowledge } from "@/components/account-knowledge";
 import { ChatPanel } from "@/components/chat-panel";
 import { Page } from "@/components/chrome";
 import { BackLink, Card, Eyebrow, Pill, SignalMeter } from "@/components/ui";
@@ -12,6 +13,7 @@ import {
   trimCompanyPrefix,
 } from "@/lib/format";
 import { currentUser, loadAccountDetail } from "@/lib/queries";
+import { listAccountDocuments } from "@/lib/workspace-docs";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
   if (!detail) notFound();
 
   const { account, contacts, history, usage } = detail;
+  const knowledge = await listAccountDocuments(account.id);
   const processed = history.filter((meeting) => meeting.summaryId);
 
   return (
@@ -68,6 +71,17 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
         </section>
 
         <div className="space-y-9 lg:order-1">
+          <AccountKnowledge
+            accountId={account.id}
+            companyName={account.companyName}
+            initial={knowledge.map((doc) => ({
+              id: doc.id,
+              title: doc.title,
+              content: doc.content,
+              kind: doc.kind,
+            }))}
+          />
+
           <section>
             <SectionHead label="Call history" aside={`${history.length} total`} />
             {history.length === 0 ? (
