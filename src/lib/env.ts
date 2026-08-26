@@ -171,10 +171,22 @@ const schema = z.object({
 
   // --- Notifications -----------------------------------------------------
   /**
-   * A Slack incoming webhook, which is the fastest way to hear about a sign-up.
-   * One URL from Slack's own UI — no OAuth, no app review — and it reaches a
-   * phone in seconds. Create it under Slack apps → Incoming Webhooks.
+   * Post into a named channel with the bot token.
+   *
+   * Preferred over a webhook: a webhook is welded to whichever channel was
+   * picked when it was created, so moving the alerts means re-issuing the URL.
+   * A channel id can be changed here. The bot needs `chat:write` and has to be
+   * invited to the channel — Slack will not post into a room it is not in.
    */
+  SLACK_BOT_TOKEN: z.string().optional(),
+  SLACK_CHANNEL_ID: z.string().optional(),
+  /**
+   * Who to tag, so the alert is a notification rather than a message in a room
+   * nobody has open. A member id (`U…`, from Slack profile → Copy member ID),
+   * or `!here` / `!channel` for the whole room.
+   */
+  SLACK_MENTION: z.string().optional(),
+  /** A webhook still works where there is no bot token. */
   SLACK_WEBHOOK_URL: z.string().url().optional(),
   /** Where sign-up and demo-request alerts go by email. Needs the SMTP sender. */
   NOTIFY_EMAIL: z.string().optional(),

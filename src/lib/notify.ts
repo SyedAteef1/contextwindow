@@ -56,23 +56,84 @@ function render(event: NotifyEvent): { title: string; lines: string[] } {
   };
 }
 
-async function toSlack(event: NotifyEvent): Promise<boolean> {
-  const url = env().SLACK_WEBHOOK_URL;
-  if (!url) return false;
+/**
+ * Who to tag.
+ *
+ * A message in a channel nobody has open is not a notification. `<@U…>` pings a
+ * person; `<!here>` and `<!channel>` ping a room. Slack only treats these as
+ * mentions inside the message body, so the tag has to be in the text rather
+ * than in a header block.
+ */
+function mention(): string {
+  const raw = env().SLACK_MENTION?.trim();
+  if (!raw) return "";
+  if (raw === "!here" || raw === "!channel") return `<${raw}> `;
+  // Accept a bare id or one already wrapped, so either form pasted from Slack
+  // does the right thing.
+  const id = raw.replace(/^<@|>$/g, "");
+  return `<@${id}> `;
+}
 
+function payload(event: NotifyEvent) {
   const { title, lines } = render(event);
+  const tag = mention();
+  const body = `${tag}${lines.join("\n")}`;
+  return {
+    // `text` is what a phone shows on the lock screen, so it has to stand
+    // alone — a blocks-only payload pushes a silent "this content can't be
+    // displayed".
+    text: `${title}: ${lines[0].replace(/\*/g, "")}`,
+    blocks: [
+      { type: "header", text: { type: "plain_text", text: title } },
+      { type: "section", text: { type: "mrkdwn", text: body } },
+    ],
+  };
+}
+
+/**
+ * Post with the bot token, into a channel chosen by id.
+ *
+ * Preferred over a webhook because the channel is configuration rather than
+ * something baked into a URL. Slack answers 200 with `ok: false` for its own
+ * errors, so the body has to be read — `not_in_channel` means the bot was never
+ * invited, which is the usual first failure.
+ */
+async function toSlackChannel(event: NotifyEvent): Promise<boolean> {
+  const token = env().SLACK_BOT_TOKEN;
+  const channel = env().SLACK_CHANNEL_ID;
+  if (!token || !channel) return false;
+
+  const response = await fetch("https://slack.com/api/chat.postMessage", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ channel, ...payload(event) }),
+    signal: AbortSignal.timeout(5000),
+  });
+
+  const result = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+  if (!result?.ok) {
+    throw new Error(
+      `Slack chat.postMessage failed: ${result?.error ?? response.status}` +
+        (result?.error === "not_in_channel"
+          ? " — invite the bot to the channel with /invite"
+          : ""),
+    );
+  }
+  return true;
+}
+
+async function toSlackWebhook(event: NotifyEvent): Promise<boolean> {
+  const url = env().SLACK_WEBHOOK_URL;
+  // The bot token path already delivered it; a webhook as well would double up.
+  if (!url || (env().SLACK_BOT_TOKEN && env().SLACK_CHANNEL_ID)) return false;
+
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    // `text` is the notification body on a phone, so it has to stand alone —
-    // a blocks-only payload pushes a silent "This content can't be displayed".
-    body: JSON.stringify({
-      text: `${title}: ${lines[0].replace(/\*/g, "")}`,
-      blocks: [
-        { type: "header", text: { type: "plain_text", text: title } },
-        { type: "section", text: { type: "mrkdwn", text: lines.join("\n") } },
-      ],
-    }),
+    body: JSON.stringify(payload(event)),
     signal: AbortSignal.timeout(5000),
   });
 
@@ -110,7 +171,11 @@ async function toEmail(event: NotifyEvent): Promise<boolean> {
  */
 export function notify(event: NotifyEvent): void {
   void (async () => {
-    const results = await Promise.allSettled([toSlack(event), toEmail(event)]);
+    const results = await Promise.allSettled([
+      toSlackChannel(event),
+      toSlackWebhook(event),
+      toEmail(event),
+    ]);
     const delivered = results.some((r) => r.status === "fulfilled" && r.value);
 
     for (const result of results) {
