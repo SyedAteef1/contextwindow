@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { LocalTime } from "./local-time";
 import { cn } from "@/lib/cn";
+import { MeetingSectionLinks, type MeetingSection } from "./meeting-section-links";
 import { trimCompanyPrefix } from "@/lib/format";
 import type { CompanyGroup, MeetingRailRow } from "@/lib/queries";
 
@@ -49,7 +50,16 @@ function statusTone(status: Row["status"]): string {
  * and repeating it is the flat list's problem. What is left is the part that
  * distinguishes this call from the others with the same customer.
  */
-function Item({ row, active }: { row: Row; active: boolean }) {
+function Item({
+  row,
+  active,
+  sections,
+}: {
+  row: Row;
+  active: boolean;
+  /** The parts of this call, shown beneath it while it is the one open. */
+  sections?: MeetingSection[];
+}) {
   const label = STATUS_LABEL[row.status];
 
   return (
@@ -94,12 +104,26 @@ function Item({ row, active }: { row: Row; active: boolean }) {
           )}
         </span>
       </Link>
+
+      {active && sections && sections.length > 0 && (
+        <MeetingSectionLinks sections={sections} className="mb-1 mt-0.5" />
+      )}
     </li>
   );
 }
 
 /** A labelled run of calls inside one company, shown only when both kinds exist. */
-function Section({ label, rows, activeId }: { label: string; rows: Row[]; activeId?: string }) {
+function Section({
+  label,
+  rows,
+  activeId,
+  sections,
+}: {
+  label: string;
+  rows: Row[];
+  activeId?: string;
+  sections?: MeetingSection[];
+}) {
   if (rows.length === 0) return null;
   return (
     <>
@@ -109,13 +133,26 @@ function Section({ label, rows, activeId }: { label: string; rows: Row[]; active
         </span>
       </li>
       {rows.map((row) => (
-        <Item key={row.id} row={row} active={row.id === activeId} />
+        <Item
+          key={row.id}
+          row={row}
+          active={row.id === activeId}
+          sections={row.id === activeId ? sections : undefined}
+        />
       ))}
     </>
   );
 }
 
-function Company({ group, activeId }: { group: CompanyGroup; activeId?: string }) {
+function Company({
+  group,
+  activeId,
+  sections,
+}: {
+  group: CompanyGroup;
+  activeId?: string;
+  sections?: MeetingSection[];
+}) {
   const holdsActive =
     activeId !== undefined &&
     [...group.upcoming, ...group.past].some((row) => row.id === activeId);
@@ -174,12 +211,17 @@ function Company({ group, activeId }: { group: CompanyGroup; activeId?: string }
       <ul className="mt-0.5 flex flex-col gap-px border-l border-rule-soft pb-1 ml-3.5">
         {showLabels ? (
           <>
-            <Section label="Upcoming" rows={group.upcoming} activeId={activeId} />
-            <Section label="Past" rows={group.past} activeId={activeId} />
+            <Section label="Upcoming" rows={group.upcoming} activeId={activeId} sections={sections} />
+            <Section label="Past" rows={group.past} activeId={activeId} sections={sections} />
           </>
         ) : (
           [...group.upcoming, ...group.past].map((row) => (
-            <Item key={row.id} row={row} active={row.id === activeId} />
+            <Item
+              key={row.id}
+              row={row}
+              active={row.id === activeId}
+              sections={row.id === activeId ? sections : undefined}
+            />
           ))
         )}
       </ul>
@@ -190,9 +232,12 @@ function Company({ group, activeId }: { group: CompanyGroup; activeId?: string }
 export function MeetingsSidebar({
   companies,
   activeId,
+  activeSections,
 }: {
   companies: CompanyGroup[];
   activeId?: string;
+  /** The parts of the open call, listed under it. */
+  activeSections?: MeetingSection[];
 }) {
   const calls = companies.reduce((total, group) => total + group.total, 0);
 
@@ -221,7 +266,12 @@ export function MeetingsSidebar({
             </p>
             <div className="flex flex-col gap-px">
               {companies.map((group) => (
-                <Company key={group.accountId} group={group} activeId={activeId} />
+                <Company
+                  key={group.accountId}
+                  group={group}
+                  activeId={activeId}
+                  sections={activeSections}
+                />
               ))}
             </div>
           </div>

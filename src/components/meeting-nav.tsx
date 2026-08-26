@@ -3,23 +3,23 @@
 import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/cn";
-
-export type MeetingSection = { id: string; label: string };
+import type { MeetingSection } from "./meeting-section-links";
 
 /**
- * Jump between the parts of a call.
+ * The parts of a call, for viewports with no sidebar.
  *
- * A processed meeting carries five or six distinct things — a brief, the
- * recording, the transcript, what was decided, what to do next — and stacked
- * down one page they read as an undifferentiated wall. This names them and
- * makes each reachable in a click, which is most of what "clear" means here.
- *
- * Sections are passed in rather than assumed, because which ones exist depends
- * on how far the call has got: an upcoming meeting has a brief and nothing
- * else, and offering a link to an empty transcript is worse than not offering
- * one.
+ * Above `lg` this navigation lives in the sidebar under the call it belongs to,
+ * which is where it reads as part of the same tree. Below `lg` the sidebar is
+ * hidden entirely, so the sections would otherwise be unreachable — this is
+ * that fallback and nothing more.
  */
-export function MeetingNav({ sections }: { sections: MeetingSection[] }) {
+export function MeetingNav({
+  sections,
+  className,
+}: {
+  sections: MeetingSection[];
+  className?: string;
+}) {
   const [active, setActive] = useState(sections[0]?.id ?? "");
 
   useEffect(() => {
@@ -50,7 +50,10 @@ export function MeetingNav({ sections }: { sections: MeetingSection[] }) {
   return (
     <nav
       aria-label="Sections of this call"
-      className="sticky top-[57px] z-10 -mx-6 mb-8 border-b border-rule bg-ground/85 px-6 backdrop-blur"
+      className={cn(
+        "sticky top-[57px] z-10 -mx-6 mb-8 border-b border-rule bg-ground/85 px-6 backdrop-blur",
+        className,
+      )}
     >
       <ul className="flex gap-1 overflow-x-auto py-2">
         {sections.map((section) => (

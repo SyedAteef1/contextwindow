@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { BriefButton } from "@/components/brief-button";
 import { Page } from "@/components/chrome";
 import { CallPlayback } from "@/components/call-playback";
-import { MeetingNav, type MeetingSection } from "@/components/meeting-nav";
+import { MeetingNav } from "@/components/meeting-nav";
+import type { MeetingSection } from "@/components/meeting-section-links";
 import { ChatPanel } from "@/components/chat-panel";
 import { WrapupDispatch } from "@/components/wrapup-dispatch";
 import { LivePanel } from "@/components/live-panel";
@@ -63,7 +64,9 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
   ].filter(Boolean) as MeetingSection[];
 
   return (
-    <Page current="meetings" sidebar={<MeetingsSidebar companies={rail.companies} activeId={id} />}>
+    <Page current="meetings" sidebar={
+        <MeetingsSidebar companies={rail.companies} activeId={id} activeSections={sections} />
+      }>
       <BackLink href="/meetings">All calls</BackLink>
 
       {/* --- Header ------------------------------------------------------- */}
@@ -121,7 +124,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         )}
       </div>
 
-      <MeetingNav sections={sections} />
+      {/* Below lg the sidebar is hidden, so the sections need somewhere to go. */}
+      <MeetingNav sections={sections} className="lg:hidden" />
 
       <div className="space-y-9">
         {/* --- Live answers: first while the call is happening ------------- */}
