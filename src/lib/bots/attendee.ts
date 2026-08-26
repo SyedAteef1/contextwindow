@@ -101,11 +101,11 @@ export class AttendeeProvider implements BotProvider {
       meeting_url: input.meetingUrl,
       bot_name: input.botName,
       metadata: input.metadata,
-      // We transcribe the call rather than watch it, so video is storage we
-      // never read: mp4 runs about 13.8 MiB per minute against roughly 1 for
-      // mp3. Audio-only also drops the bot's CPU request substantially, which
-      // is what makes many concurrent bots affordable.
-      recording_settings: { format: "mp3" },
+      // Video by default. It costs roughly 13.8 MiB per minute against about 1
+      // for audio and asks more of the bot's CPU, but a recording you cannot
+      // watch is half a recording — RECORDING_FORMAT drops it to mp3 for a
+      // deployment running many concurrent bots on a small host.
+      recording_settings: { format: env().RECORDING_FORMAT },
 
       /*
        * When to give up and leave.

@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 
 import { BriefButton } from "@/components/brief-button";
 import { Page } from "@/components/chrome";
-import { RecordingPlayer } from "@/components/recording-player";
+import { CallPlayback } from "@/components/call-playback";
+import { ChatPanel } from "@/components/chat-panel";
 import { WrapupDispatch } from "@/components/wrapup-dispatch";
 import { LivePanel } from "@/components/live-panel";
 import { MarkBriefSeen } from "@/components/mark-brief-seen";
@@ -149,12 +150,6 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
           </section>
         )}
 
-        {/* --- The recording ---------------------------------------------- */}
-        {meeting.botId &&
-          (meeting.status === "transcribed" || meeting.status === "processed") && (
-            <RecordingPlayer meetingId={meeting.id} />
-          )}
-
         {/* --- Buying signals ---------------------------------------------- */}
         {signals && (
           <section>
@@ -268,10 +263,10 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
           )}
         </section>
 
-        {/* --- Transcript ---------------------------------------------------- */}
+        {/* --- The call: recording and transcript, in step ------------------ */}
         <section>
           <SectionHead
-            label="Transcript"
+            label="The call"
             aside={
               transcript
                 ? [transcript.source, durationLabel(transcript.durationSeconds)]
@@ -281,51 +276,29 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
             }
           />
           {transcript ? (
-            <Card as="article" className="overflow-hidden">
-              <details className="group">
-                <summary className="cursor-pointer list-none px-5 py-3.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted transition-colors hover:text-ink">
-                  <span className="group-open:hidden">Show full transcript</span>
-                  <span className="hidden group-open:inline">Hide full transcript</span>
-                </summary>
-                <div className="max-h-[28rem] overflow-y-auto border-t border-rule-soft px-5 py-4">
-                  {transcript.speakerSegments && transcript.speakerSegments.length > 0 ? (
-                    <ol className="space-y-2.5">
-                      {transcript.speakerSegments.map((segment, index) => (
-                        <li key={index} className="grid grid-cols-[3rem_1fr] gap-3 text-[13px]">
-                          <span className="pt-px font-mono text-[10.5px] tabular-nums text-faint">
-                            {Math.floor(segment.timestampMs / 60000)
-                              .toString()
-                              .padStart(2, "0")}
-                            :
-                            {Math.floor((segment.timestampMs % 60000) / 1000)
-                              .toString()
-                              .padStart(2, "0")}
-                          </span>
-                          <span>
-                            <span className="font-mono text-[10.5px] uppercase tracking-[0.08em] text-ink">
-                              {segment.speakerName}
-                            </span>
-                            <span className="mt-0.5 block text-ink-soft">{segment.text}</span>
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <pre className="whitespace-pre-wrap font-mono text-[12.5px] leading-relaxed text-ink-soft">
-                      {transcript.rawText}
-                    </pre>
-                  )}
-                </div>
-              </details>
-            </Card>
+            <CallPlayback
+              meetingId={meeting.id}
+              segments={transcript.speakerSegments}
+              rawText={transcript.rawText}
+            />
           ) : isPast ? (
             <TranscriptUpload meetingId={meeting.id} />
           ) : (
             <Empty title="The call hasn't happened yet">
-              A notetaker joins automatically. Once the call ends, the transcript and summary land
-              here.
+              A notetaker joins automatically. Once the call ends, the recording, transcript and
+              summary land here.
             </Empty>
           )}
+        </section>
+
+        {/* --- Ask about it -------------------------------------------------- */}
+        <section>
+          <SectionHead label={`Ask about ${account.companyName}`} />
+          <ChatPanel
+            accountId={account.id}
+            companyName={account.companyName}
+            hasHistory={Boolean(transcript) || Boolean(summary)}
+          />
         </section>
       </div>
     </Page>

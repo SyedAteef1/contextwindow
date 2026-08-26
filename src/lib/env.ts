@@ -201,6 +201,17 @@ const schema = z.object({
    * post-call pipeline can be exercised without Attendee or a public webhook
    * URL. `noop` schedules nothing at all.
    */
+  /**
+   * What the bot records.
+   *
+   * `mp4` keeps the video, which is what people expect from a call recording —
+   * you can see the deck, and who was talking. It costs roughly 13.8 MiB per
+   * minute against about 1 for audio, and asks more of the bot's CPU, so a
+   * deployment running many concurrent bots on a small host can drop to `mp3`
+   * and lose only the picture.
+   */
+  RECORDING_FORMAT: z.enum(["mp4", "mp3"]).default("mp4"),
+
   BOT_PROVIDER: z.enum(["attendee", "meetingbot", "mock", "noop"]).default("attendee"),
   /** Your self-hosted Attendee; https://app.attendee.dev is the hosted fallback. */
   ATTENDEE_BASE_URL: z.string().default("https://app.attendee.dev"),
