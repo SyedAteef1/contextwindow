@@ -72,38 +72,79 @@ export function relativeDay(date: Date | string, now: Date = new Date()): string
  * Reps name events "Cobalt Systems — platform evaluation", and the company is
  * already the heading, so rendering both reads as a stutter.
  */
-export function trimCompanyPrefix(title: string | null, companyName: string): string {
+export function trimCompanyPrefix(
+  title: string | null,
+  companyName: string,
+  domain?: string | null,
+): string {
   if (!title) return "Untitled meeting";
 
   const normalised = title.trim();
   const full = companyName.trim();
   if (!full) return normalised;
 
-  // Agents abbreviate: an account called "Cobalt Systems" gets titles beginning
-  // "Cobalt — ...". Try the full name first, then the leading word, but only
-  // accept the short form when a separator follows it — otherwise "Cobalt
-  // migration plan" would lose its subject.
-  const separator = /^\s*[—–\-:|·]\s*/;
-  const candidates: { prefix: string; requireSeparator: boolean }[] = [
-    { prefix: full, requireSeparator: false },
-  ];
-  const firstWord = full.split(/\s+/)[0];
-  if (firstWord && firstWord.toLowerCase() !== full.toLowerCase()) {
-    candidates.push({ prefix: firstWord, requireSeparator: true });
-  }
+  // Who the call is with is the heading above it, so the title only has to say
+  // what the call *is*. Organisers put the company anywhere: in front
+  // ("Cobalt — kickoff"), in brackets ("Daily stand up [syncrocore]"), or on the
+  // end ("Kickoff | Cobalt"). All three read as repetition in a grouped list.
+  const needles = new Set<string>();
+  const add = (value: string | null | undefined) => {
+    const cleaned = value?.trim().toLowerCase();
+    if (cleaned) needles.add(cleaned);
+  };
+  add(full);
+  // The domain label catches the common case where the calendar uses the
+  // handle ("syncrocore") and the account carries the prettified name.
+  add(domain?.split(".")[0]);
+  // Whole words only, to protect a distinct word that merely starts the same.
+  add(full.replace(/\s+(inc|llc|ltd|limited|corp|co|gmbh|plc|group)\.?$/i, ""));
+  // Organisers abbreviate: "Cobalt Systems" becomes "Cobalt — kickoff". Safe to
+  // include because every rule below needs a separator or brackets around it,
+  // so "Cobalt migration plan" keeps its subject.
+  add(full.split(/\s+/)[0]);
 
-  for (const { prefix, requireSeparator } of candidates) {
-    if (!normalised.toLowerCase().startsWith(prefix.toLowerCase())) continue;
+  const SEPARATORS = "—–\\-:|·/,";
+  const escape = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const alternatives = [...needles]
+    .sort((a, b) => b.length - a.length) // longest first, so "Cobalt Systems" wins over "Cobalt"
+    .map(escape)
+    .join("|");
 
-    const rest = normalised.slice(prefix.length);
-    if (requireSeparator && !separator.test(rest)) continue;
+  let result = normalised;
 
-    const remainder = rest.replace(separator, "").trim();
-    // A title that is *only* the company name stays as it is.
-    if (remainder) return remainder;
-  }
+  // 1. A bracketed group that is nothing but the company.
+  result = result.replace(
+    new RegExp(`[\\[({<]\\s*(?:${alternatives})\\s*[\\])}>]`, "gi"),
+    " ",
+  );
+  // 2. Leading company, with or without a separator after it.
+  result = result.replace(
+    new RegExp(`^\\s*(?:${alternatives})\\s*[${SEPARATORS}]\\s*`, "i"),
+    "",
+  );
+  // 3. Trailing company, but only behind a separator — otherwise "Renewal
+  //    Cobalt" and "Cobalt migration plan" lose a real word.
+  result = result.replace(
+    new RegExp(`\\s*[${SEPARATORS}]\\s*(?:${alternatives})\\s*$`, "i"),
+    "",
+  );
+  // 4. Whatever the removals left behind: stray brackets, doubled separators,
+  //    and the leading or trailing punctuation now hanging off the ends.
+  result = result
+    .replace(/[[({<]\s*[\])}>]/g, " ")
+    .replace(new RegExp(`\\s*[${SEPARATORS}]\\s*[${SEPARATORS}]\\s*`, "g"), " — ")
+    .replace(new RegExp(`^[\\s${SEPARATORS}]+`), "")
+    .replace(new RegExp(`[\\s${SEPARATORS}]+$`), "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
-  return normalised;
+  // A title that was *only* the company name keeps it: an empty row is worse
+  // than a repeated one.
+  if (!result) return normalised;
+
+  // The short form is accepted only with a separator, which rules 2 and 3
+  // already enforce, so anything surviving here is genuinely the subject.
+  return result;
 }
 
 /** Rail node appearance, derived from where the meeting is in its lifecycle. */

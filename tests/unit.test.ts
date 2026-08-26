@@ -421,6 +421,38 @@ describe("trimCompanyPrefix", () => {
   it("handles a missing title", () => {
     expect(trimCompanyPrefix(null, "Cobalt Systems")).toBe("Untitled meeting");
   });
+
+  it("strips the company from trailing brackets", () => {
+    expect(trimCompanyPrefix("Daily stand up [syncrocore]", "Syncrocore")).toBe("Daily stand up");
+    expect(trimCompanyPrefix("Kickoff (Cobalt Systems)", "Cobalt Systems")).toBe("Kickoff");
+    expect(trimCompanyPrefix("<Cobalt>partnership", "Cobalt Systems")).toBe("partnership");
+  });
+
+  it("strips the company from the end behind a separator", () => {
+    expect(trimCompanyPrefix("Quarterly review — Cobalt Systems", "Cobalt Systems")).toBe(
+      "Quarterly review",
+    );
+    expect(trimCompanyPrefix("Kickoff | Cobalt", "Cobalt Systems")).toBe("Kickoff");
+  });
+
+  it("matches the domain label when the calendar uses the handle", () => {
+    expect(
+      trimCompanyPrefix("Daily stand up [syncrocore]", "Syncro Core", "syncrocore.com"),
+    ).toBe("Daily stand up");
+  });
+
+  it("ignores a legal suffix the organiser left off", () => {
+    expect(trimCompanyPrefix("Cobalt Systems — QBR", "Cobalt Systems Ltd")).toBe("QBR");
+  });
+
+  it("keeps a trailing word that is not behind a separator", () => {
+    expect(trimCompanyPrefix("Renewal Cobalt", "Cobalt Systems")).toBe("Renewal Cobalt");
+  });
+
+  it("never returns an empty title", () => {
+    expect(trimCompanyPrefix("[Cobalt Systems]", "Cobalt Systems")).toBe("[Cobalt Systems]");
+    expect(trimCompanyPrefix("Cobalt Systems —", "Cobalt Systems")).toBe("Cobalt Systems —");
+  });
 });
 
 describe("requireEnv", () => {

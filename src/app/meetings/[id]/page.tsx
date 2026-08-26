@@ -49,7 +49,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
   const signals = summary?.intentSignals ?? null;
 
   return (
-    <Page current="meetings" sidebar={<MeetingsSidebar upcoming={rail.upcoming} past={rail.past} activeId={id} />}>
+    <Page current="meetings" sidebar={<MeetingsSidebar companies={rail.companies} activeId={id} />}>
       <BackLink href="/meetings">All calls</BackLink>
 
       {/* --- Header ------------------------------------------------------- */}
@@ -63,7 +63,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
               {account.companyName}
             </Link>
             <p className="mt-1.5 text-[15px] text-ink-soft">
-              {trimCompanyPrefix(meeting.title, account.companyName)}
+              {trimCompanyPrefix(meeting.title, account.companyName, account.domain)}
             </p>
             <p className="mt-2.5 font-mono text-[11px] uppercase tracking-[0.1em] text-faint">
               {shortDate(meeting.scheduledAt)} · {clockTime(meeting.scheduledAt)} ·{" "}

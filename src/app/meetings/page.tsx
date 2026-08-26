@@ -32,7 +32,7 @@ export default async function MeetingsPage() {
   const ordered = [...railMeetings].reverse();
 
   return (
-    <Page current="meetings" sidebar={<MeetingsSidebar upcoming={split.upcoming} past={split.past} />}>
+    <Page current="meetings" sidebar={<MeetingsSidebar companies={split.companies} />}>
       <PageHead
         eyebrow={`Signed in as ${user.email}`}
         title="Your calls"
@@ -70,7 +70,7 @@ export default async function MeetingsPage() {
                   <span>
                     <span className="font-semibold">{brief.companyName}</span>
                     {" — "}
-                    {trimCompanyPrefix(brief.title, brief.companyName)}
+                    {trimCompanyPrefix(brief.title, brief.companyName, brief.domain)}
                   </span>
                   <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted">
                     Call {relativeDay(brief.scheduledAt)} at {clockTime(brief.scheduledAt)} · read →
@@ -98,7 +98,7 @@ export default async function MeetingsPage() {
                   <span>
                     <span className="font-semibold">{followup.companyName}</span>
                     {" — "}
-                    {trimCompanyPrefix(followup.title, followup.companyName)}
+                    {trimCompanyPrefix(followup.title, followup.companyName, followup.domain)}
                   </span>
                   <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-signal">
                     Proposed {shortDate(followup.proposedStart)} · review →

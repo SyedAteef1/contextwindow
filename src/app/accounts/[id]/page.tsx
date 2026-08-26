@@ -84,7 +84,7 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
                     >
                       <div className="min-w-0">
                         <p className="truncate text-[14px] text-ink">
-                          {trimCompanyPrefix(meeting.title, account.companyName)}
+                          {trimCompanyPrefix(meeting.title, account.companyName, account.domain)}
                         </p>
                         <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
                           {shortDate(meeting.scheduledAt)} · {clockTime(meeting.scheduledAt)}

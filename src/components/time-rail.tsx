@@ -56,7 +56,7 @@ function MeetingNode({ meeting }: { meeting: RailMeeting }) {
               {meeting.companyName}
             </h3>
             <p className="mt-0.5 truncate text-[13.5px] text-muted">
-              {trimCompanyPrefix(meeting.title, meeting.companyName)}
+              {trimCompanyPrefix(meeting.title, meeting.companyName, meeting.domain)}
             </p>
           </div>
 

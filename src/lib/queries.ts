@@ -49,6 +49,7 @@ export async function listMeetingsForRail(userId: string) {
       scheduledAt: meetings.scheduledAt,
       status: meetings.status,
       attendees: meetings.attendees,
+      accountId: accounts.id,
       companyName: accounts.companyName,
       domain: accounts.domain,
       dealStage: accounts.dealStage,
@@ -70,6 +71,7 @@ export async function listMeetingsForRail(userId: string) {
     title: row.title,
     scheduledAt: row.scheduledAt.toISOString(),
     status: row.status,
+    accountId: row.accountId,
     companyName: row.companyName,
     domain: row.domain,
     dealStage: row.dealStage,
@@ -88,15 +90,88 @@ export async function listMeetingsForRail(userId: string) {
  * a component must not read one during render — the same reason
  * `loadMeetingDetail` resolves `isPast` before returning.
  */
+/** One row of the meetings rail. */
+export type MeetingRailRow = Awaited<ReturnType<typeof listMeetingsForRail>>[number];
+
 export async function listMeetingsSplit(userId: string) {
   const rows = await listMeetingsForRail(userId);
   const now = Date.now();
   const at = (row: (typeof rows)[number]) => Date.parse(row.scheduledAt);
-  return {
-    rows,
-    upcoming: rows.filter((row) => at(row) >= now).sort((a, b) => at(a) - at(b)),
-    past: rows.filter((row) => at(row) < now).sort((a, b) => at(b) - at(a)),
-  };
+  const upcoming = rows.filter((row) => at(row) >= now).sort((a, b) => at(a) - at(b));
+  const past = rows.filter((row) => at(row) < now).sort((a, b) => at(b) - at(a));
+  return { rows, upcoming, past, companies: groupByCompany(rows, now) };
+}
+
+export type CompanyGroup = {
+  accountId: string;
+  companyName: string;
+  domain: string;
+  dealStage: string | null;
+  /** Soonest first — a to-do list. */
+  upcoming: MeetingRailRow[];
+  /** Most recent first — a record. */
+  past: MeetingRailRow[];
+  total: number;
+  /** Set while a call is being recorded, so the company can show it collapsed. */
+  live: boolean;
+  /** Unread pre-call briefs anywhere in the company. */
+  unread: number;
+};
+
+/**
+ * Group the rail by company.
+ *
+ * A rep thinks in accounts, not in calls: "where are we with Cobalt" comes
+ * before "what is at 10:30". A flat list buries that — five calls with one
+ * customer print the company name five times and the eye has to reassemble the
+ * grouping on every render.
+ *
+ * Ordering puts whoever you are seeing soonest at the top, because the sidebar
+ * is read most often just before a call. Companies with nothing scheduled fall
+ * below, most recently active first, which is also the order in which they stop
+ * being relevant.
+ */
+function groupByCompany(rows: MeetingRailRow[], now: number): CompanyGroup[] {
+  const at = (row: MeetingRailRow) => Date.parse(row.scheduledAt);
+  const groups = new Map<string, CompanyGroup>();
+
+  for (const row of rows) {
+    let group = groups.get(row.accountId);
+    if (!group) {
+      group = {
+        accountId: row.accountId,
+        companyName: row.companyName,
+        domain: row.domain,
+        dealStage: row.dealStage,
+        upcoming: [],
+        past: [],
+        total: 0,
+        live: false,
+        unread: 0,
+      };
+      groups.set(row.accountId, group);
+    }
+
+    (at(row) >= now ? group.upcoming : group.past).push(row);
+    group.total += 1;
+    if (row.status === "recording") group.live = true;
+    if (row.briefUnread) group.unread += 1;
+  }
+
+  for (const group of groups.values()) {
+    group.upcoming.sort((a, b) => at(a) - at(b));
+    group.past.sort((a, b) => at(b) - at(a));
+  }
+
+  return [...groups.values()].sort((a, b) => {
+    if (a.live !== b.live) return a.live ? -1 : 1;
+    const nextA = a.upcoming[0] ? at(a.upcoming[0]) : Infinity;
+    const nextB = b.upcoming[0] ? at(b.upcoming[0]) : Infinity;
+    if (nextA !== nextB) return nextA - nextB;
+    const lastA = a.past[0] ? at(a.past[0]) : -Infinity;
+    const lastB = b.past[0] ? at(b.past[0]) : -Infinity;
+    return lastB - lastA;
+  });
 }
 
 export async function meetingCounts(userId: string) {
@@ -205,6 +280,7 @@ export async function pendingFollowups(userId: string) {
       title: followupProposals.title,
       proposedStart: followupProposals.proposedStart,
       companyName: accounts.companyName,
+      domain: accounts.domain,
       meetingId: followupProposals.meetingId,
     })
     .from(followupProposals)
@@ -228,6 +304,7 @@ export async function unreadBriefs(userId: string) {
       title: meetings.title,
       scheduledAt: meetings.scheduledAt,
       companyName: accounts.companyName,
+      domain: accounts.domain,
     })
     .from(meetingBriefs)
     .innerJoin(meetings, eq(meetings.id, meetingBriefs.meetingId))

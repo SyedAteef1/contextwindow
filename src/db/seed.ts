@@ -207,6 +207,7 @@ async function main() {
     .insert(accounts)
     .values({
       ownerUserId: rep.id,
+      workspaceId: workspace.id,
       companyName: "Cobalt Systems",
       domain: "cobaltsystems.com",
       industry: "Manufacturing software",
@@ -218,6 +219,7 @@ async function main() {
     .insert(accounts)
     .values({
       ownerUserId: rep.id,
+      workspaceId: workspace.id,
       companyName: "Meridian Health",
       domain: "meridianhealth.org",
       industry: "Healthcare",
@@ -250,9 +252,14 @@ async function main() {
   ]);
 
     // One meter, belonging to the rep — not one per company they sell to.
+    // Re-running the seed must not fail on the meter that already exists.
     await db
       .insert(usage)
-      .values({ userId: rep.id, meetingsProcessedThisMonth: 1, freeTierLimit: 5 });
+      .values({ userId: rep.id, meetingsProcessedThisMonth: 1, freeTierLimit: 5 })
+      .onConflictDoUpdate({
+        target: usage.userId,
+        set: { meetingsProcessedThisMonth: 1, freeTierLimit: 5, updatedAt: new Date() },
+      });
 
   // --- The completed call -------------------------------------------------
   const [pastMeeting] = await db

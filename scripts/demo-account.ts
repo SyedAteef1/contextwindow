@@ -17,7 +17,7 @@
  *   npm run demo
  */
 import "dotenv/config";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db, sqlClient } from "@/db";
 import {
@@ -27,7 +27,6 @@ import {
   meetingBriefs,
   meetingSummaries,
   meetings,
-  playbookSnippets,
   transcripts,
   usage,
   users,
@@ -510,42 +509,61 @@ Where we lose. Deals where the champion never gets finance into a room, and deal
 async function main() {
   console.log("Building the demo account…\n");
 
-  const [workspace] = await db
-    .insert(workspaces)
-    .values({
-      name: "Northstar",
-      domain: "northstar.io",
-      description:
-        "Northstar sells a revenue-intelligence platform to mid-market sales teams. Priced per seat on annual contracts, with a security review typically required above 50 seats.",
-    })
-    .onConflictDoUpdate({ target: workspaces.domain, set: { updatedAt: new Date() } })
-    .returning();
+  // When pointed at a real signed-in user, attach to whoever they already are.
+  // Creating or renaming their workspace would rewrite live identity to stage a
+  // demo, and deleting by owner would take their real accounts with it.
+  const existing = await db.query.users.findFirst({ where: eq(users.email, REP_EMAIL) });
 
-  const [rep] = await db
-    .insert(users)
-    .values({
-      email: REP_EMAIL,
-      workspaceId: workspace.id,
-      name: REP_NAME,
-      emailDomain: REP_EMAIL.split("@")[1],
-      defaultDeliverableType: "plain_summary",
-    })
-    .onConflictDoUpdate({
-      target: users.email,
-      set: { workspaceId: workspace.id, name: REP_NAME, updatedAt: new Date() },
-    })
-    .returning();
+  let workspaceId = existing?.workspaceId ?? null;
+  if (!workspaceId) {
+    const [created] = await db
+      .insert(workspaces)
+      .values({
+        name: "Northstar",
+        domain: "northstar.io",
+        description:
+          "Northstar sells a revenue-intelligence platform to mid-market sales teams. Priced per seat on annual contracts, with a security review typically required above 50 seats.",
+      })
+      .onConflictDoUpdate({ target: workspaces.domain, set: { updatedAt: new Date() } })
+      .returning();
+    workspaceId = created.id;
+  }
 
-  // Idempotent: re-running replaces the demo rather than duplicating it.
-  await db.delete(accounts).where(eq(accounts.ownerUserId, rep.id));
-  await db.delete(playbookSnippets).where(eq(playbookSnippets.ownerUserId, rep.id));
-  await db.delete(workspaceDocuments).where(eq(workspaceDocuments.workspaceId, workspace.id));
+  const [rep] = existing
+    ? [existing]
+    : await db
+        .insert(users)
+        .values({
+          email: REP_EMAIL,
+          workspaceId,
+          name: REP_NAME,
+          emailDomain: REP_EMAIL.split("@")[1],
+          defaultDeliverableType: "plain_summary",
+        })
+        .returning();
+
+  if (!existing) {
+    console.log(`  rep            ${rep.email} (created)`);
+  } else {
+    console.log(`  rep            ${rep.email} (existing — leaving their data alone)`);
+  }
+
+  // Idempotent, but only over what this script owns: the demo account and the
+  // demo's own workspace documents. Never a blanket delete by owner.
+  await db
+    .delete(accounts)
+    .where(and(eq(accounts.ownerUserId, rep.id), eq(accounts.domain, "cobaltsystems.com")));
+  for (const doc of WORKSPACE_DOCS) {
+    await db
+      .delete(workspaceDocuments)
+      .where(and(eq(workspaceDocuments.workspaceId, workspaceId), eq(workspaceDocuments.title, doc.title)));
+  }
 
   const [cobalt] = await db
     .insert(accounts)
     .values({
       ownerUserId: rep.id,
-      workspaceId: workspace.id,
+      workspaceId,
       companyName: "Cobalt Systems",
       domain: "cobaltsystems.com",
       industry: "Manufacturing software",
@@ -594,10 +612,10 @@ async function main() {
   for (const doc of WORKSPACE_DOCS) {
     const [row] = await db
       .insert(workspaceDocuments)
-      .values({ workspaceId: workspace.id, title: doc.title, content: doc.content, kind: doc.kind })
+      .values({ workspaceId, title: doc.title, content: doc.content, kind: doc.kind })
       .returning();
     chunks += await indexDocument({
-      workspaceId: workspace.id,
+      workspaceId,
       accountId: null,
       sourceType: "workspace_doc",
       sourceId: row.id,
@@ -660,7 +678,7 @@ async function main() {
       .returning();
 
     chunks += await indexDocument({
-      workspaceId: workspace.id,
+      workspaceId,
       accountId: cobalt.id,
       sourceType: "transcript",
       sourceId: transcript.id,
@@ -668,7 +686,7 @@ async function main() {
       meta: { meetingId: meeting.id, meetingTitle: call.title, scheduledAt: scheduledAt.toISOString(), label: `Transcript — ${day}` },
     });
     chunks += await indexDocument({
-      workspaceId: workspace.id,
+      workspaceId,
       accountId: cobalt.id,
       sourceType: "summary",
       sourceId: summary.id,
@@ -716,7 +734,7 @@ async function main() {
     .returning();
 
   chunks += await indexDocument({
-    workspaceId: workspace.id,
+    workspaceId,
     accountId: cobalt.id,
     sourceType: "brief",
     sourceId: brief.id,
