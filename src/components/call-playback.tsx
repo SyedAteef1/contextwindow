@@ -62,6 +62,7 @@ export function CallPlayback({
   segments,
   rawText,
   meta,
+  show = "both",
 }: {
   meetingId: string;
   segments: SpeakerSegment[] | null;
@@ -69,6 +70,13 @@ export function CallPlayback({
   rawText?: string | null;
   /** Source and duration, shown against the transcript heading. */
   meta?: string;
+  /**
+   * Which half to render. Both are mounted from the same component either way,
+   * because the transcript seeks the player — but only one is shown, so a view
+   * called "Transcript" is a transcript rather than a recording with a
+   * transcript beneath it.
+   */
+  show?: "recording" | "transcript" | "both";
 }) {
   const [state, setState] = useState<State>({ kind: "loading" });
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -147,24 +155,39 @@ export function CallPlayback({
 
   const hasSegments = Boolean(segments && segments.length > 0);
   const playable = state.kind === "ready";
+  const compact = show === "transcript";
 
   return (
     <>
       {/* --- Recording ---------------------------------------------------- */}
-      <section id="recording" className="scroll-mt-24">
-        <div className="mb-3.5 flex items-baseline gap-3">
-          <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.08em] text-ink">
-            Recording
-          </h2>
-          <span className="h-px flex-1 bg-rule" aria-hidden />
-          {hasSegments && playable && (
-            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-faint">
-              Click any line below to jump
-            </span>
-          )}
-        </div>
+      {/* On the transcript view this stays, compact and pinned to the top:
+          clicking a line starts playback, and a player you cannot see makes
+          that feel like nothing happened. It is also why the component is
+          never unmounted — the seek has to reach this media element. */}
+      <section
+        id="recording"
+        className={cn(compact && "sticky top-[57px] z-10 -mt-1 bg-ground pb-3 pt-1")}
+      >
+        {!compact && (
+          <div className="mb-3.5 flex items-baseline gap-3">
+            <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.08em] text-ink">
+              Recording
+            </h2>
+            <span className="h-px flex-1 bg-rule" aria-hidden />
+            {hasSegments && playable && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-faint">
+                Click any line below to jump
+              </span>
+            )}
+          </div>
+        )}
 
-        <div className="rounded-lg border border-rule bg-surface px-5 py-4">
+        <div
+          className={cn(
+            "rounded-lg border border-rule bg-surface",
+            compact ? "px-3 py-2.5" : "px-5 py-4",
+          )}
+        >
           {state.kind === "loading" && (
             <div className="h-1 w-24 animate-pulse rounded bg-rule" aria-hidden />
           )}
@@ -177,7 +200,10 @@ export function CallPlayback({
                 preload="metadata"
                 src={state.url}
                 onTimeUpdate={onTimeUpdate}
-                className="w-full rounded border border-rule bg-black"
+                className={cn(
+                  "w-full rounded border border-rule bg-black",
+                  compact && "max-h-44 object-contain",
+                )}
               >
                 Your browser cannot play this recording.
               </video>
@@ -193,9 +219,11 @@ export function CallPlayback({
                 >
                   Your browser cannot play this recording.
                 </audio>
-                <p className="mt-2.5 text-[12px] text-faint">
-                  Audio only — this call was recorded before video capture was switched on.
-                </p>
+                {!compact && (
+                  <p className="mt-2.5 text-[12px] text-faint">
+                    Audio only — this call was recorded before video capture was switched on.
+                  </p>
+                )}
               </>
             ))}
 
@@ -209,7 +237,7 @@ export function CallPlayback({
       </section>
 
       {/* --- Transcript --------------------------------------------------- */}
-      <section id="transcript" className="scroll-mt-24">
+      <section id="transcript" className={cn(show === "recording" && "hidden")}>
         <div className="mb-3.5 flex items-baseline gap-3">
           <h2 className="font-display text-[13px] font-bold uppercase tracking-[0.08em] text-ink">
             Full transcript

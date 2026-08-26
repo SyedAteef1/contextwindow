@@ -54,11 +54,14 @@ function Item({
   row,
   active,
   sections,
+  activeView,
 }: {
   row: Row;
   active: boolean;
   /** The parts of this call, shown beneath it while it is the one open. */
   sections?: MeetingSection[];
+  /** Which section is showing, so the sidebar can mark it. */
+  activeView?: string;
 }) {
   const label = STATUS_LABEL[row.status];
 
@@ -106,7 +109,12 @@ function Item({
       </Link>
 
       {active && sections && sections.length > 0 && (
-        <MeetingSectionLinks sections={sections} className="mb-1 mt-0.5" />
+        <MeetingSectionLinks
+          meetingId={row.id}
+          sections={sections}
+          active={activeView}
+          className="mb-1 mt-0.5"
+        />
       )}
     </li>
   );
@@ -118,11 +126,13 @@ function Section({
   rows,
   activeId,
   sections,
+  activeView,
 }: {
   label: string;
   rows: Row[];
   activeId?: string;
   sections?: MeetingSection[];
+  activeView?: string;
 }) {
   if (rows.length === 0) return null;
   return (
@@ -138,6 +148,7 @@ function Section({
           row={row}
           active={row.id === activeId}
           sections={row.id === activeId ? sections : undefined}
+          activeView={activeView}
         />
       ))}
     </>
@@ -148,10 +159,12 @@ function Company({
   group,
   activeId,
   sections,
+  activeView,
 }: {
   group: CompanyGroup;
   activeId?: string;
   sections?: MeetingSection[];
+  activeView?: string;
 }) {
   const holdsActive =
     activeId !== undefined &&
@@ -211,8 +224,20 @@ function Company({
       <ul className="mt-0.5 flex flex-col gap-px border-l border-rule-soft pb-1 ml-3.5">
         {showLabels ? (
           <>
-            <Section label="Upcoming" rows={group.upcoming} activeId={activeId} sections={sections} />
-            <Section label="Past" rows={group.past} activeId={activeId} sections={sections} />
+            <Section
+              label="Upcoming"
+              rows={group.upcoming}
+              activeId={activeId}
+              sections={sections}
+              activeView={activeView}
+            />
+            <Section
+              label="Past"
+              rows={group.past}
+              activeId={activeId}
+              sections={sections}
+              activeView={activeView}
+            />
           </>
         ) : (
           [...group.upcoming, ...group.past].map((row) => (
@@ -221,6 +246,7 @@ function Company({
               row={row}
               active={row.id === activeId}
               sections={row.id === activeId ? sections : undefined}
+              activeView={activeView}
             />
           ))
         )}
@@ -233,11 +259,14 @@ export function MeetingsSidebar({
   companies,
   activeId,
   activeSections,
+  activeView,
 }: {
   companies: CompanyGroup[];
   activeId?: string;
   /** The parts of the open call, listed under it. */
   activeSections?: MeetingSection[];
+  /** Which section of the open call is showing. */
+  activeView?: string;
 }) {
   const calls = companies.reduce((total, group) => total + group.total, 0);
 
@@ -271,6 +300,7 @@ export function MeetingsSidebar({
                   group={group}
                   activeId={activeId}
                   sections={activeSections}
+                  activeView={activeView}
                 />
               ))}
             </div>

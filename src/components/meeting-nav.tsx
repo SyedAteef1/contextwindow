@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { cn } from "@/lib/cn";
 import type { MeetingSection } from "./meeting-section-links";
@@ -14,37 +12,16 @@ import type { MeetingSection } from "./meeting-section-links";
  * that fallback and nothing more.
  */
 export function MeetingNav({
+  meetingId,
   sections,
+  active,
   className,
 }: {
+  meetingId: string;
   sections: MeetingSection[];
+  active?: string;
   className?: string;
 }) {
-  const [active, setActive] = useState(sections[0]?.id ?? "");
-
-  useEffect(() => {
-    if (sections.length === 0) return;
-
-    // rootMargin pulls the trigger line to just under the sticky nav, so a
-    // section counts as current when its heading reaches the nav rather than
-    // when it touches the top of the window.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (visible) setActive(visible.target.id);
-      },
-      { rootMargin: "-88px 0px -55% 0px", threshold: 0 },
-    );
-
-    for (const section of sections) {
-      const element = document.getElementById(section.id);
-      if (element) observer.observe(element);
-    }
-    return () => observer.disconnect();
-  }, [sections]);
-
   if (sections.length < 2) return null;
 
   return (
@@ -58,9 +35,9 @@ export function MeetingNav({
       <ul className="flex gap-1 overflow-x-auto py-2">
         {sections.map((section) => (
           <li key={section.id}>
-            <a
-              href={`#${section.id}`}
-              aria-current={active === section.id ? "true" : undefined}
+            <Link
+              href={`/meetings/${meetingId}?view=${section.id}`}
+              aria-current={active === section.id ? "page" : undefined}
               className={cn(
                 "block whitespace-nowrap rounded px-3 py-1.5 text-[12.5px] transition-colors",
                 active === section.id
@@ -69,7 +46,7 @@ export function MeetingNav({
               )}
             >
               {section.label}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { cn } from "@/lib/cn";
 
@@ -9,56 +7,32 @@ export type MeetingSection = { id: string; label: string };
 /**
  * The parts of the open call, as a third level under it in the sidebar.
  *
- * The sidebar already answers "which company, which call"; this answers "which
- * part of it", in the same place and the same shape. Putting it anywhere else —
- * a bar across the top of the page, say — means the navigation for a call lives
- * apart from the navigation to it, and the page has to carry a second row of
- * controls it did not need.
- *
- * Client-side only for the highlight: the links themselves are anchors and work
- * without it.
+ * Each is a real page rather than an anchor into a long one, so the link is a
+ * link: the server knows which section is showing, the back button works, and
+ * a link to a transcript opens a transcript. That also means no client state
+ * and no scroll observer — which section is current is simply what the URL
+ * says.
  */
 export function MeetingSectionLinks({
+  meetingId,
   sections,
+  active,
   className,
 }: {
+  meetingId: string;
   sections: MeetingSection[];
+  active?: string;
   className?: string;
 }) {
-  const [active, setActive] = useState(sections[0]?.id ?? "");
-
-  useEffect(() => {
-    if (sections.length === 0) return;
-
-    // rootMargin pulls the trigger line below the masthead, so a section counts
-    // as current when its heading reaches the top of the readable area rather
-    // than when it touches the top of the window.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (visible) setActive(visible.target.id);
-      },
-      { rootMargin: "-80px 0px -55% 0px", threshold: 0 },
-    );
-
-    for (const section of sections) {
-      const element = document.getElementById(section.id);
-      if (element) observer.observe(element);
-    }
-    return () => observer.disconnect();
-  }, [sections]);
-
   if (sections.length === 0) return null;
 
   return (
     <ul className={cn("ml-3 flex flex-col gap-px border-l border-rule-soft", className)}>
       {sections.map((section) => (
         <li key={section.id}>
-          <a
-            href={`#${section.id}`}
-            aria-current={active === section.id ? "true" : undefined}
+          <Link
+            href={`/meetings/${meetingId}?view=${section.id}`}
+            aria-current={active === section.id ? "page" : undefined}
             className={cn(
               "block rounded py-1 pl-3 pr-2 text-[12px] transition-colors duration-150 ease-out",
               active === section.id
@@ -67,7 +41,7 @@ export function MeetingSectionLinks({
             )}
           >
             {section.label}
-          </a>
+          </Link>
         </li>
       ))}
     </ul>

@@ -34,10 +34,17 @@ export function ChatPanel({
   accountId,
   companyName,
   hasHistory,
+  variant = "panel",
 }: {
   accountId: string;
   companyName: string;
   hasHistory: boolean;
+  /**
+   * `panel` sits inside a page alongside other things and is a fixed height.
+   * `full` is the page: it fills the viewport, centres the conversation in a
+   * readable column, and puts the composer at the bottom where a chat belongs.
+   */
+  variant?: "panel" | "full";
 }) {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -206,10 +213,27 @@ export function ChatPanel({
     "How has their interest changed?",
   ];
 
+  const full = variant === "full";
+
   return (
-    <div className="flex h-[34rem] overflow-hidden rounded-lg border border-rule bg-surface">
+    <div
+      className={cn(
+        "flex overflow-hidden",
+        full
+          // Fills what is left below the masthead. Negative margins undo the
+          // page's own padding, so the composer sits against the window edge
+          // rather than floating in the middle of it.
+          ? "-mx-6 -mb-24 -mt-2 h-[calc(100dvh-57px)] border-t border-rule"
+          : "h-[34rem] rounded-lg border border-rule bg-surface",
+      )}
+    >
       {/* --- Conversations ------------------------------------------------- */}
-      <aside className="hidden w-52 shrink-0 flex-col border-r border-rule-soft bg-sunken/40 sm:flex">
+      <aside
+        className={cn(
+          "hidden shrink-0 flex-col border-r border-rule-soft bg-sunken/40 sm:flex",
+          full ? "w-60" : "w-52",
+        )}
+      >
         <div className="border-b border-rule-soft px-3 py-3">
           <button
             type="button"
@@ -267,7 +291,12 @@ export function ChatPanel({
 
       {/* --- The conversation ---------------------------------------------- */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-3 border-b border-rule-soft px-5 py-3.5">
+        <div
+          className={cn(
+            "flex items-center justify-between gap-3 border-b border-rule-soft px-5 py-3.5",
+            full && "sm:hidden",
+          )}
+        >
           <div className="flex min-w-0 items-center gap-2.5">
             <Eyebrow>Ask about {companyName}</Eyebrow>
             {streaming && <Pill tone="quiet">Thinking</Pill>}
@@ -292,8 +321,39 @@ export function ChatPanel({
           </div>
         </div>
 
-        <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
-          {turns.length === 0 && (
+        <div
+          ref={scrollRef}
+          className={cn("flex-1 overflow-y-auto", full ? "px-4 py-8" : "px-5 py-5")}
+        >
+          <div className={cn("space-y-5", full && "mx-auto w-full max-w-3xl")}>
+          {turns.length === 0 && full && (
+            <div className="pt-[12vh] text-center">
+              <h2 className="font-display text-[26px] font-bold tracking-[-0.02em] text-ink">
+                Ask about {companyName}
+              </h2>
+              <p className="mx-auto mt-2.5 max-w-md text-[14px] leading-relaxed text-muted">
+                {hasHistory
+                  ? "Every call, brief and note for this account is searchable. Ask the way you would ask a colleague who sat in on all of them."
+                  : `Nothing is indexed for ${companyName} yet. Process a call first and the answers will have something to draw on.`}
+              </p>
+              {hasHistory && (
+                <div className="mx-auto mt-7 grid max-w-xl gap-2 sm:grid-cols-2">
+                  {starters.map((starter) => (
+                    <button
+                      key={starter}
+                      type="button"
+                      onClick={() => ask(starter)}
+                      className="rounded-lg border border-rule bg-surface px-4 py-3 text-left text-[13.5px] text-ink-soft transition-colors hover:border-faint hover:text-ink"
+                    >
+                      {starter}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {turns.length === 0 && !full && (
             <div className="pt-6 text-center">
               <p className="text-[13.5px] text-muted">
                 {hasHistory
@@ -346,7 +406,8 @@ export function ChatPanel({
             </div>
           ))}
 
-          {error && <p className="text-[13px] text-flag">{error}</p>}
+            {error && <p className="text-[13px] text-flag">{error}</p>}
+          </div>
         </div>
 
         <form
@@ -354,22 +415,48 @@ export function ChatPanel({
             event.preventDefault();
             ask(question);
           }}
-          className="flex items-center gap-2 border-t border-rule-soft px-4 py-3"
+          className={cn(
+            "border-t border-rule-soft",
+            full ? "px-4 py-4" : "flex items-center gap-2 px-4 py-3",
+          )}
         >
-          <input
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Ask anything about this account…"
-            disabled={streaming}
-            className="flex-1 bg-transparent px-1 py-1.5 text-[14px] text-ink outline-none placeholder:text-faint disabled:opacity-60"
-          />
-          <button
-            type="submit"
-            disabled={streaming || !question.trim()}
-            className="rounded-md bg-ink px-3.5 py-2 text-[13px] font-medium text-ground transition-colors hover:bg-ink-soft disabled:opacity-40"
+          <div
+            className={cn(
+              full
+                ? "mx-auto flex w-full max-w-3xl items-end gap-2 rounded-xl border border-rule bg-surface px-3 py-2 focus-within:border-faint"
+                : "flex flex-1 items-center gap-2",
+            )}
           >
-            Ask
-          </button>
+            <input
+              value={question}
+              onChange={(event) => setQuestion(event.target.value)}
+              placeholder={
+                full ? `Ask anything about ${companyName}…` : "Ask anything about this account…"
+              }
+              disabled={streaming}
+              className={cn(
+                "min-w-0 flex-1 bg-transparent outline-none placeholder:text-faint disabled:opacity-60",
+                full ? "px-1 py-2 text-[15px] text-ink" : "px-1 py-1.5 text-[14px] text-ink",
+              )}
+            />
+            <button
+              type="submit"
+              disabled={streaming || !question.trim()}
+              className={cn(
+                "shrink-0 font-medium text-ground transition-colors hover:bg-ink-soft disabled:opacity-40",
+                full
+                  ? "rounded-lg bg-ink px-4 py-2 text-[13.5px]"
+                  : "rounded-md bg-ink px-3.5 py-2 text-[13px]",
+              )}
+            >
+              Ask
+            </button>
+          </div>
+          {full && (
+            <p className="mx-auto mt-2 w-full max-w-3xl text-center text-[11.5px] text-faint">
+              Answers come only from this account&rsquo;s calls, briefs and saved notes.
+            </p>
+          )}
         </form>
       </div>
     </div>

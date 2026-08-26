@@ -35,9 +35,16 @@ const DELIVERABLE_LABEL = {
   plain_summary: "Summary",
 } as const;
 
-export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function MeetingPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ view?: string }>;
+}) {
   const user = await currentUser();
   const { id } = await params;
+  const { view: requestedView } = await searchParams;
   // Fetched together: the sidebar is on every meeting page, so serialising
   // these would add a round trip to each navigation.
   const [detail, rail] = await Promise.all([
@@ -63,9 +70,25 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
     { id: "chat", label: "Ask" },
   ].filter(Boolean) as MeetingSection[];
 
+  // One section at a time. A call has six distinct parts and stacking them down
+  // a single page meant scrolling past five to reach the one you came for —
+  // the anchors named them but did nothing to separate them.
+  //
+  // Held in the URL rather than in client state so every link is a real link:
+  // the sidebar stays server-rendered, the back button works, and a link to a
+  // transcript opens the transcript.
+  const view = sections.some((section) => section.id === requestedView)
+    ? requestedView!
+    : (sections[0]?.id ?? "brief");
+
   return (
     <Page current="meetings" sidebar={
-        <MeetingsSidebar companies={rail.companies} activeId={id} activeSections={sections} />
+        <MeetingsSidebar
+          companies={rail.companies}
+          activeId={id}
+          activeSections={sections}
+          activeView={view}
+        />
       }>
       <BackLink href="/meetings">All calls</BackLink>
 
@@ -125,7 +148,12 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Below lg the sidebar is hidden, so the sections need somewhere to go. */}
-      <MeetingNav sections={sections} className="lg:hidden" />
+      <MeetingNav
+        meetingId={id}
+        sections={sections}
+        active={view}
+        className="lg:hidden"
+      />
 
       <div className="space-y-9">
         {/* --- Live answers: first while the call is happening ------------- */}
@@ -134,8 +162,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* --- After the call: the only thing here needing a decision ----- */}
-        {(proposals.length > 0 || recapEmail) && (
-          <section id="next" className="scroll-mt-24">
+        {view === "next" && (proposals.length > 0 || recapEmail) && (
+          <section id="next">
             <WrapupDispatch
               meetingId={meeting.id}
               email={
@@ -170,8 +198,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* --- Buying signals ---------------------------------------------- */}
-        {signals && (
-          <section id="signals" className="scroll-mt-24">
+        {view === "signals" && signals && (
+          <section id="signals">
             <SectionHead label="What the call signalled" />
             <Card className="px-5 py-4">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rule-soft pb-4">
@@ -242,8 +270,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* --- Summary ------------------------------------------------------ */}
-        {summary && (
-          <section id="summary" className="scroll-mt-24">
+        {view === "summary" && summary && (
+          <section id="summary">
             <SectionHead
               label={DELIVERABLE_LABEL[summary.deliverableType]}
               aside={`Written ${shortDate(summary.generatedAt)}`}
@@ -255,7 +283,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* --- Pre-call brief ----------------------------------------------- */}
-        <section id="brief" className="scroll-mt-24">
+        {view === "brief" && (
+        <section id="brief">
           <SectionHead
             label="Pre-call brief"
             aside={brief ? `Researched ${shortDate(brief.generatedAt)}` : undefined}
@@ -281,40 +310,46 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
             </Empty>
           )}
         </section>
-
-        {/* --- The recording and the transcript, as two sections ----------- */}
-        {transcript ? (
-          <CallPlayback
-            meetingId={meeting.id}
-            segments={transcript.speakerSegments}
-            rawText={transcript.rawText}
-            meta={[transcript.source, durationLabel(transcript.durationSeconds)]
-              .filter(Boolean)
-              .join(" · ")}
-          />
-        ) : (
-          <section id="transcript" className="scroll-mt-24">
-            <SectionHead label="Transcript" />
-            {isPast ? (
-              <TranscriptUpload meetingId={meeting.id} />
-            ) : (
-              <Empty title="The call hasn't happened yet">
-                A notetaker joins automatically. Once the call ends, the recording, transcript and
-                summary land here.
-              </Empty>
-            )}
-          </section>
         )}
 
+        {/* --- The recording and the transcript --------------------------- */}
+        {/* One component for both views: the transcript is the index into the
+            recording, so the seek has to reach the same media element. It
+            renders whichever half the current view asks for. */}
+        {(view === "recording" || view === "transcript") &&
+          (transcript ? (
+            <CallPlayback
+              meetingId={meeting.id}
+              segments={transcript.speakerSegments}
+              rawText={transcript.rawText}
+              show={view}
+              meta={[transcript.source, durationLabel(transcript.durationSeconds)]
+                .filter(Boolean)
+                .join(" · ")}
+            />
+          ) : (
+            <section id="transcript">
+              <SectionHead label="Transcript" />
+              {isPast ? (
+                <TranscriptUpload meetingId={meeting.id} />
+              ) : (
+                <Empty title="The call hasn't happened yet">
+                  A notetaker joins automatically. Once the call ends, the recording, transcript
+                  and summary land here.
+                </Empty>
+              )}
+            </section>
+          ))}
+
         {/* --- Ask about it -------------------------------------------------- */}
-        <section id="chat" className="scroll-mt-24">
-          <SectionHead label={`Ask about ${account.companyName}`} />
+        {view === "chat" && (
           <ChatPanel
             accountId={account.id}
             companyName={account.companyName}
             hasHistory={Boolean(transcript) || Boolean(summary)}
+            variant="full"
           />
-        </section>
+        )}
       </div>
     </Page>
   );
