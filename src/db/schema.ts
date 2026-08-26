@@ -177,6 +177,33 @@ export const workspaceDocuments = pgTable(
   ],
 );
 
+/**
+ * Someone asking for a demo.
+ *
+ * The landing page no longer drops a stranger straight into a Google consent
+ * screen: an enterprise buyer will not grant calendar access to a product they
+ * have not seen. This is the row that request lands in.
+ *
+ * Deliberately not tied to a user — there is no account yet, and that is the
+ * point.
+ */
+export const demoRequests = pgTable(
+  "demo_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    company: text("company").notNull(),
+    teamSize: text("team_size"),
+    message: text("message"),
+    /** Where they came from, when a campaign puts it in the URL. */
+    source: text("source"),
+    handledAt: timestamp("handled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("ix_demo_requests_created").on(t.createdAt)],
+);
+
 export const users = pgTable(
   "users",
   {
