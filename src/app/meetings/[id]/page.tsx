@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BriefButton } from "@/components/brief-button";
 import { Page } from "@/components/chrome";
 import { CallPlayback } from "@/components/call-playback";
+import { MeetingNav, type MeetingSection } from "@/components/meeting-nav";
 import { ChatPanel } from "@/components/chat-panel";
 import { WrapupDispatch } from "@/components/wrapup-dispatch";
 import { LivePanel } from "@/components/live-panel";
@@ -48,6 +49,18 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
     detail;
   const liveAnswerCount = (await listLiveAnswers(meeting.id)).length;
   const signals = summary?.intentSignals ?? null;
+
+  // Only the parts that exist. Offering a link to an empty transcript is worse
+  // than not offering one.
+  const sections: MeetingSection[] = [
+    proposals.length > 0 || recapEmail ? { id: "next", label: "What's next" } : null,
+    signals ? { id: "signals", label: "Signals" } : null,
+    summary ? { id: "summary", label: DELIVERABLE_LABEL[summary.deliverableType] } : null,
+    { id: "brief", label: "Brief" },
+    transcript ? { id: "recording", label: "Recording" } : null,
+    { id: "transcript", label: "Transcript" },
+    { id: "chat", label: "Ask" },
+  ].filter(Boolean) as MeetingSection[];
 
   return (
     <Page current="meetings" sidebar={<MeetingsSidebar companies={rail.companies} activeId={id} />}>
@@ -108,6 +121,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         )}
       </div>
 
+      <MeetingNav sections={sections} />
+
       <div className="space-y-9">
         {/* --- Live answers: first while the call is happening ------------- */}
         {(meeting.status === "recording" || liveAnswerCount > 0) && (
@@ -116,7 +131,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
 
         {/* --- After the call: the only thing here needing a decision ----- */}
         {(proposals.length > 0 || recapEmail) && (
-          <section>
+          <section id="next" className="scroll-mt-24">
             <WrapupDispatch
               meetingId={meeting.id}
               email={
@@ -152,7 +167,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
 
         {/* --- Buying signals ---------------------------------------------- */}
         {signals && (
-          <section>
+          <section id="signals" className="scroll-mt-24">
             <SectionHead label="What the call signalled" />
             <Card className="px-5 py-4">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rule-soft pb-4">
@@ -224,7 +239,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
 
         {/* --- Summary ------------------------------------------------------ */}
         {summary && (
-          <section>
+          <section id="summary" className="scroll-mt-24">
             <SectionHead
               label={DELIVERABLE_LABEL[summary.deliverableType]}
               aside={`Written ${shortDate(summary.generatedAt)}`}
@@ -236,7 +251,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         )}
 
         {/* --- Pre-call brief ----------------------------------------------- */}
-        <section>
+        <section id="brief" className="scroll-mt-24">
           <SectionHead
             label="Pre-call brief"
             aside={brief ? `Researched ${shortDate(brief.generatedAt)}` : undefined}
@@ -263,36 +278,32 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
           )}
         </section>
 
-        {/* --- The call: recording and transcript, in step ------------------ */}
-        <section>
-          <SectionHead
-            label="The call"
-            aside={
-              transcript
-                ? [transcript.source, durationLabel(transcript.durationSeconds)]
-                    .filter(Boolean)
-                    .join(" · ")
-                : undefined
-            }
+        {/* --- The recording and the transcript, as two sections ----------- */}
+        {transcript ? (
+          <CallPlayback
+            meetingId={meeting.id}
+            segments={transcript.speakerSegments}
+            rawText={transcript.rawText}
+            meta={[transcript.source, durationLabel(transcript.durationSeconds)]
+              .filter(Boolean)
+              .join(" · ")}
           />
-          {transcript ? (
-            <CallPlayback
-              meetingId={meeting.id}
-              segments={transcript.speakerSegments}
-              rawText={transcript.rawText}
-            />
-          ) : isPast ? (
-            <TranscriptUpload meetingId={meeting.id} />
-          ) : (
-            <Empty title="The call hasn't happened yet">
-              A notetaker joins automatically. Once the call ends, the recording, transcript and
-              summary land here.
-            </Empty>
-          )}
-        </section>
+        ) : (
+          <section id="transcript" className="scroll-mt-24">
+            <SectionHead label="Transcript" />
+            {isPast ? (
+              <TranscriptUpload meetingId={meeting.id} />
+            ) : (
+              <Empty title="The call hasn't happened yet">
+                A notetaker joins automatically. Once the call ends, the recording, transcript and
+                summary land here.
+              </Empty>
+            )}
+          </section>
+        )}
 
         {/* --- Ask about it -------------------------------------------------- */}
-        <section>
+        <section id="chat" className="scroll-mt-24">
           <SectionHead label={`Ask about ${account.companyName}`} />
           <ChatPanel
             accountId={account.id}
