@@ -215,9 +215,12 @@ export function classifyExternalMeeting(
     counts.set(domain, (counts.get(domain) ?? 0) + 1);
   }
 
-  const accountDomain =
-    [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ??
-    domainOf(externals[0].email);
+  // Null when every external is on free mail. There is no company behind
+  // gmail.com, so treating it as one creates an account called "Gmail" that
+  // collects every personal meeting and researches each of them. The caller
+  // skips a meeting with no account domain, which is the right outcome: a call
+  // with no identifiable company is not a sales call we can prepare for.
+  const accountDomain = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
   return { external: true, accountDomain, attendees: mapped };
 }

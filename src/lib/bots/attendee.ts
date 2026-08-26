@@ -106,6 +106,32 @@ export class AttendeeProvider implements BotProvider {
       // mp3. Audio-only also drops the bot's CPU request substantially, which
       // is what makes many concurrent bots affordable.
       recording_settings: { format: "mp3" },
+
+      /*
+       * When to give up and leave.
+       *
+       * Attendee has defaults for most of this, but `max_uptime_seconds` is
+       * unlimited by default — so a call somebody forgets to end, or a bot that
+       * fails to notice it is alone, keeps a container alive indefinitely. On a
+       * shared host that is the failure that takes everything else down with
+       * it, so a hard ceiling matters more than any of the finer timeouts.
+       *
+       * The rest are stated rather than inherited: a sales call that nobody
+       * joins should not hold a slot for ten minutes, and the silence timeout
+       * is brought forward because a call that has gone quiet for five minutes
+       * is over, whatever the calendar says.
+       */
+      automatic_leave_settings: {
+        // Everyone else has left. Short, because there is nothing left to hear.
+        only_participant_in_meeting_timeout_seconds: 60,
+        silence_timeout_seconds: 300,
+        silence_activate_after_seconds: 600,
+        // Waiting to be admitted. Beyond this nobody is coming.
+        waiting_room_timeout_seconds: 300,
+        wait_for_host_to_start_meeting_timeout_seconds: 300,
+        // Four hours. Far longer than any real call, purely a runaway stop.
+        max_uptime_seconds: 4 * 60 * 60,
+      },
     };
 
     // Omitting `join_at` tells Attendee to join now. Sending one always costs

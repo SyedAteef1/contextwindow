@@ -137,6 +137,20 @@ describe("classifyExternalMeeting", () => {
     expect(result).toBeNull();
   });
 
+  it("refuses to make a company out of free mail", () => {
+    // Otherwise a personal call becomes an account named "Gmail" that collects
+    // every meeting and gets researched like a prospect.
+    const result = classifyExternalMeeting(
+      {
+        ...base,
+        attendees: [{ email: "rep@gmail.com", self: true }, { email: "friend@gmail.com" }],
+      },
+      "gmail.com",
+      "rep@gmail.com",
+    );
+    expect(result?.accountDomain).toBeNull();
+  });
+
   it("treats another free-mail attendee as external when the rep is on free mail too", () => {
     // Two gmail.com addresses are not colleagues. Classifying by domain would
     // call this internal and silently drop every meeting a solo seller books.
