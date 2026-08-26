@@ -13,6 +13,7 @@ import { and, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
 import { demoRequests } from "@/db/schema";
 import { handler } from "@/lib/api";
+import { notify } from "@/lib/notify";
 
 const LIMITS = { name: 120, email: 200, company: 160, teamSize: 40, message: 2000, source: 120 };
 const COOLDOWN_MS = 60_000;
@@ -67,6 +68,9 @@ export const POST = handler(async (request: Request) => {
     message: message || null,
     source: source || null,
   });
+
+  // Not awaited: the row is written, and the person is waiting on a response.
+  notify({ kind: "demo_request", name, email, company, teamSize, message, source });
 
   return NextResponse.json({ ok: true });
 });

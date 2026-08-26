@@ -12,6 +12,7 @@ import { authEvents, oauthCredentials, users, workspaces } from "@/db/schema";
 import { decrypt, encrypt } from "@/lib/crypto";
 import { isConsumerDomain } from "@/lib/google/calendar";
 import { env, requireEnv } from "@/lib/env";
+import { notify } from "@/lib/notify";
 
 const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
@@ -228,6 +229,16 @@ export async function upsertUserAndCredentials(
     await db
       .insert(authEvents)
       .values({ userId: user.id, event: isNewUser ? "signed_up" : "signed_in" });
+
+  // Only the first time. A sign-in is not news; a sign-up is.
+  if (isNewUser) {
+    notify({
+      kind: "signup",
+      email: user.email,
+      name: user.name,
+      domain: emailDomain,
+    });
+  }
   } catch (error) {
     console.error("Failed to record the auth event:", error);
   }

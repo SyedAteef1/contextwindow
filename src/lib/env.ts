@@ -169,6 +169,16 @@ const schema = z.object({
     .default("true")
     .transform((value) => value === "true"),
 
+  // --- Notifications -----------------------------------------------------
+  /**
+   * A Slack incoming webhook, which is the fastest way to hear about a sign-up.
+   * One URL from Slack's own UI — no OAuth, no app review — and it reaches a
+   * phone in seconds. Create it under Slack apps → Incoming Webhooks.
+   */
+  SLACK_WEBHOOK_URL: z.string().url().optional(),
+  /** Where sign-up and demo-request alerts go by email. Needs the SMTP sender. */
+  NOTIFY_EMAIL: z.string().optional(),
+
   // --- Outbound mail -----------------------------------------------------
   /**
    * Who the mail comes from.
