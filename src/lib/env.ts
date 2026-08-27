@@ -11,7 +11,25 @@ const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 
   // --- App ---------------------------------------------------------------
+  /** Where the signed-in product lives. OAuth returns here. */
   APP_URL: z.string().url().default("http://localhost:3000"),
+  /**
+   * Where the public site lives, when it is a different host.
+   *
+   * Marketing on the apex and the product on a subdomain is the arrangement
+   * buyers expect, and it keeps a stranger off the app entirely. Unset, both
+   * are the same origin and nothing below changes.
+   */
+  MARKETING_URL: z.string().url().optional(),
+  /**
+   * The cookie scope, when the session has to be readable on both hosts.
+   *
+   * A cookie set on `sales.example.com` is invisible to `example.com`, so the
+   * public site could not tell a signed-in visitor from a stranger. Setting
+   * `.example.com` shares it across both. Leave unset for a single host — a
+   * domain-scoped cookie on localhost is silently dropped.
+   */
+  COOKIE_DOMAIN: z.string().optional(),
   SESSION_SECRET: z.string().min(16).default("dev-only-insecure-session-secret"),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(24 * 7),
 

@@ -49,12 +49,20 @@ export async function setSessionCookie(payload: SessionPayload): Promise<void> {
     secure: env().NODE_ENV === "production",
     path: "/",
     maxAge: env().SESSION_TTL_HOURS * 3600,
+    // Shared across the apex and the app subdomain, so the public site can
+    // tell a signed-in visitor from a stranger and send them onward.
+    ...(env().COOKIE_DOMAIN ? { domain: env().COOKIE_DOMAIN } : {}),
   });
 }
 
 export async function clearSessionCookie(): Promise<void> {
   const store = await cookies();
-  store.delete(SESSION_COOKIE);
+  // Deleted with the same scope it was set with: a delete that omits the
+  // domain removes a host-only cookie that is not the one signing them in,
+  // and the shared one survives — so logging out appears to do nothing.
+  const domain = env().COOKIE_DOMAIN;
+  if (domain) store.set(SESSION_COOKIE, "", { path: "/", domain, maxAge: 0 });
+  else store.delete(SESSION_COOKIE);
 }
 
 export async function readSession(): Promise<SessionPayload | null> {

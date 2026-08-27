@@ -32,6 +32,7 @@ services:
       # HTTP so webhook delivery is not redirected to a certificate that
       # cannot match a bare IP.
       - SITE_INTERNAL=${SITE_INTERNAL:-localhost}
+      - SITE_MARKETING=${SITE_MARKETING:-}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

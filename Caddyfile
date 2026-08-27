@@ -9,6 +9,16 @@
 	reverse_proxy app:3000
 }
 
+# The public site, on the apex.
+#
+# One deployment answers on both names and sorts them out in middleware, so
+# there is nothing to run here beyond a second certificate. Unset, this block
+# collapses to the same address as the one above and Caddy ignores the
+# duplicate.
+{$SITE_MARKETING:{$SITE_ADDRESS::80}} {
+	reverse_proxy app:3000
+}
+
 # The internal address, for services on this host talking to the app.
 #
 # Naming a hostname above makes Caddy redirect *everything* else on :80 to

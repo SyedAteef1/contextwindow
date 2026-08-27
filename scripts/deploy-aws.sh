@@ -22,6 +22,11 @@ KEY="${KEY:-$HOME/.ssh/sales-intel-deploy}"
 #   DEPLOY_DOMAIN=sales.contextwindowhq.com ./scripts/deploy-aws.sh
 DEPLOY_DOMAIN="${DEPLOY_DOMAIN:-}"
 
+# The public site, when it lives on a different hostname to the app. Marketing
+# on the apex and the product on a subdomain keeps a stranger off app routes.
+#   DEPLOY_MARKETING_DOMAIN=contextwindowhq.com
+DEPLOY_MARKETING_DOMAIN="${DEPLOY_MARKETING_DOMAIN:-}"
+
 # Which bot backend the deployed app uses. Defaults to `noop` — a deployment
 # with no Attendee reachable should refuse to send bots rather than fail on
 # every meeting.
@@ -112,10 +117,11 @@ step "Writing the production environment"
 # Built here from the local .env, with the values that must differ in
 # production overridden. Written straight to the host over ssh so it never
 # exists as a file on this machine.
-python3 - "$HOST" "$DEPLOY_DOMAIN" "$DEPLOY_BOT_PROVIDER" "$DEPLOY_WEBHOOK_BASE_URL" "$DEPLOY_AUDIO_BRIDGE_URL" <<'PYEOF' > /tmp/env.production
+python3 - "$HOST" "$DEPLOY_DOMAIN" "$DEPLOY_BOT_PROVIDER" "$DEPLOY_WEBHOOK_BASE_URL" "$DEPLOY_AUDIO_BRIDGE_URL" "$DEPLOY_MARKETING_DOMAIN" <<'PYEOF' > /tmp/env.production
 import pathlib, sys
 host, domain, bot_provider, webhook_base = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 audio_bridge = sys.argv[5]
+marketing = sys.argv[6]
 # Once DNS resolves, everything public must be https: Google will not redirect
 # OAuth back to a bare IP, and bot providers reject plain-http webhooks.
 origin = f"https://{domain}" if domain else f"http://{host}"
@@ -142,6 +148,16 @@ keep.update({
     "WEBHOOK_BASE_URL": webhook_base or origin,
     "BOT_PROVIDER": bot_provider,
 })
+
+# Two hostnames, one deployment. The cookie has to be readable on both or the
+# public site cannot tell a signed-in visitor from a stranger — scoped to the
+# registrable domain, which is the app host minus its first label.
+if marketing:
+    keep["MARKETING_URL"] = f"https://{marketing}"
+    keep["COOKIE_DOMAIN"] = "." + marketing
+else:
+    keep.pop("MARKETING_URL", None)
+    keep.pop("COOKIE_DOMAIN", None)
 
 # Present only when the bridge is actually deployed. Carrying the local value
 # over points every bot at a socket that is not there.
@@ -182,7 +198,7 @@ step "Starting the stack"
 # The internal host is whatever DEPLOY_WEBHOOK_BASE_URL points at, so Caddy
 # always serves plain HTTP on exactly the address the bot provider posts to.
 SITE_INTERNAL=$(printf '%s' "$DEPLOY_WEBHOOK_BASE_URL" | sed -E 's#^https?://##; s#/.*$##')
-remote "set -eux; cd /opt/sales-intel/app && SITE_ADDRESS='$DEPLOY_DOMAIN' SITE_INTERNAL='${SITE_INTERNAL:-localhost}' docker compose -f docker-compose.prod.yml up -d"
+remote "set -eux; cd /opt/sales-intel/app && SITE_ADDRESS='$DEPLOY_DOMAIN' SITE_MARKETING='${DEPLOY_MARKETING_DOMAIN:+$DEPLOY_MARKETING_DOMAIN, www.$DEPLOY_MARKETING_DOMAIN}' SITE_INTERNAL='${SITE_INTERNAL:-localhost}' docker compose -f docker-compose.prod.yml up -d"
 sleep 8
 remote 'docker ps --format "  {{.Names}}: {{.Status}}"'
 
