@@ -73,13 +73,18 @@ export function middleware(request: NextRequest) {
   }
 
   if (host === appHost) {
-    // The app host has no front door: send a stranger to the pitch, and a
-    // signed-in rep straight past it.
-    if (MARKETING_PATHS.has(pathname)) {
-      return signedIn
-        ? NextResponse.redirect(new URL("/meetings", process.env.APP_URL))
-        : NextResponse.redirect(new URL(pathname, process.env.MARKETING_URL));
+    // A signed-in rep asking for the pitch wants their meetings.
+    if (signedIn && MARKETING_PATHS.has(pathname)) {
+      return NextResponse.redirect(new URL("/meetings", process.env.APP_URL));
     }
+    // Everything else is served here, including the landing page.
+    //
+    // Sending a stranger from the app host to the public host would be tidier,
+    // but it makes this deployment depend on the other hostname already
+    // resolving here — and during a DNS move it does not, so the redirect
+    // lands them on whatever the old records still point at. Serving the page
+    // on both hosts is correct before and after the move, and costs only that
+    // the page has two addresses.
     return NextResponse.next();
   }
 

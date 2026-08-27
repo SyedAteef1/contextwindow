@@ -5,7 +5,12 @@
 # a Let's Encrypt certificate on its own; leave it unset and the site answers on
 # :80, which is enough to check a deployment but NOT enough for Google OAuth
 # (which refuses non-HTTPS redirect URIs, and refuses bare IPs entirely).
-{$SITE_ADDRESS::80} {
+# A `{$VAR:default}` default only applies when the variable is *unset*. Compose
+# always passes these, so an empty value substitutes an empty site address and
+# Caddy reads the bare `{` as a global options block — which fails to parse and
+# crash-loops the container. The deploy script therefore substitutes a real
+# fallback rather than relying on the default here.
+{$SITE_ADDRESS} {
 	reverse_proxy app:3000
 }
 
@@ -15,7 +20,9 @@
 # there is nothing to run here beyond a second certificate. Unset, this block
 # collapses to the same address as the one above and Caddy ignores the
 # duplicate.
-{$SITE_MARKETING:{$SITE_ADDRESS::80}} {
+# Defaults to a local-only name when there is no public site, because an empty
+# value breaks the parse and a duplicate of the address above is a conflict.
+{$SITE_MARKETING} {
 	reverse_proxy app:3000
 }
 

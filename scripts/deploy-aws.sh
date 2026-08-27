@@ -198,7 +198,17 @@ step "Starting the stack"
 # The internal host is whatever DEPLOY_WEBHOOK_BASE_URL points at, so Caddy
 # always serves plain HTTP on exactly the address the bot provider posts to.
 SITE_INTERNAL=$(printf '%s' "$DEPLOY_WEBHOOK_BASE_URL" | sed -E 's#^https?://##; s#/.*$##')
-remote "set -eux; cd /opt/sales-intel/app && SITE_ADDRESS='$DEPLOY_DOMAIN' SITE_MARKETING='${DEPLOY_MARKETING_DOMAIN:+$DEPLOY_MARKETING_DOMAIN, www.$DEPLOY_MARKETING_DOMAIN}' SITE_INTERNAL='${SITE_INTERNAL:-localhost}' docker compose -f docker-compose.prod.yml up -d"
+# Both site addresses must be non-empty: Caddy cannot parse a block with no
+# address, and an empty value is not the same as an unset one. Without a public
+# domain the app answers on :80; without a marketing domain the second block
+# gets a local-only name so it parses and simply never matches a real request.
+SITE_ADDR="${DEPLOY_DOMAIN:-:80}"
+if [ -n "$DEPLOY_MARKETING_DOMAIN" ]; then
+  SITE_MKT="$DEPLOY_MARKETING_DOMAIN, www.$DEPLOY_MARKETING_DOMAIN"
+else
+  SITE_MKT="http://marketing.localhost"
+fi
+remote "set -eux; cd /opt/sales-intel/app && SITE_ADDRESS='$SITE_ADDR' SITE_MARKETING='$SITE_MKT' SITE_INTERNAL='${SITE_INTERNAL:-localhost}' docker compose -f docker-compose.prod.yml up -d"
 sleep 8
 remote 'docker ps --format "  {{.Names}}: {{.Status}}"'
 
