@@ -166,7 +166,7 @@ export default async function LandingPage({
           className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-zinc-950"
         />
 
-        <div className="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div className="relative mx-auto w-full max-w-7xl px-4 pb-20 pt-10 sm:px-6 lg:px-8 lg:pb-24 lg:pt-14">
           <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-20">
             <div className="flex flex-col gap-6">
               <div className="inline-flex w-fit items-center gap-2 rounded border border-white/10 bg-white/5 px-3 py-1">
@@ -237,8 +237,8 @@ export default async function LandingPage({
                           The buyer just asked
                         </p>
                         <p className="text-base leading-snug text-white">
-                          If we lose connection halfway through a sync, do we end up with duplicate
-                          records?
+                          Our last vendor promised six weeks and took nine months. What is the
+                          real number?
                         </p>
                       </div>
 
@@ -252,8 +252,9 @@ export default async function LandingPage({
                           </span>
                         </div>
                         <p className="text-sm leading-relaxed text-zinc-300">
-                          No. A dropped sync picks up where it left off and never writes the same
-                          record twice. Two customers asked this last quarter.
+                          Three weeks for a team this size. And it runs in parallel — their
+                          current system stays live until they choose to switch, so the date is
+                          theirs, not ours.
                         </p>
 
                         <p className="flex flex-wrap items-center gap-2 border-t border-dashed border-amber-500/20 pt-3">
@@ -261,7 +262,7 @@ export default async function LandingPage({
                             From your docs
                           </span>
                           <span className="font-mono text-[10px] text-zinc-600">
-                            Support ticket · 14 Aug
+                            Meridian rollout · 3 weeks · June
                           </span>
                         </p>
                       </div>
@@ -340,9 +341,9 @@ export default async function LandingPage({
               >
                 <div className="flex flex-col gap-3 p-5">
                   {[
-                    ["Decides", "Slowly, with a committee"],
-                    ["Fears", "A rollout that goes wrong"],
-                    ["Open with", "A customer like them"],
+                    ["Decides", "Wants a business case, not a demo"],
+                    ["Fears", "Being blamed if it fails"],
+                    ["Open with", "A result, not a feature"],
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-start gap-3">
                       <span className="w-24 shrink-0 font-mono text-xs uppercase tracking-widest text-zinc-600">
@@ -361,17 +362,17 @@ export default async function LandingPage({
                 body="While the buyer is speaking, Context Window listens. A difficult question triggers a search of your past winning calls, product docs and support tickets, and the answer lands on your rep's screen before the buyer finishes the sentence."
               >
                 <div className="flex flex-col gap-2 p-4">
-                  <div className="flex items-center justify-between gap-3 rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                  <p className="pb-1 text-sm leading-relaxed text-zinc-400">
+                    &ldquo;Does this replace Salesforce, or sit on top of it?&rdquo;
+                  </p>
+                  <div className="flex flex-col gap-2 rounded border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
                     <span className="text-xs font-semibold uppercase tracking-widest text-amber-400">
-                      Answer found
+                      Say this
                     </span>
-                    <span className="font-mono text-xs tabular-nums text-zinc-500">0.8s</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3 rounded border border-white/10 px-3 py-2.5">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-                      Buyer losing interest
+                    <span className="text-sm leading-relaxed text-zinc-300">
+                      On top. Nothing gets ripped out — it writes into the fields your team
+                      already uses.
                     </span>
-                    <span className="font-mono text-xs tabular-nums text-zinc-500">0.3s</span>
                   </div>
                 </div>
               </Phase>
@@ -384,8 +385,8 @@ export default async function LandingPage({
               >
                 <div className="flex flex-col gap-3 p-5">
                   {[
-                    ["Salesforce", "Updated"],
-                    ["Proposal", "Built · 120 seats"],
+                    ["Stage", "Discovery → Evaluation"],
+                    ["Next step", "Security review · Thu"],
                     ["Follow-up", "Drafted · needs approval"],
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-start gap-3">
