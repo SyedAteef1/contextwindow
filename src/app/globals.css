@@ -675,3 +675,43 @@
     transform: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Loading.
+
+   A placeholder breathes rather than sweeps. A shimmer that travels across the
+   screen draws the eye to the fact that nothing has arrived yet; a slow opacity
+   pulse sits still enough to be read as "shortly" instead of "broken", and it
+   costs one property to animate rather than a moving gradient.
+
+   The global reduced-motion rule already flattens this to a static block.
+   -------------------------------------------------------------------------- */
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.shimmer {
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/*
+ * The palette's navigation bar.
+ *
+ * Runs to 90% and stops. A determinate bar that reaches the end before the page
+ * does is a lie the reader catches; stopping short reads as "still going" and
+ * the panel closing is what completes it.
+ */
+@keyframes palette-load {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(0.9);
+  }
+}

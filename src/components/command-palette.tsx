@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/cn";
@@ -66,6 +66,7 @@ export function CommandPalette() {
   const [cursor, setCursor] = useState(0);
   const [index, setIndex] = useState<{ meetings: MeetingHit[]; accounts: AccountHit[] } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [navigating, startNavigation] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const indexRef = useRef(false);
@@ -170,8 +171,10 @@ export function CommandPalette() {
   const go = useCallback(
     (row: Row | undefined) => {
       if (!row) return;
-      setOpen(false);
-      router.push(row.href);
+      startNavigation(() => {
+        router.push(row.href);
+        setOpen(false);
+      });
     },
     [router],
   );
@@ -217,6 +220,13 @@ export function CommandPalette() {
       <div className="relative w-full max-w-xl overflow-hidden rounded-xl border border-rule bg-surface shadow-[0_24px_80px_-24px_rgba(0,0,0,0.9)] motion-safe:animate-[palette-in_140ms_cubic-bezier(0.2,0.7,0.3,1)]">
         {/* The frame states what the ordering is, because the ordering is the
             feature: this list is a clock, not an alphabet. */}
+        {navigating && (
+          <span
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-0.5 origin-left bg-cobalt motion-safe:animate-[palette-load_600ms_ease-out_forwards]"
+          />
+        )}
+
         <div className="flex items-center gap-3 border-b border-rule px-4">
           <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-faint">
             {clock(new Date())}
@@ -230,7 +240,7 @@ export function CommandPalette() {
               setCursor(0);
             }}
             onKeyDown={onInputKey}
-            placeholder="Jump to a call or account"
+            placeholder={navigating ? "Opening…" : "Jump to a call or account"}
             className="min-w-0 flex-1 bg-transparent py-4 text-[15px] text-ink outline-none placeholder:text-faint"
             aria-label="Search calls and accounts"
           />
@@ -241,7 +251,14 @@ export function CommandPalette() {
 
         <div ref={listRef} className="max-h-[52vh] overflow-y-auto py-2">
           {loading && !index && (
-            <p className="px-4 py-6 text-center text-[13px] text-faint">Loading your calls…</p>
+            <div className="px-4 py-2" aria-busy="true" aria-label="Loading your calls">
+              {["w-40", "w-52", "w-32", "w-44", "w-36"].map((w, i) => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <span className="shimmer h-2.5 w-11 shrink-0 rounded bg-rule/70" />
+                  <span className={`shimmer h-3 rounded bg-rule/70 ${w}`} />
+                </div>
+              ))}
+            </div>
           )}
 
           {index && flat.length === 0 && (
