@@ -32,7 +32,8 @@ export type RailMeeting = {
 function statusTone(status: MeetingStatus) {
   if (status === "recording") return "live" as const;
   if (status === "failed" || status === "skipped_quota") return "flag" as const;
-  if (status === "brief_ready" || status === "processed") return "neutral" as const;
+  if (status === "brief_ready" || status === "processed" || status === "bot_requires_upgrade")
+    return "neutral" as const;
   return "quiet" as const;
 }
 

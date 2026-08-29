@@ -32,6 +32,7 @@ const STATUS_LABEL: Partial<Record<Row["status"], string>> = {
   transcribed: "Transcript",
   processed: "Summary",
   skipped_quota: "Over limit",
+  bot_requires_upgrade: "Brief only",
   failed: "Failed",
   cancelled: "Cancelled",
 };
@@ -39,7 +40,8 @@ const STATUS_LABEL: Partial<Record<Row["status"], string>> = {
 function statusTone(status: Row["status"]): string {
   if (status === "recording") return "text-live";
   if (status === "failed" || status === "skipped_quota") return "text-flag";
-  if (status === "processed" || status === "transcribed") return "text-muted";
+  if (status === "processed" || status === "transcribed" || status === "bot_requires_upgrade")
+    return "text-muted";
   return "text-signal";
 }
 

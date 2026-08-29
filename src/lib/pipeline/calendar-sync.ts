@@ -33,7 +33,7 @@ import {
   type CalendarEvent,
 } from "@/lib/google/calendar";
 import { getAccessTokenForUser } from "@/lib/google/oauth";
-import { canProcessMeeting } from "@/lib/usage";
+import { botEntitlement, canGenerateBrief, incrementBriefUsage } from "@/lib/usage";
 import { generateMeetingBrief } from "@/agents/research";
 
 export type SyncResult = {
@@ -257,10 +257,19 @@ async function processEvent(input: {
 }
 
 /**
- * Move a detected meeting forward: schedule the bot, then write the brief.
+ * Move a detected meeting forward: write the brief, then schedule the bot.
  *
- * Both are gated on the free-tier meter, per the spec's rule that steps 2-4 are
- * what the cap protects.
+ * The order is the product.
+ *
+ * The brief runs first and runs for everyone, because it is what the free plan
+ * *is* — connect a calendar and research starts arriving, with nothing to
+ * install and no bot in anyone's meeting. The bot is the part that costs real
+ * money to run (recording, transcription, a live model held to half a second),
+ * so it is what an upgrade buys.
+ *
+ * These used to be gated together behind one meter, which meant a rep who ran
+ * out stopped receiving research as well — the free tier looked broken rather
+ * than free.
  */
 async function advanceMeeting(input: {
   meetingId: string;
@@ -269,15 +278,39 @@ async function advanceMeeting(input: {
 }): Promise<void> {
   const { meetingId, ownerUserId, result } = input;
 
+  // --- The brief. Free, but bounded. -------------------------------------
+  // Don't pay for a second brief on a meeting that already has one.
+  const brief = await db.query.meetingBriefs.findFirst({
+    where: (table, { eq: equals }) => equals(table.meetingId, meetingId),
+  });
+
+  if (!brief) {
+    if (await canGenerateBrief(ownerUserId)) {
+      try {
+        await generateMeetingBrief(meetingId);
+        await incrementBriefUsage(ownerUserId);
+        result.briefsGenerated += 1;
+      } catch (error) {
+        await recordBriefFailure(meetingId, error, result);
+      }
+    } else {
+      // The ceiling sits far above a working rep's calendar, so reaching it
+      // means something is looping rather than that someone is selling hard.
+      result.errors.push(`meeting ${meetingId}: monthly brief ceiling reached`);
+    }
+  }
+
+  // --- The bot. What `pro` buys. -----------------------------------------
   // The meter belongs to the rep. Metering the account instead gave every
   // prospect company its own free tier.
-  const quota = await canProcessMeeting(ownerUserId);
-  if (quota.overLimit) {
+  const entitlement = await botEntitlement(ownerUserId);
+  if (!entitlement.allowed) {
+    const status = entitlement.reason === "free" ? "bot_requires_upgrade" : "skipped_quota";
     await db
       .update(meetings)
-      .set({ status: "skipped_quota", updatedAt: new Date() })
-      .where(and(eq(meetings.id, meetingId), ne(meetings.status, "skipped_quota")));
-    result.quotaSkipped += 1;
+      .set({ status, updatedAt: new Date() })
+      .where(and(eq(meetings.id, meetingId), ne(meetings.status, status)));
+    if (entitlement.reason === "quota") result.quotaSkipped += 1;
     return;
   }
 
@@ -287,24 +320,20 @@ async function advanceMeeting(input: {
     const message = error instanceof Error ? error.message : String(error);
     result.errors.push(`meeting ${meetingId}: bot scheduling failed — ${message}`);
   }
+}
 
-  // Don't pay for a second brief on a meeting that already has one.
-  const brief = await db.query.meetingBriefs.findFirst({
-    where: (table, { eq: equals }) => equals(table.meetingId, meetingId),
-  });
-  if (brief) return;
-
-  try {
-    await generateMeetingBrief(meetingId);
-    result.briefsGenerated += 1;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    result.errors.push(`meeting ${meetingId}: brief generation failed — ${message}`);
-    await db
-      .update(meetings)
-      .set({ errorMessage: message, updatedAt: new Date() })
-      .where(eq(meetings.id, meetingId));
-  }
+/** A brief that failed is recorded on the meeting, not just in the run log. */
+async function recordBriefFailure(
+  meetingId: string,
+  error: unknown,
+  result: SyncResult,
+): Promise<void> {
+  const message = error instanceof Error ? error.message : String(error);
+  result.errors.push(`meeting ${meetingId}: brief generation failed — ${message}`);
+  await db
+    .update(meetings)
+    .set({ errorMessage: message, updatedAt: new Date() })
+    .where(eq(meetings.id, meetingId));
 }
 
 /**

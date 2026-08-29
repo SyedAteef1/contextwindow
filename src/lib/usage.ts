@@ -7,8 +7,10 @@
 import { and, eq, lt, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { usage } from "@/db/schema";
+import { usage, users, workspaces } from "@/db/schema";
 import { env } from "./env";
+
+export type Plan = "free" | "pro";
 
 /** Midnight UTC on the first of the current month. */
 export function currentPeriodStart(now: Date = new Date()): Date {
@@ -22,6 +24,10 @@ export type UsageState = {
   remaining: number;
   overLimit: boolean;
   periodStart: Date;
+  /** Briefs are free; this meter only exists so the bill cannot run away. */
+  briefsUsed: number;
+  briefLimit: number;
+  briefsExhausted: boolean;
 };
 
 /** Fetch the meter for a rep, creating it and rolling the period as needed. */
@@ -41,7 +47,12 @@ export async function getUsage(userId: string): Promise<UsageState> {
   // A stored period older than this month means the month rolled over.
   await db
     .update(usage)
-    .set({ meetingsProcessedThisMonth: 0, periodStart: period, updatedAt: new Date() })
+    .set({
+      meetingsProcessedThisMonth: 0,
+      briefsThisMonth: 0,
+      periodStart: period,
+      updatedAt: new Date(),
+    })
     .where(and(eq(usage.userId, userId), lt(usage.periodStart, period)));
 
   const row = await db.query.usage.findFirst({ where: eq(usage.userId, userId) });
@@ -56,7 +67,62 @@ export async function getUsage(userId: string): Promise<UsageState> {
     remaining: Math.max(0, limit - used),
     overLimit: used >= limit,
     periodStart: row.periodStart,
+    briefsUsed: row.briefsThisMonth,
+    briefLimit: row.briefLimit,
+    briefsExhausted: row.briefsThisMonth >= row.briefLimit,
   };
+}
+
+/**
+ * What this rep's company is entitled to.
+ *
+ * Read through the workspace rather than the user: a sales team buys together,
+ * so the second rep at a company that has already upgraded should not have to
+ * buy it again. A rep with no workspace row cannot happen — the OAuth upsert
+ * creates one — but the fallback keeps a missing row cheap rather than fatal.
+ */
+export async function planForUser(userId: string): Promise<Plan> {
+  const row = await db
+    .select({ plan: workspaces.plan })
+    .from(users)
+    .innerJoin(workspaces, eq(users.workspaceId, workspaces.id))
+    .where(eq(users.id, userId))
+    .limit(1);
+  return row[0]?.plan ?? "free";
+}
+
+/**
+ * Whether a bot may be sent to this rep's call.
+ *
+ * Two different refusals, and the caller has to tell them apart: `free` means
+ * the plan does not include a notetaker at all, `quota` means it does and the
+ * month is spent. One is an offer, the other is a limit.
+ */
+export async function botEntitlement(
+  userId: string,
+): Promise<{ allowed: true } | { allowed: false; reason: "free" | "quota" }> {
+  if ((await planForUser(userId)) === "free") return { allowed: false, reason: "free" };
+  const quota = await getUsage(userId);
+  return quota.overLimit ? { allowed: false, reason: "quota" } : { allowed: true };
+}
+
+/** Whether another brief may be written this month. */
+export async function canGenerateBrief(userId: string): Promise<boolean> {
+  const state = await getUsage(userId);
+  return !state.briefsExhausted;
+}
+
+/** Record one brief written. Same single-statement increment as the meter above. */
+export async function incrementBriefUsage(userId: string): Promise<UsageState> {
+  await getUsage(userId);
+  await db
+    .update(usage)
+    .set({
+      briefsThisMonth: sql`${usage.briefsThisMonth} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(eq(usage.userId, userId));
+  return getUsage(userId);
 }
 
 /** True when this rep still has free-tier headroom this month. */

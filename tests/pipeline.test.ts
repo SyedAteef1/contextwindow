@@ -20,7 +20,17 @@ import {
   type SpeakerSegment,
 } from "@/db/schema";
 import { indexDocument, loadPlaybookSnippets, retrieveForAccount } from "@/lib/retrieval";
-import { canProcessMeeting, currentPeriodStart, getUsage, incrementUsage, setFreeTierLimit } from "@/lib/usage";
+import {
+  botEntitlement,
+  canGenerateBrief,
+  canProcessMeeting,
+  currentPeriodStart,
+  getUsage,
+  incrementBriefUsage,
+  incrementUsage,
+  planForUser,
+  setFreeTierLimit,
+} from "@/lib/usage";
 
 async function resetDatabase() {
   // Cascades through every dependent table.
@@ -308,6 +318,103 @@ describe("free-tier metering", () => {
     expect(state.used).toBe(3);
     expect(state.remaining).toBe(2);
     expect(a.id).not.toBe(b.id);
+  });
+});
+
+/**
+ * The free/paid split.
+ *
+ * The property worth protecting is that these two entitlements move
+ * independently: research keeps arriving on the free plan no matter how many
+ * calls a rep has had, and the bot stops for two different reasons that must
+ * not be confused with each other.
+ */
+describe("plan entitlements", () => {
+  /** A rep whose workspace is on a given plan. */
+  async function makeRepOnPlan(plan: "free" | "pro", email = "rep@northstar.io") {
+    const [workspace] = await db
+      .insert(workspaces)
+      .values({ name: "Northstar", domain: `plan-${plan}-${email}`, plan })
+      .returning();
+    const [rep] = await db
+      .insert(users)
+      .values({
+        email,
+        emailDomain: email.split("@")[1],
+        name: "Test Rep",
+        workspaceId: workspace.id,
+      })
+      .returning();
+    return rep;
+  }
+
+  it("defaults a new workspace to free", async () => {
+    const rep = await makeRepOnPlan("free");
+    expect(await planForUser(rep.id)).toBe("free");
+  });
+
+  it("refuses the bot on free, and says it is the plan rather than the quota", async () => {
+    const rep = await makeRepOnPlan("free");
+
+    const entitlement = await botEntitlement(rep.id);
+    expect(entitlement.allowed).toBe(false);
+    if (!entitlement.allowed) expect(entitlement.reason).toBe("free");
+  });
+
+  it("allows the bot on pro", async () => {
+    const rep = await makeRepOnPlan("pro");
+    expect((await botEntitlement(rep.id)).allowed).toBe(true);
+  });
+
+  it("distinguishes a spent quota from a free plan", async () => {
+    const rep = await makeRepOnPlan("pro");
+    for (let i = 0; i < 5; i++) await incrementUsage(rep.id);
+
+    const entitlement = await botEntitlement(rep.id);
+    expect(entitlement.allowed).toBe(false);
+    // Same refusal, different cause — and the pipeline writes a different
+    // status for each, so collapsing them would show the wrong button.
+    if (!entitlement.allowed) expect(entitlement.reason).toBe("quota");
+  });
+
+  it("keeps writing briefs after the bot quota is gone", async () => {
+    const rep = await makeRepOnPlan("pro");
+    for (let i = 0; i < 5; i++) await incrementUsage(rep.id);
+
+    expect((await canProcessMeeting(rep.id)).overLimit).toBe(true);
+    // The regression this whole split exists to prevent: research used to stop
+    // here too, which made the free tier look broken rather than free.
+    expect(await canGenerateBrief(rep.id)).toBe(true);
+  });
+
+  it("meters briefs separately, and only stops at their own ceiling", async () => {
+    const rep = await makeRepOnPlan("free");
+
+    for (let i = 0; i < 24; i++) await incrementBriefUsage(rep.id);
+    expect(await canGenerateBrief(rep.id)).toBe(true);
+
+    const state = await incrementBriefUsage(rep.id);
+    expect(state.briefsUsed).toBe(25);
+    expect(state.briefsExhausted).toBe(true);
+    expect(await canGenerateBrief(rep.id)).toBe(false);
+    // The bot meter is untouched by any of that.
+    expect(state.used).toBe(0);
+  });
+
+  it("resets both meters when the month rolls over", async () => {
+    const rep = await makeRepOnPlan("free");
+    await incrementUsage(rep.id);
+    await incrementBriefUsage(rep.id);
+
+    await db
+      .update(usage)
+      .set({ periodStart: new Date(Date.UTC(2020, 0, 1)) })
+      .where(eq(usage.userId, rep.id));
+
+    const rolled = await getUsage(rep.id);
+    expect(rolled.used).toBe(0);
+    expect(rolled.briefsUsed).toBe(0);
+    expect(rolled.periodStart.getTime()).toBe(currentPeriodStart().getTime());
   });
 });
 

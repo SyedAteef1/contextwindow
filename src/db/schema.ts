@@ -64,9 +64,32 @@ export const meetingStatusEnum = pgEnum("meeting_status", [
   "transcribed", // transcript stored, wrap-up not yet run
   "processed", // summary + intent written
   "skipped_quota", // over the free-tier cap
+  /**
+   * The brief was written and delivered, but the bot is not joining.
+   *
+   * Distinct from `skipped_quota` on purpose: one means "you have used up this
+   * month", the other means "your plan does not include the bot". They need
+   * different words on screen and a different button, and collapsing them into
+   * one status made the free tier look broken rather than free.
+   */
+  "bot_requires_upgrade",
   "failed",
   "cancelled", // removed from the calendar
 ]);
+
+/**
+ * What a workspace is entitled to.
+ *
+ * `free` is the research agent: connect a calendar and briefs start arriving,
+ * with no bot in anyone's meeting and nothing to install. `pro` adds the parts
+ * that cost real money to run — a bot in the call, live answers, and the
+ * wrap-up afterwards.
+ *
+ * It sits on the workspace rather than the user because a sales team buys
+ * together; the *meter* stays per-rep, so one rep cannot burn the floor's
+ * quota.
+ */
+export const planEnum = pgEnum("plan", ["free", "pro"]);
 
 export const dealStageEnum = pgEnum("deal_stage", [
   "discovery",
@@ -124,6 +147,8 @@ export const workspaces = pgTable(
     domain: text("domain").notNull(),
     /** What this company sells, in their own words. Indexed for retrieval. */
     description: text("description"),
+    /** Everyone starts free; the bot is what an upgrade buys. */
+    plan: planEnum("plan").notNull().default("free"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -585,8 +610,20 @@ export const usage = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    /** Bot-attended calls. What `pro` buys, and what the cap protects. */
     meetingsProcessedThisMonth: integer("meetings_processed_this_month").notNull().default(0),
     freeTierLimit: integer("free_tier_limit").notNull().default(5),
+    /*
+     * Briefs are free, but not infinite.
+     *
+     * A brief is one model call plus a web search, which is cheap enough to
+     * give away and expensive enough that a runaway calendar sync should not
+     * be able to run it two hundred times in a month. The ceiling is set well
+     * above what a working rep does — nobody on a real calendar will ever see
+     * it — so it reads as unlimited while still being bounded.
+     */
+    briefsThisMonth: integer("briefs_this_month").notNull().default(0),
+    briefLimit: integer("brief_limit").notNull().default(25),
     periodStart: timestamp("period_start", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

@@ -184,6 +184,8 @@ export function nodeState(status: MeetingStatus): "done" | "live" | "pending" | 
       return "done";
     case "recording":
       return "live";
+    case "bot_requires_upgrade":
+      return "done";
     case "skipped_quota":
     case "failed":
     case "cancelled":
@@ -204,6 +206,7 @@ export function statusLabel(status: MeetingStatus): string {
     transcribed: "Writing summary",
     processed: "Summary ready",
     skipped_quota: "Over free limit",
+    bot_requires_upgrade: "Brief ready · no notetaker",
     failed: "Needs attention",
     cancelled: "Cancelled",
   };

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BriefButton } from "@/components/brief-button";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { Page } from "@/components/chrome";
 import { CallPlayback } from "@/components/call-playback";
 import { MeetingNav } from "@/components/meeting-nav";
@@ -124,6 +125,12 @@ export default async function MeetingPage({
           <p className="mt-4 rounded-md border border-flag/25 bg-flag-soft px-3.5 py-2.5 text-[13px] text-flag">
             {meeting.errorMessage}
           </p>
+        )}
+
+        {meeting.status === "bot_requires_upgrade" && (
+          <div className="mt-4">
+            <UpgradePrompt companyName={account.companyName} />
+          </div>
         )}
 
         {meeting.attendees && meeting.attendees.length > 0 && (
