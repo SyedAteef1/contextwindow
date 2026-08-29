@@ -6,42 +6,77 @@
 /* ==========================================================================
    Tokens
 
-   Colour is semantic here, not decorative. Amber means buying-signal strength,
-   rose means an objection or risk, green means a bot is live in a call. Nothing
-   else is coloured, so when something is, it means something.
+   Colour is semantic here, not decorative. Electric emerald means the answer
+   landed and the deal is moving, cobalt means structure — a citation, a source,
+   an integration — and amber means risk in a live call. Nothing else is
+   coloured, so when something is, it means something.
    ========================================================================== */
 
 @theme {
   /*
-   * One palette, dark.
+   * "Obsidian & Electric Signal" — one palette, dark, for the marketing page
+   * and the product both.
    *
    * The app used to render light while the marketing page was dark, so signing
    * in threw you from one product into what looked like another. These are
    * semantic tokens, so re-pointing them here turns every screen at once —
    * which is the only reason a change this broad is a small diff.
    *
-   * `ink` is the foreground and is now *light*: anything that paired `bg-ink`
+   * `ink` is the foreground and is *light*: anything that paired `bg-ink`
    * with `text-white` had to become `text-ground`, or it would be white on
    * white.
    */
-  --color-ink: #fafafa;
-  --color-ink-soft: #d4d4d8;
-  --color-muted: #a1a1aa;
-  --color-faint: #71717a;
-  --color-ground: #09090b;
-  --color-surface: #131316;
-  --color-sunken: #1c1c20;
-  --color-rule: #2a2a30;
-  --color-rule-soft: #202024;
 
-  /* Semantic accents — each reserved for one meaning, brightened for a dark
-     ground where the old print-weight tones went muddy. */
-  --color-signal: #fbbf24;
-  --color-signal-soft: #2c2008;
+  /* The canvas. Near-black rather than grey — a lit surface reads as
+     high-compute infrastructure; a grey one reads as an admin portal. */
+  --color-ground: #08090c;
+  --color-surface: #11141a;
+  --color-sunken: #171b23;
+  --color-rule: #1e222b;
+  --color-rule-soft: #171a21;
+
+  /* Type. Zinc-50 down to a muted slate — the slate is cool enough to sit on
+     the obsidian without the brown cast neutral greys pick up down here. */
+  --color-ink: #f8fafc;
+  --color-ink-soft: #cbd5e1;
+  --color-muted: #8e9bae;
+  --color-faint: #5d6a7d;
+
+  /*
+   * Three accents, one meaning each. Nothing else on the page is coloured, so
+   * when something is, it is saying something.
+   *
+   * volt   — the answer landed, the deal is won, the button you press. Green
+   *          is what closed-won looks like on every board this buyer reads;
+   *          the neon tint is what makes it read as real-time rather than
+   *          agricultural. `live` is the same colour under the name the app
+   *          already uses for a bot in a call.
+   * cobalt — structure: citations, source links, integrations. Corporate
+   *          reliability without going generic on a dark ground.
+   * signal — risk in a live call: a buying signal cooling, an objection. Amber
+   *          rather than red, because the rep has to keep talking through it.
+   */
+  --color-volt: #00f08b;
+  --color-volt-soft: #04321f;
+  --color-cobalt: #3b82f6;
+  --color-cobalt-soft: #0d1b33;
+  /*
+   * The same blue, lifted, for small type.
+   *
+   * `cobalt` is a structural colour and holds up as a border or a fill, but at
+   * 5.4:1 against the obsidian it is less than half as present as the emerald
+   * beside it (13:1) — so a 9px label set in it reads as switched off rather
+   * than as quiet. This tint measures 7.8:1 and is still unmistakably the same
+   * blue; it is for text only, never for a border or a fill.
+   */
+  --color-cobalt-bright: #60a5fa;
+
+  --color-signal: #f59e0b;
+  --color-signal-soft: #2a1c05;
   --color-flag: #fb7185;
   --color-flag-soft: #2e1218;
-  --color-live: #34d399;
-  --color-live-soft: #06301f;
+  --color-live: #00f08b;
+  --color-live-soft: #04321f;
 
   --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
@@ -682,14 +717,14 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #09090b;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--color-ground);
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
 .rail-dot[data-live="true"] {
-  background: #34d399;
-  border-color: #34d399;
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+  background: var(--color-volt);
+  border-color: var(--color-volt);
+  box-shadow: 0 0 0 3px rgba(0, 240, 139, 0.16);
 }
 
 @media (max-width: 640px) {
@@ -792,4 +827,77 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* --------------------------------------------------------------------------
+   The hero glow.
+
+   Two blurred blobs — cobalt and emerald, both held at a tenth of their
+   strength — sitting behind the headline. On a near-black ground depth comes
+   from light rather than from shadow: a drop shadow down here is invisible,
+   whereas a wash bleeding out from under the type makes the surface read as
+   lit. Kept faint enough that the text never sits on colour.
+   -------------------------------------------------------------------------- */
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-glow::before,
+.hero-glow::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(96px);
+}
+
+/* Emerald sits under the headline and the primary button. */
+.hero-glow::before {
+  width: 42rem;
+  height: 26rem;
+  left: -8rem;
+  top: -6rem;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in oklab, var(--color-volt) 12%, transparent) 0%,
+    transparent 100%
+  );
+}
+
+/* Cobalt sits under the product shot, so the two meet behind the fold. */
+.hero-glow::after {
+  width: 46rem;
+  height: 30rem;
+  right: -12rem;
+  top: -4rem;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    color-mix(in oklab, var(--color-cobalt) 12%, transparent) 0%,
+    transparent 100%
+  );
+}
+
+/*
+ * The latency badge.
+ *
+ * A ring that breathes once, slowly, rather than a spinner: the number has
+ * already landed, and the pulse is saying it landed *just now*.
+ */
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-volt) 30%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring 2.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
 }
