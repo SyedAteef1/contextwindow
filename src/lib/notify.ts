@@ -18,6 +18,21 @@ import { env } from "@/lib/env";
 
 export type NotifyEvent =
   | {
+      /**
+       * Every sign-in, including the first.
+       *
+       * Deliberately separate from `signup`: a new user produces both, one for
+       * the log and one for the room where arrivals get answered. The log is
+       * the record of who was here and when; the signups channel is news.
+       */
+      kind: "signin";
+      email: string;
+      name?: string | null;
+      domain: string;
+      at: Date;
+      isNewUser: boolean;
+    }
+  | {
       kind: "signup";
       email: string;
       name?: string | null;
@@ -33,7 +48,30 @@ export type NotifyEvent =
       source?: string | null;
     };
 
+/**
+ * A timestamp Slack renders in each reader's own timezone.
+ *
+ * A log line stamped in UTC makes every reader do the arithmetic, and they get
+ * it wrong. Slack's date token does it for them; the text after the pipe is
+ * what shows anywhere the token cannot be expanded, so it has to stand alone.
+ */
+function slackDate(at: Date): string {
+  const unix = Math.floor(at.getTime() / 1000);
+  return `<!date^${unix}^{date_short_pretty} at {time}|${at.toISOString()}>`;
+}
+
 function render(event: NotifyEvent): { title: string; lines: string[] } {
+  if (event.kind === "signin") {
+    return {
+      title: event.isNewUser ? "First sign-in" : "Signed in",
+      lines: [
+        `*${event.name ?? event.email}*`,
+        event.name ? event.email : "",
+        `Domain: ${event.domain}`,
+        slackDate(event.at),
+      ].filter(Boolean),
+    };
+  }
   if (event.kind === "signup") {
     return {
       title: "New sign-up",
@@ -57,6 +95,20 @@ function render(event: NotifyEvent): { title: string; lines: string[] } {
 }
 
 /**
+ * Which channel this event belongs in.
+ *
+ * Sign-ins go to their own room and fall back to the main one only if no log
+ * channel is configured — better a noisy single channel than a silent audit
+ * trail. Everything else is an arrival someone has to answer.
+ */
+function channelFor(event: NotifyEvent): string | undefined {
+  if (event.kind === "signin") {
+    return env().SLACK_USER_LOG_CHANNEL_ID || env().SLACK_CHANNEL_ID;
+  }
+  return env().SLACK_CHANNEL_ID;
+}
+
+/**
  * Who to tag.
  *
  * A message in a channel nobody has open is not a notification. `<@U…>` pings a
@@ -64,7 +116,10 @@ function render(event: NotifyEvent): { title: string; lines: string[] } {
  * mentions inside the message body, so the tag has to be in the text rather
  * than in a header block.
  */
-function mention(): string {
+function mention(event: NotifyEvent): string {
+  // A log is read when someone goes looking. Pinging a human for every sign-in
+  // trains them to mute the room, which costs the alerts that do matter.
+  if (event.kind === "signin") return "";
   const raw = env().SLACK_MENTION?.trim();
   if (!raw) return "";
   if (raw === "!here" || raw === "!channel") return `<${raw}> `;
@@ -76,7 +131,7 @@ function mention(): string {
 
 function payload(event: NotifyEvent) {
   const { title, lines } = render(event);
-  const tag = mention();
+  const tag = mention(event);
   const body = `${tag}${lines.join("\n")}`;
   return {
     // `text` is what a phone shows on the lock screen, so it has to stand
@@ -100,7 +155,7 @@ function payload(event: NotifyEvent) {
  */
 async function toSlackChannel(event: NotifyEvent): Promise<boolean> {
   const token = env().SLACK_BOT_TOKEN;
-  const channel = env().SLACK_CHANNEL_ID;
+  const channel = channelFor(event);
   if (!token || !channel) return false;
 
   const response = await fetch("https://slack.com/api/chat.postMessage", {
@@ -126,6 +181,9 @@ async function toSlackChannel(event: NotifyEvent): Promise<boolean> {
 }
 
 async function toSlackWebhook(event: NotifyEvent): Promise<boolean> {
+  // A webhook cannot choose a channel, so a sign-in sent through one lands in
+  // the room meant for arrivals. The log is a bot-token feature or nothing.
+  if (event.kind === "signin") return false;
   const url = env().SLACK_WEBHOOK_URL;
   // The bot token path already delivered it; a webhook as well would double up.
   if (!url || (env().SLACK_BOT_TOKEN && env().SLACK_CHANNEL_ID)) return false;
@@ -142,6 +200,8 @@ async function toSlackWebhook(event: NotifyEvent): Promise<boolean> {
 }
 
 async function toEmail(event: NotifyEvent): Promise<boolean> {
+  // Mailing a human on every sign-in is how an inbox rule gets written.
+  if (event.kind === "signin") return false;
   const to = env().NOTIFY_EMAIL;
   if (!to) return false;
 
