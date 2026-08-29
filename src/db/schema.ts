@@ -147,6 +147,24 @@ export const workspaces = pgTable(
     domain: text("domain").notNull(),
     /** What this company sells, in their own words. Indexed for retrieval. */
     description: text("description"),
+    /**
+     * The seller's own website.
+     *
+     * Asked for once, at sign-up, because it is the single highest-yield thing
+     * a new workspace can give us: one URL produces the positioning, the
+     * product language and often the customer list, without anyone typing a
+     * paragraph. Everything else in the knowledge base is optional; this is the
+     * one question worth interrupting someone for.
+     */
+    website: text("website"),
+    /**
+     * Who they sell to, in their words — the answer to "what are you looking
+     * for". Steers research towards the signals this team cares about rather
+     * than generic company facts.
+     */
+    idealCustomer: text("ideal_customer"),
+    /** Set once the website has been asked for, so we never ask twice. */
+    onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
     /** Everyone starts free; the bot is what an upgrade buys. */
     plan: planEnum("plan").notNull().default("free"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -14,6 +14,7 @@ import {
   meetingBriefs,
   meetings,
   users,
+  workspaces,
   type Citation,
 } from "@/db/schema";
 import { runText } from "@/lib/llm";
@@ -49,6 +50,8 @@ function buildResearchRequest(input: {
   externalAttendees: { email: string; displayName: string | null }[];
   knownContacts: { name: string | null; role: string | null; email: string }[];
   playbook: string;
+  /** Who the *seller* is, in their own words. Read off their website at sign-up. */
+  seller?: { name: string; sells: string | null; idealCustomer: string | null } | null;
 }): string {
   const lines: string[] = [];
 
@@ -83,6 +86,24 @@ function buildResearchRequest(input: {
       const parts = [contact.name ?? contact.email];
       if (contact.role) parts.push(contact.role);
       lines.push(`- ${parts.join(" — ")}`);
+    }
+  }
+
+  if (input.seller && (input.seller.sells || input.seller.idealCustomer)) {
+    lines.push("");
+    lines.push(`## Who we are (the seller)`);
+    lines.push(`We are ${input.seller.name}.`);
+    if (input.seller.sells) {
+      lines.push("");
+      lines.push(`What we sell, from our own website:`);
+      lines.push(input.seller.sells);
+    }
+    if (input.seller.idealCustomer) {
+      lines.push("");
+      lines.push(`Who we are looking for: ${input.seller.idealCustomer}`);
+      lines.push(
+        `Judge this buyer against that. Say plainly where they do not fit — a brief that flatters a bad prospect costs the rep the call.`,
+      );
     }
   }
 
@@ -139,6 +160,13 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     }),
   );
 
+  // The seller's own context, gathered once at sign-up. Loaded here rather
+  // than threaded through every caller: a brief is worth less without it, and
+  // no caller should be able to forget it.
+  const sellerWorkspace = await db.query.workspaces.findFirst({
+    where: eq(workspaces.id, await workspaceIdForAccount(account.id)),
+  });
+
   const prompt = buildResearchRequest({
     companyName: account.companyName,
     domain: account.domain,
@@ -149,6 +177,13 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     externalAttendees,
     knownContacts,
     playbook,
+    seller: sellerWorkspace
+      ? {
+          name: sellerWorkspace.name,
+          sells: sellerWorkspace.description,
+          idealCustomer: sellerWorkspace.idealCustomer,
+        }
+      : null,
   });
 
   const result = await runText({

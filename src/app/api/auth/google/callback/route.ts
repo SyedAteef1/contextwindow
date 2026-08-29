@@ -43,6 +43,8 @@ export const GET = handler(async (request: Request) => {
   const { userId, email } = await upsertUserAndCredentials(profile, tokens);
   await setSessionCookie({ userId, email });
 
-  // Land on the dashboard; the first calendar sync is triggered from there.
-  return NextResponse.redirect(new URL("/meetings?connected=1", env().APP_URL));
+  // A new workspace is asked for its website once before the product opens.
+  // `/welcome` sends anyone already onboarded straight on, so this is safe for
+  // a returning rep and for the second person from the same company.
+  return NextResponse.redirect(new URL("/welcome", env().APP_URL));
 });

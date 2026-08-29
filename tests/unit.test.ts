@@ -1089,3 +1089,62 @@ describe("audio bridge wiring", () => {
     expect(sent.websocket_settings).toBeUndefined();
   });
 });
+
+/**
+ * Reading a company's own website.
+ *
+ * The URL comes from a user, so the tests that matter are the ones about
+ * refusing it: a server that fetches arbitrary user-supplied addresses is a
+ * server-side request forgery waiting to happen.
+ */
+describe("company site scraping", () => {
+  it("accepts a bare domain and forces https", async () => {
+    const { normaliseUrl } = await import("@/lib/scrape");
+    expect(normaliseUrl("contravault.com")?.toString()).toBe("https://contravault.com/");
+    expect(normaliseUrl("http://contravault.com")?.protocol).toBe("https:");
+    expect(normaliseUrl("  https://contravault.com/pricing  ")?.pathname).toBe("/pricing");
+  });
+
+  it("refuses anything pointing back inside the network", async () => {
+    const { normaliseUrl } = await import("@/lib/scrape");
+    for (const hostile of [
+      "localhost",
+      "127.0.0.1",
+      "10.0.0.5",
+      "192.168.1.1",
+      "172.16.4.2",
+      // The cloud metadata endpoint, which is the one that actually hurts.
+      "169.254.169.254",
+      "metadata.google.internal",
+    ]) {
+      expect(normaliseUrl(hostile), hostile).toBeNull();
+    }
+  });
+
+  it("refuses input that is not a hostname at all", async () => {
+    const { normaliseUrl } = await import("@/lib/scrape");
+    expect(normaliseUrl("")).toBeNull();
+    expect(normaliseUrl("   ")).toBeNull();
+    expect(normaliseUrl("notadomain")).toBeNull();
+  });
+
+  it("strips script and style bodies rather than just their tags", async () => {
+    const { htmlToText } = await import("@/lib/scrape");
+    const { title, text } = htmlToText(
+      `<html><head><title>Contravault</title><style>.a{color:red}</style></head>
+       <body><script>var secret = 1;</script><h1>Compliance for banks</h1>
+       <p>We automate audit evidence.</p></body></html>`,
+    );
+    expect(title).toBe("Contravault");
+    expect(text).toContain("Compliance for banks");
+    expect(text).toContain("We automate audit evidence.");
+    expect(text).not.toContain("secret");
+    expect(text).not.toContain("color:red");
+  });
+
+  it("keeps block boundaries so sentences do not run together", async () => {
+    const { htmlToText } = await import("@/lib/scrape");
+    const { text } = htmlToText("<p>First line.</p><p>Second line.</p>");
+    expect(text).toBe("First line.\nSecond line.");
+  });
+});
