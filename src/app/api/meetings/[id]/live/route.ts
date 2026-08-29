@@ -8,8 +8,26 @@ import { handler, requireOwnedMeeting, requireUser } from "@/lib/api";
 import { listLiveAnswers } from "@/agents/live";
 import { subscribeLiveAnswers } from "@/lib/live-bus";
 
-// Held open for the length of a call.
-export const maxDuration = 3600;
+/*
+ * How long the platform may hold this request open.
+ *
+ * Ideally the length of a call, since this is the SSE stream a rep watches
+ * while the meeting is happening. 300 is what it says because that is the
+ * ceiling on Vercel's hobby plan, and a larger number fails the build outright
+ * rather than being clamped — every other route in this app already sits at
+ * exactly 300 for the same reason.
+ *
+ * It costs nothing where the app actually runs: this is a hint to a serverless
+ * platform, and the self-hosted server behind Caddy does not enforce it, so the
+ * stream stays open for as long as the browser holds it. It would matter on
+ * Vercel, where a long call would be cut at five minutes — the client
+ * reconnects and replays its backlog, so it recovers, but that is a plan limit
+ * rather than something the code can solve.
+ *
+ * Flat rather than conditional: route segment config has to be statically
+ * analysable, so it cannot read an env var.
+ */
+export const maxDuration = 300;
 
 export const GET = handler(
   async (request: Request, context: { params: Promise<{ id: string }> }) => {
