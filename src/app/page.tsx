@@ -72,12 +72,14 @@ function Cta({
       </a>
     );
   }
-  /* Solid emerald on obsidian text: the highest-contrast pairing on the page,
-     spent only on the one thing we want pressed. */
+  /* Cobalt, not emerald. A button is structure — it is the same object on
+     every page — and green is kept for the moments the product is actually
+     doing something. `cobalt-deep` rather than `cobalt` because a 14px label
+     needs 4.5:1 and the lighter blue gives 3.7. */
   return (
     <a
       href={href}
-      className="group inline-flex items-center gap-2 rounded bg-volt px-5 py-3 text-sm font-semibold text-ground shadow-[0_0_28px_-8px_var(--color-volt)] transition-[transform,box-shadow] duration-150 ease-out hover:shadow-[0_0_36px_-6px_var(--color-volt)] active:scale-[0.97]"
+      className="group inline-flex items-center gap-2 rounded bg-cobalt-deep px-5 py-3 text-sm font-semibold text-ink shadow-[0_0_28px_-10px_var(--color-cobalt)] transition-[transform,box-shadow] duration-150 ease-out hover:shadow-[0_0_36px_-8px_var(--color-cobalt)] active:scale-[0.97]"
     >
       {children}
       <ArrowRight className="size-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5" />
@@ -169,7 +171,7 @@ export default async function LandingPage({
     : null;
 
   return (
-    <div className="min-h-screen bg-ground text-ink selection:bg-volt/25 selection:text-ink">
+    <div className="min-h-screen bg-ground text-ink selection:bg-cobalt/30 selection:text-ink">
       {/* --- Nav ------------------------------------------------------------ */}
       <header className="sticky top-0 z-50 border-b border-rule bg-ground/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -198,7 +200,7 @@ export default async function LandingPage({
             </Link>
             <a
               href="#demo"
-              className="rounded bg-volt px-4 py-2 text-sm font-semibold text-ground transition-transform duration-150 ease-out active:scale-[0.97]"
+              className="rounded bg-cobalt-deep px-4 py-2 text-sm font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]"
             >
               See a live demo
             </a>
@@ -222,7 +224,7 @@ export default async function LandingPage({
           <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-20">
             <div className="flex flex-col gap-6">
               <div className="inline-flex w-fit items-center gap-2 rounded border border-rule bg-surface/80 px-3 py-1">
-                <span className="size-1.5 rounded-full bg-volt" />
+                <span className="size-1.5 rounded-full bg-cobalt" />
                 <span className="text-xs uppercase tracking-widest text-muted">
                   The live-call cheat code
                 </span>
@@ -389,7 +391,7 @@ export default async function LandingPage({
                 ))}
               </ol>
 
-              <p className="border-l border-volt/40 pl-5 text-xl font-medium tracking-tight text-ink">
+              <p className="border-l border-cobalt/50 pl-5 text-xl font-medium tracking-tight text-ink">
                 We built a third option.
               </p>
             </div>
@@ -536,7 +538,7 @@ export default async function LandingPage({
                     <th className="p-4 text-xs font-medium uppercase tracking-widest text-faint">
                       Gong, Chorus
                     </th>
-                    <th className="p-4 text-xs font-semibold uppercase tracking-widest text-volt">
+                    <th className="p-4 text-xs font-semibold uppercase tracking-widest text-cobalt-bright">
                       Context Window
                     </th>
                   </tr>
@@ -547,7 +549,7 @@ export default async function LandingPage({
                       <td className="p-4 align-top text-sm font-medium text-ink">{row.moment}</td>
                       <td className="p-4 align-top text-sm text-faint">{row.recorders}</td>
                       <td className="p-4 align-top text-sm text-faint">{row.ri}</td>
-                      <td className="bg-volt/[0.04] p-4 align-top text-sm text-ink-soft">
+                      <td className="bg-cobalt/[0.06] p-4 align-top text-sm text-ink-soft">
                         {row.ours}
                       </td>
                     </tr>
@@ -677,7 +679,7 @@ export default async function LandingPage({
                   forty seconds to write your follow-up, the other exists only to put the first
                   word on your screen.
                 </p>
-                <p className="border-l border-volt/40 pl-5 text-ink-soft">
+                <p className="border-l border-cobalt/50 pl-5 text-ink-soft">
                   If it cannot make it in time, it shows you nothing. An answer you read out loud
                   and get wrong is worse than no answer at all.
                 </p>

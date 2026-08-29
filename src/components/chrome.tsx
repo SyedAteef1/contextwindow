@@ -1,4 +1,6 @@
 /** App shell: a thin masthead and the page container. */
+
+import { CommandPalette } from "@/components/command-palette";
 import Link from "next/link";
 
 import { Mark } from "@/components/marketing/wordmark";
@@ -68,6 +70,7 @@ export function Page({
       <div className="min-h-dvh">
         <Masthead current={current} />
         <main className={cn("mx-auto max-w-5xl px-6 pt-9 pb-24", className)}>{children}</main>
+        <CommandPalette />
       </div>
     );
   }
@@ -81,6 +84,7 @@ export function Page({
           <div className="mx-auto max-w-4xl">{children}</div>
         </main>
       </div>
+      <CommandPalette />
     </div>
   );
 }

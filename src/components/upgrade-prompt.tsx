@@ -10,9 +10,10 @@ import { Eyebrow } from "@/components/ui";
  * before a call the rep is about to walk into alone — which is when wanting a
  * notetaker in the room is a feeling rather than a pitch.
  *
- * Emerald rather than amber. Nothing has gone wrong: the free plan did exactly
- * what it promises, and this is an offer. Amber here would read as a failure
- * and make a working product look broken.
+ * Cobalt rather than amber or emerald. Nothing has gone wrong — the free plan
+ * did exactly what it promises — so amber would read as a failure. And this is
+ * a commercial offer rather than the product doing its trick, so it is not
+ * emerald either: green is kept for an answer landing or a deal won.
  */
 export function UpgradePrompt({
   companyName,
@@ -22,7 +23,7 @@ export function UpgradePrompt({
   when?: string | null;
 }) {
   return (
-    <div className="rounded-lg border border-volt/25 bg-volt/[0.05] px-5 py-4">
+    <div className="rounded-lg border border-cobalt/35 bg-cobalt/[0.06] px-5 py-4">
       <Eyebrow>Your plan</Eyebrow>
       <p className="mt-1.5 text-[13.5px] text-ink-soft">
         The brief is done. The notetaker is not joining
@@ -33,7 +34,7 @@ export function UpgradePrompt({
       </p>
       <Link
         href="/#pricing"
-        className="mt-3.5 inline-flex items-center rounded bg-volt px-4 py-2 text-[13px] font-semibold text-ground transition-transform duration-150 ease-out active:scale-[0.97]"
+        className="mt-3.5 inline-flex items-center rounded bg-cobalt-deep px-4 py-2 text-[13px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]"
       >
         Request the bot
       </Link>

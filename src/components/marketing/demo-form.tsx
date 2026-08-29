@@ -67,7 +67,7 @@ export function DemoForm({ source }: { source?: string }) {
   }
 
   const input =
-    "w-full rounded border border-rule bg-sunken/60 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-volt/50";
+    "w-full rounded border border-rule bg-sunken/60 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-cobalt/60";
   const label = "text-xs font-medium uppercase tracking-widest text-muted";
 
   return (
@@ -149,7 +149,7 @@ export function DemoForm({ source }: { source?: string }) {
         <button
           type="submit"
           disabled={state === "sending"}
-          className="group inline-flex w-fit items-center gap-2 rounded bg-volt px-5 py-3 text-sm font-semibold text-ground shadow-[0_0_28px_-8px_var(--color-volt)] transition-[transform,box-shadow] duration-150 ease-out hover:shadow-[0_0_36px_-6px_var(--color-volt)] active:scale-[0.97] disabled:opacity-50 disabled:shadow-none"
+          className="group inline-flex w-fit items-center gap-2 rounded bg-cobalt-deep px-5 py-3 text-sm font-semibold text-ink shadow-[0_0_28px_-10px_var(--color-cobalt)] transition-[transform,box-shadow] duration-150 ease-out hover:shadow-[0_0_36px_-8px_var(--color-cobalt)] active:scale-[0.97] disabled:opacity-50 disabled:shadow-none"
         >
           {state === "sending" ? "Sending…" : "Request a demo"}
           {state !== "sending" && (

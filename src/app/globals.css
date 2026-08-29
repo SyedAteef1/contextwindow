@@ -6,10 +6,18 @@
 /* ==========================================================================
    Tokens
 
-   Colour is semantic here, not decorative. Electric emerald means the answer
-   landed and the deal is moving, cobalt means structure — a citation, a source,
-   an integration — and amber means risk in a live call. Nothing else is
-   coloured, so when something is, it means something.
+   Colour is semantic here, not decorative.
+
+   Cobalt leads. It is the structural colour — navigation, links, citations,
+   and every primary action — because it is the visual language the buyer
+   already reads all day, and departing from it costs trust rather than buying
+   distinction.
+
+   Emerald is rationed. It appears only where the product is doing its one
+   trick in real time — an answer landing, a bot live in a call — or where a
+   deal is won. Spent everywhere it stops meaning anything anywhere.
+
+   Amber means risk in a live call. Nothing else is coloured.
    ========================================================================== */
 
 @theme {
@@ -60,6 +68,15 @@
   --color-volt-soft: #04321f;
   --color-cobalt: #3b82f6;
   --color-cobalt-soft: #0d1b33;
+  /*
+   * Cobalt, deep enough to put white on.
+   *
+   * `cobalt` is an accent and holds up as a border, a small mark, or type on
+   * the obsidian. It cannot be a button fill: white on #3b82f6 measures 3.7:1,
+   * under the 4.5 a 14px label needs. This one measures 5.0:1 and is what every
+   * solid primary action is painted with.
+   */
+  --color-cobalt-deep: #2563eb;
   /*
    * The same blue, lifted, for small type.
    *
@@ -900,4 +917,31 @@
 
 .pulse-ring {
   animation: pulse-ring 2.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+}
+
+/* --------------------------------------------------------------------------
+   The command palette.
+
+   Arrives fast and from slightly above, the way a spotlight does — it is a
+   tool being reached for, not a dialog being presented. Short enough that it
+   never sits between the rep and what they were doing.
+   -------------------------------------------------------------------------- */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

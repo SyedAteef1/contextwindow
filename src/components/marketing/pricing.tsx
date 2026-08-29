@@ -81,7 +81,7 @@ export function Pricing() {
               className={cn(
                 "flex flex-col rounded border p-8 transition-colors duration-150 ease-out",
                 plan.highlighted
-                  ? "border-volt/30 bg-surface hover:border-volt/50"
+                  ? "border-cobalt/40 bg-surface hover:border-cobalt/60"
                   : "border-rule bg-surface hover:border-muted/25",
               )}
             >
@@ -109,7 +109,7 @@ export function Pricing() {
                     <Check
                       className={cn(
                         "mt-0.5 size-3.5 shrink-0",
-                        plan.highlighted ? "text-volt" : "text-faint",
+                        plan.highlighted ? "text-cobalt-bright" : "text-faint",
                       )}
                     />
                     <span className="text-sm leading-snug text-ink-soft">{feature}</span>
@@ -122,7 +122,7 @@ export function Pricing() {
                 className={cn(
                   "mt-8 inline-flex items-center justify-center rounded px-5 py-3 text-sm transition-[transform,border-color,box-shadow] duration-150 ease-out active:scale-[0.97]",
                   plan.highlighted
-                    ? "bg-volt font-semibold text-ground shadow-[0_0_28px_-8px_var(--color-volt)] hover:shadow-[0_0_36px_-6px_var(--color-volt)]"
+                    ? "bg-cobalt-deep font-semibold text-ink shadow-[0_0_28px_-10px_var(--color-cobalt)] hover:shadow-[0_0_36px_-8px_var(--color-cobalt)]"
                     : "border border-rule font-medium text-ink-soft hover:border-muted/40 hover:text-ink",
                 )}
               >
