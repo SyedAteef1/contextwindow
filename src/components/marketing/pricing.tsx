@@ -88,7 +88,7 @@ export function Pricing() {
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-base font-semibold tracking-tight text-ink">{plan.name}</h3>
                 {plan.highlighted && (
-                  <span className="rounded border border-volt/30 bg-volt/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-volt">
+                  <span className="rounded border border-live/30 bg-live/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-live">
                     The live part
                   </span>
                 )}

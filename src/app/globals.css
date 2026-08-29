@@ -22,78 +22,66 @@
 
 @theme {
   /*
-   * "Obsidian & Electric Signal" — one palette, dark, for the marketing page
-   * and the product both.
+   * Fifteen values, in four groups. That is the whole system.
    *
-   * The app used to render light while the marketing page was dark, so signing
-   * in threw you from one product into what looked like another. These are
-   * semantic tokens, so re-pointing them here turns every screen at once —
-   * which is the only reason a change this broad is a small diff.
+   * It used to be twenty-one, which is how a palette stops being a palette:
+   * `live` and `live` were the same hex under two names, `live-soft` and
+   * `cobalt-soft` were declared and never used once, and three `-soft` tints
+   * existed as separate tokens for what an alpha channel already expresses.
+   * Common guidance for a SaaS system is four to six neutrals, one or two
+   * brand colours with their state variants, and four semantics — so the count
+   * below is deliberate rather than whatever accumulated.
    *
-   * `ink` is the foreground and is *light*: anything that paired `bg-ink`
-   * with `text-white` had to become `text-ground`, or it would be white on
-   * white.
+   * Tints are `/10`, `/25`, `/50` on these, never new tokens. A tint composited
+   * with alpha also sits correctly on a card as well as on the page, which a
+   * baked-in hex cannot do.
    */
 
-  /* The canvas. Near-black rather than grey — a lit surface reads as
-     high-compute infrastructure; a grey one reads as an admin portal. */
+  /* --- Neutral: the canvas, in five steps ------------------------------- */
   --color-ground: #08090c;
   --color-surface: #11141a;
   --color-sunken: #171b23;
   --color-rule: #1e222b;
   --color-rule-soft: #171a21;
 
-  /* Type. Zinc-50 down to a muted slate — the slate is cool enough to sit on
-     the obsidian without the brown cast neutral greys pick up down here. */
+  /* --- Text: four weights of attention ---------------------------------- */
   --color-ink: #f8fafc;
   --color-ink-soft: #cbd5e1;
   --color-muted: #8e9bae;
   --color-faint: #5d6a7d;
 
   /*
-   * Three accents, one meaning each. Nothing else on the page is coloured, so
-   * when something is, it is saying something.
+   * --- Brand: cobalt, in the three jobs a brand colour actually has ------
    *
-   * volt   — the answer landed, the deal is won, the button you press. Green
-   *          is what closed-won looks like on every board this buyer reads;
-   *          the neon tint is what makes it read as real-time rather than
-   *          agricultural. `live` is the same colour under the name the app
-   *          already uses for a bot in a call.
-   * cobalt — structure: citations, source links, integrations. Corporate
-   *          reliability without going generic on a dark ground.
-   * signal — risk in a live call: a buying signal cooling, an objection. Amber
-   *          rather than red, because the rep has to keep talking through it.
+   * One hue, three values, because one value cannot do all three legibly:
+   * `cobalt` is the accent and the border, `cobalt-deep` is the only thing a
+   * solid button is painted with (white on `cobalt` measures 3.5:1, under the
+   * 4.5 a 14px label needs; this gives 4.9), and `cobalt-bright` is for small
+   * type on the obsidian, where `cobalt` reads as switched off next to the
+   * green beside it.
+   *
+   * Blue leads because it is the language the buyer already reads all day —
+   * Salesforce, Gong, Outreach, Clari. Departing from it costs trust rather
+   * than buying distinction.
    */
-  --color-volt: #00f08b;
-  --color-volt-soft: #04321f;
   --color-cobalt: #3b82f6;
-  --color-cobalt-soft: #0d1b33;
-  /*
-   * Cobalt, deep enough to put white on.
-   *
-   * `cobalt` is an accent and holds up as a border, a small mark, or type on
-   * the obsidian. It cannot be a button fill: white on #3b82f6 measures 3.7:1,
-   * under the 4.5 a 14px label needs. This one measures 5.0:1 and is what every
-   * solid primary action is painted with.
-   */
   --color-cobalt-deep: #2563eb;
-  /*
-   * The same blue, lifted, for small type.
-   *
-   * `cobalt` is a structural colour and holds up as a border or a fill, but at
-   * 5.4:1 against the obsidian it is less than half as present as the emerald
-   * beside it (13:1) — so a 9px label set in it reads as switched off rather
-   * than as quiet. This tint measures 7.8:1 and is still unmistakably the same
-   * blue; it is for text only, never for a border or a fill.
-   */
   --color-cobalt-bright: #60a5fa;
 
-  --color-signal: #f59e0b;
-  --color-signal-soft: #2a1c05;
-  --color-flag: #fb7185;
-  --color-flag-soft: #2e1218;
+  /*
+   * --- Status: three states, and nothing else is coloured ----------------
+   *
+   * `live` is the product doing its one trick in real time — a bot in the
+   * call, an answer landing — and a deal won. It is rationed: spent everywhere
+   * it would mean nothing anywhere, which is exactly what happened when it was
+   * also every button.
+   *
+   * `signal` is risk in a live call, amber rather than red because the rep has
+   * to keep talking through it. `flag` is something actually broken.
+   */
   --color-live: #00f08b;
-  --color-live-soft: #04321f;
+  --color-signal: #f59e0b;
+  --color-flag: #fb7185;
 
   --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
@@ -154,20 +142,6 @@
    A vertical spine with meetings as nodes on it, and a dashed NOW line cutting
    across. Above the line the call has happened; below it hasn't.
    -------------------------------------------------------------------------- */
-.rail {
-  position: relative;
-  padding-left: 4.75rem;
-}
-
-.rail::before {
-  content: "";
-  position: absolute;
-  left: 3.5rem;
-  top: 0.75rem;
-  bottom: 0.75rem;
-  width: 1px;
-  background: var(--color-rule);
-}
 
 .rail-node {
   position: relative;
@@ -372,124 +346,6 @@
 }
 
 /* --------------------------------------------------------------------------
-   The page timeline — the rail motif at page scale.
-
-   This product is entirely about time around one meeting: research happens
-   before it, answers during it, the recap after it. So the marketing page is
-   built on a single unbroken spine with each moment hung off it at its real
-   offset. The mono stamps in the gutter are the section headings; there is no
-   other numbering, because time is the sequence.
-   -------------------------------------------------------------------------- */
-.tl {
-  --tl-gutter: 7rem;
-  --tl-line: var(--color-rule);
-  position: relative;
-  padding-left: var(--tl-gutter);
-}
-
-.tl::before {
-  content: "";
-  position: absolute;
-  left: calc(var(--tl-gutter) - 3.5rem);
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--tl-line);
-}
-
-.tl-node {
-  position: relative;
-  padding-block: 3.25rem;
-}
-
-/* The stamp hangs in the gutter and titles the moment. */
-.tl-stamp {
-  position: absolute;
-  left: calc(var(--tl-gutter) * -1);
-  top: 3.25rem;
-  width: 5.25rem;
-  text-align: right;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-faint);
-}
-
-.tl-node::before {
-  content: "";
-  position: absolute;
-  left: -3.84rem;
-  top: 3.55rem;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--color-surface);
-  border: 1.5px solid var(--color-faint);
-  z-index: 1;
-}
-
-.tl-node[data-state="done"]::before {
-  background: var(--color-ink);
-  border-color: var(--color-ink);
-}
-
-.tl-node[data-state="live"]::before {
-  background: var(--color-live);
-  border-color: var(--color-live);
-  box-shadow: 0 0 0 5px var(--color-live-soft);
-}
-
-/*
- * Night.
- *
- * The page inverts for exactly one section: the call itself. Everything above
- * is preparation and everything below is record, but this is the only part the
- * rep actually lives through. Re-pointing the colour tokens rather than
- * restyling means every component inside re-tones on its own.
- */
-.night {
-  --color-surface: #171e28;
-  --color-sunken: #1f2733;
-  --color-ink: #f2f5f8;
-  --color-ink-soft: #d3dae2;
-  --color-muted: #97a3b1;
-  --color-faint: #6d7a89;
-  --color-rule: #2c3644;
-  --color-rule-soft: #232c38;
-  --color-live-soft: #06301f;
-  --color-signal: #f0a35a;
-  --tl-line: #2c3644;
-  background: #10161e;
-  color: var(--color-ink);
-}
-
-@media (max-width: 640px) {
-  /* The gutter costs too much width on a phone, so the stamp moves inline. */
-  .tl {
-    --tl-gutter: 1.5rem;
-  }
-
-  .tl::before {
-    left: 3px;
-  }
-
-  .tl-stamp {
-    position: static;
-    display: block;
-    width: auto;
-    text-align: left;
-    margin-bottom: 0.6rem;
-  }
-
-  .tl-node::before {
-    left: -1.5rem;
-    top: 3.4rem;
-  }
-}
-
-/* --------------------------------------------------------------------------
    Landing-page furniture.
 
    Structure follows the Tailark blocks: raked light streaks behind the hero, a
@@ -505,57 +361,6 @@
  * Three overlapping ellipses rotated -45deg. Kept faint: on a light ground this
  * reads as a shaft of light rather than the glow-on-black these blocks assume.
  */
-.streaks {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  isolation: isolate;
-  contain: strict;
-  opacity: 0.85;
-}
-
-.streaks > * {
-  position: absolute;
-  left: 0;
-  top: 0;
-  border-radius: 9999px;
-  rotate: -45deg;
-}
-
-.streaks > :nth-child(1) {
-  width: 35rem;
-  height: 80rem;
-  translate: 0 -350px;
-  background: radial-gradient(
-    68% 68% at 55% 31%,
-    color-mix(in oklab, var(--color-signal) 10%, transparent) 0,
-    color-mix(in oklab, var(--color-signal) 3%, transparent) 50%,
-    transparent 80%
-  );
-}
-
-.streaks > :nth-child(2) {
-  width: 14rem;
-  height: 80rem;
-  translate: 5% -50%;
-  background: radial-gradient(
-    50% 50% at 50% 50%,
-    color-mix(in oklab, var(--color-ink) 6%, transparent) 0,
-    transparent 80%
-  );
-}
-
-.streaks > :nth-child(3) {
-  width: 14rem;
-  height: 80rem;
-  translate: 0 -350px;
-  background: radial-gradient(
-    50% 50% at 50% 50%,
-    color-mix(in oklab, var(--color-live) 6%, transparent) 0,
-    transparent 80%
-  );
-}
 
 /* Settles the streaks into the page instead of letting them run to the fold. */
 .hero-veil {
@@ -567,52 +372,7 @@
 }
 
 /* The big product shot: a ring, a soft lift, and a veil over the top edge. */
-.shot-frame {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-  border: 1px solid var(--color-rule);
-  background: var(--color-surface);
-  padding: 0.6rem;
-  box-shadow:
-    0 1px 2px rgba(16, 21, 28, 0.04),
-    0 18px 40px -12px rgba(16, 21, 28, 0.14),
-    0 60px 120px -30px rgba(16, 21, 28, 0.18);
-}
 
-.shot-veil {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent 35%, var(--color-ground) 100%);
-}
-
-/*
- * Corner brackets.
- *
- * Square cards with four L-marks instead of a rounded border. The marks are
- * amber so a feature card is visibly part of the same system as the signal
- * meter and the drafted follow-up.
- */
-.bracket-card {
-  position: relative;
-  border: 1px solid var(--color-rule);
-  background: var(--color-surface);
-}
-
-.bracket-card::before,
-.bracket-card::after,
-.bracket-card > .bracket-b::before,
-.bracket-card > .bracket-b::after {
-  content: "";
-  position: absolute;
-  width: 9px;
-  height: 9px;
-  border-color: var(--color-signal);
-  border-style: solid;
-  border-width: 0;
-}
 
 .bracket-card::before {
   top: -1px;
@@ -642,38 +402,8 @@
   border-right-width: 2px;
 }
 
-/*
- * Diagonal hatching, from the comparison block.
- *
- * Marks the bars that are *not* the good outcome, so the one solid bar reads as
- * the answer without needing a colour that means something else.
- */
-.candy-stripe {
-  background-image: linear-gradient(
-    135deg,
-    var(--color-sunken) 25%,
-    transparent 25.5%,
-    transparent 50%,
-    var(--color-sunken) 50.5%,
-    var(--color-sunken) 75%,
-    transparent 75.5%,
-    transparent
-  );
-  background-size: 10px 10px;
-  background-color: color-mix(in oklab, var(--color-sunken) 45%, transparent);
-}
 
 /* Masks a card's illustration so it dissolves rather than stopping at an edge. */
-.card-fade {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    125% 125% at 50% 0%,
-    transparent 40%,
-    var(--color-surface) 100%
-  );
-}
 
 /* --------------------------------------------------------------------------
    Motion — one orchestrated entrance, and nothing else.
@@ -739,8 +469,8 @@
 }
 
 .rail-dot[data-live="true"] {
-  background: var(--color-volt);
-  border-color: var(--color-volt);
+  background: var(--color-live);
+  border-color: var(--color-live);
   box-shadow: 0 0 0 3px rgba(0, 240, 139, 0.16);
 }
 
@@ -879,7 +609,7 @@
   top: -6rem;
   background: radial-gradient(
     50% 50% at 50% 50%,
-    color-mix(in oklab, var(--color-volt) 12%, transparent) 0%,
+    color-mix(in oklab, var(--color-live) 12%, transparent) 0%,
     transparent 100%
   );
 }
@@ -905,7 +635,7 @@
  */
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-volt) 30%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-live) 30%, transparent);
   }
   70% {
     box-shadow: 0 0 0 6px transparent;

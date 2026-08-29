@@ -50,7 +50,7 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
       </div>
 
       {usage.overLimit && (
-        <div className="mb-8 rounded-lg border border-signal/30 bg-signal-soft px-5 py-4">
+        <div className="mb-8 rounded-lg border border-signal/30 bg-signal/10 px-5 py-4">
           <Eyebrow>Free limit reached</Eyebrow>
           <p className="mt-1.5 text-[13.5px] text-ink-soft">
             {account.companyName} has used all {usage.limit} free meetings this month. New calls are

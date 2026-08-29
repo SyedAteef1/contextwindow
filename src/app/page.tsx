@@ -272,7 +272,7 @@ export default async function LandingPage({
               </div>
 
               <div className="relative">
-                <span className="rail-stamp font-mono text-xs text-volt">Live</span>
+                <span className="rail-stamp font-mono text-xs text-live">Live</span>
                 <span className="rail-dot" data-live="true" aria-hidden />
                 <div className="relative rounded border border-rule bg-surface p-2">
                   <div className="overflow-hidden rounded border border-rule bg-ground">
@@ -282,8 +282,8 @@ export default async function LandingPage({
                       <span className="size-2 rounded-full bg-rule" />
                       <span className="ml-2 text-xs text-faint">Cobalt Systems</span>
                       <span className="ml-auto flex items-center gap-2">
-                        <span className="size-1.5 animate-pulse rounded-full bg-volt" />
-                        <span className="text-xs uppercase tracking-widest text-volt">
+                        <span className="size-1.5 animate-pulse rounded-full bg-live" />
+                        <span className="text-xs uppercase tracking-widest text-live">
                           Live
                         </span>
                       </span>
@@ -306,12 +306,12 @@ export default async function LandingPage({
                         </p>
                       </div>
 
-                      <div className="flex flex-col gap-3 rounded border border-volt/25 bg-volt/[0.06] p-4">
+                      <div className="flex flex-col gap-3 rounded border border-live/25 bg-live/[0.06] p-4">
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-semibold uppercase tracking-widest text-volt">
+                          <span className="text-xs font-semibold uppercase tracking-widest text-live">
                             Say this
                           </span>
-                          <span className="pulse-ring ml-auto rounded-full border border-volt/30 bg-volt/10 px-2 py-0.5 font-mono text-[10px] tabular-nums text-volt">
+                          <span className="pulse-ring ml-auto rounded-full border border-live/30 bg-live/10 px-2 py-0.5 font-mono text-[10px] tabular-nums text-live">
                             0.8s
                           </span>
                         </div>
@@ -321,7 +321,7 @@ export default async function LandingPage({
                           theirs, not ours.
                         </p>
 
-                        <p className="flex flex-wrap items-center gap-2 border-t border-dashed border-volt/20 pt-3">
+                        <p className="flex flex-wrap items-center gap-2 border-t border-dashed border-live/20 pt-3">
                           {/* Where it came from is structure, so it is cobalt. */}
                           <span className="rounded border border-cobalt/50 px-1.5 py-px text-[9px] font-semibold uppercase tracking-[0.14em] text-cobalt-bright">
                             From your docs
@@ -464,8 +464,8 @@ export default async function LandingPage({
                   <p className="pb-1 text-sm leading-relaxed text-muted">
                     &ldquo;Does this replace Salesforce, or sit on top of it?&rdquo;
                   </p>
-                  <div className="flex flex-col gap-2 rounded border border-volt/25 bg-volt/[0.06] px-3 py-2.5">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-volt">
+                  <div className="flex flex-col gap-2 rounded border border-live/25 bg-live/[0.06] px-3 py-2.5">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-live">
                       Say this
                     </span>
                     <span className="text-sm leading-relaxed text-ink-soft">
@@ -610,8 +610,8 @@ export default async function LandingPage({
                 <div className="flex items-center gap-2 border-b border-rule px-4 py-3">
                   <span className="text-xs text-faint">Watching · Cobalt Systems</span>
                   <span className="ml-auto flex items-center gap-2">
-                    <span className="size-1.5 animate-pulse rounded-full bg-volt" />
-                    <span className="text-xs uppercase tracking-widest text-volt">Live</span>
+                    <span className="size-1.5 animate-pulse rounded-full bg-live" />
+                    <span className="text-xs uppercase tracking-widest text-live">Live</span>
                   </span>
                 </div>
 
@@ -625,8 +625,8 @@ export default async function LandingPage({
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-2 rounded border border-volt/25 bg-volt/[0.06] p-3">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-volt">
+                  <div className="flex flex-col gap-2 rounded border border-live/25 bg-live/[0.06] p-3">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-live">
                       We suggested
                     </span>
                     <p className="text-sm leading-relaxed text-ink-soft">
@@ -695,7 +695,7 @@ export default async function LandingPage({
                 [
                   "Two models, not one",
                   "Forty seconds for the follow-up. Under a second for the answer.",
-                  "bg-volt",
+                  "bg-live",
                 ],
                 [
                   "It shuts up when unsure",

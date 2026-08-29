@@ -87,7 +87,7 @@ export default async function MeetingsPage() {
       )}
 
       {followups.length > 0 && (
-        <section className="mb-9 rounded-lg border border-signal/25 bg-signal-soft/45 px-5 py-4">
+        <section className="mb-9 rounded-lg border border-signal/25 bg-signal/[0.07] px-5 py-4">
           <div className="mb-3 flex items-center gap-2.5">
             <p className="eyebrow !text-signal">Waiting on you</p>
             <span className="h-px flex-1 bg-signal/20" aria-hidden />

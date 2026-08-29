@@ -56,7 +56,7 @@ export function DemoForm({ source }: { source?: string }) {
 
   if (state === "sent") {
     return (
-      <div className="flex flex-col items-center gap-3 rounded border border-volt/25 bg-volt/[0.06] px-8 py-10 text-center">
+      <div className="flex flex-col items-center gap-3 rounded border border-live/25 bg-live/[0.06] px-8 py-10 text-center">
         <p className="text-lg font-medium text-ink">Request received.</p>
         <p className="max-w-sm text-sm leading-relaxed text-muted">
           We read every one of these ourselves. Expect a reply within one working day, from a person

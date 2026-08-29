@@ -122,7 +122,7 @@ export default async function MeetingPage({
         </div>
 
         {meeting.errorMessage && (
-          <p className="mt-4 rounded-md border border-flag/25 bg-flag-soft px-3.5 py-2.5 text-[13px] text-flag">
+          <p className="mt-4 rounded-md border border-flag/25 bg-flag/10 px-3.5 py-2.5 text-[13px] text-flag">
             {meeting.errorMessage}
           </p>
         )}
