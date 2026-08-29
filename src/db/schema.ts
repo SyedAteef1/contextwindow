@@ -634,6 +634,58 @@ export const usage = pgTable(
 export const authEventEnum = pgEnum("auth_event", ["signed_up", "signed_in"]);
 
 /**
+ * What a rep actually did.
+ *
+ * Deliberately a short list rather than every click. The question this table
+ * has to answer is "is this account getting value" — before a renewal, when a
+ * rep goes quiet, when something looks broken — and a log that records
+ * everything answers it worse than one that records the handful of moments
+ * where the product either delivered or was used. Page views are not on it.
+ *
+ * Kept in step with the privacy policy: a row is a user, a verb, a subject and
+ * a time. No IP address, no device fingerprint, no page URL. Those are personal
+ * data we would then have to justify holding, and none of them answer the
+ * question above.
+ */
+export const activityActionEnum = pgEnum("activity_action", [
+  "calendar_synced",
+  "brief_generated",
+  "brief_opened",
+  "transcript_uploaded",
+  "chat_asked",
+  "followup_approved",
+  "followup_rejected",
+  "recap_sent",
+  "upgrade_requested",
+]);
+
+export const activityEvents = pgTable(
+  "activity_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    action: activityActionEnum("action").notNull(),
+    /** The row this was done to — a meeting, an account — when there is one. */
+    subjectType: text("subject_type"),
+    subjectId: uuid("subject_id"),
+    /**
+     * Small, non-identifying detail that makes a row answerable on its own:
+     * how many meetings a sync found, how long an answer took. Never content.
+     */
+    detail: jsonb("detail").$type<Record<string, string | number | boolean>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // The two questions asked of it: what did this rep do, and what happened
+    // lately. Both are ordered by time, so both indexes carry it.
+    index("ix_activity_user_time").on(t.userId, t.createdAt),
+    index("ix_activity_time").on(t.createdAt),
+  ],
+);
+
+/**
  * Who arrived, and when.
  *
  * Deliberately thin: a user, an event, a timestamp. No IP address and no device

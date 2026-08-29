@@ -20,6 +20,7 @@ import {
   type SpeakerSegment,
 } from "@/db/schema";
 import { indexDocument, loadPlaybookSnippets, retrieveForAccount } from "@/lib/retrieval";
+import { lastActiveAt, recentActivity, trackNow } from "@/lib/activity";
 import {
   botEntitlement,
   canGenerateBrief,
@@ -415,6 +416,61 @@ describe("plan entitlements", () => {
     expect(rolled.used).toBe(0);
     expect(rolled.briefsUsed).toBe(0);
     expect(rolled.periodStart.getTime()).toBe(currentPeriodStart().getTime());
+  });
+});
+
+/**
+ * The activity log.
+ *
+ * The property that matters is that it cannot break what it observes: a rep
+ * approving a follow-up must never see an error because a log insert failed.
+ */
+describe("activity log", () => {
+  it("records a verb against a rep and a subject", async () => {
+    const rep = await makeRep();
+    const account = await makeAccount(rep.id, "Northstar", "northstar.io");
+
+    await trackNow({
+      userId: rep.id,
+      action: "chat_asked",
+      subjectType: "account",
+      subjectId: account.id,
+      detail: { sources: 3 },
+    });
+
+    const [row] = await recentActivity(rep.id);
+    expect(row.action).toBe("chat_asked");
+    expect(row.subjectId).toBe(account.id);
+    expect(row.detail).toEqual({ sources: 3 });
+  });
+
+  it("swallows its own failure rather than failing the caller", async () => {
+    // A user id that cannot satisfy the foreign key: the insert is guaranteed
+    // to fail, and the point is that the caller never learns about it.
+    await expect(
+      trackNow({ userId: "00000000-0000-0000-0000-000000000000", action: "calendar_synced" }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("answers when a rep was last active, which is the churn question", async () => {
+    const rep = await makeRep();
+    expect(await lastActiveAt(rep.id)).toBeNull();
+
+    await trackNow({ userId: rep.id, action: "calendar_synced" });
+    const seen = await lastActiveAt(rep.id);
+    expect(seen).toBeInstanceOf(Date);
+  });
+
+  it("keeps one rep's trail out of another's", async () => {
+    const one = await makeRep("one@northstar.io");
+    const two = await makeRep("two@northstar.io");
+
+    await trackNow({ userId: one.id, action: "brief_opened" });
+    await trackNow({ userId: two.id, action: "followup_approved" });
+
+    const trail = await recentActivity(one.id);
+    expect(trail).toHaveLength(1);
+    expect(trail[0].action).toBe("brief_opened");
   });
 });
 

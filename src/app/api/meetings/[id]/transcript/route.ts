@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { handler, readJson, requireOwnedMeeting, requireUser } from "@/lib/api";
+import { track } from "@/lib/activity";
 import { ingestTranscript } from "@/lib/pipeline/transcript";
 import type { SpeakerSegment } from "@/db/schema";
 
@@ -108,6 +109,16 @@ export const POST = handler(
       source: body.source,
       durationSeconds: body.durationSeconds ?? null,
     });
+
+    if (!result.skippedReason) {
+      track({
+        userId: user.id,
+        action: "transcript_uploaded",
+        subjectType: "meeting",
+        subjectId: meeting.id,
+        detail: { segments: segments.length, source: body.source ?? "paste" },
+      });
+    }
 
     return NextResponse.json(result, { status: result.skippedReason ? 402 : 200 });
   },

@@ -21,6 +21,7 @@ import { formatPlaybook, indexDocument, loadPlaybookSnippets } from "@/lib/retri
 import { workspaceIdForAccount } from "@/lib/workspace";
 import { RESEARCH_SYSTEM } from "./prompts";
 import { sendBriefEmail } from "@/lib/brief-email";
+import { trackNow } from "@/lib/activity";
 import { precomputeAnswers } from "./precompute";
 
 export type BriefResult = {
@@ -236,6 +237,23 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
   } catch (error) {
     console.error(`Emailing the brief for meeting ${meeting.id} failed:`, error);
   }
+
+  /*
+   * Awaited, unlike the routes.
+   *
+   * `track` is fire-and-forget because an HTTP handler has a person waiting on
+   * it. This is a background job that already took seconds, so one awaited
+   * insert costs nothing — and an insert still in flight after the job returns
+   * holds a row lock on `users` that will deadlock against anything taking an
+   * exclusive lock, which is exactly how this surfaced in the tests.
+   */
+  await trackNow({
+    userId: meeting.ownerUserId,
+    action: "brief_generated",
+    subjectType: "meeting",
+    subjectId: meeting.id,
+    detail: { citations: result.citations.length, chunks: chunksIndexed },
+  });
 
   return {
     briefId: brief.id,

@@ -10,6 +10,7 @@ import { eq, isNull, and } from "drizzle-orm";
 import { db } from "@/db";
 import { meetingBriefs } from "@/db/schema";
 import { handler, requireOwnedMeeting, requireUser } from "@/lib/api";
+import { track } from "@/lib/activity";
 
 export const POST = handler(
   async (_request: Request, context: { params: Promise<{ id: string }> }) => {
@@ -24,6 +25,13 @@ export const POST = handler(
       .where(
         and(eq(meetingBriefs.meetingId, meeting.id), isNull(meetingBriefs.notifiedAt)),
       );
+
+    track({
+      userId: user.id,
+      action: "brief_opened",
+      subjectType: "meeting",
+      subjectId: meeting.id,
+    });
 
     return NextResponse.json({ ok: true });
   },

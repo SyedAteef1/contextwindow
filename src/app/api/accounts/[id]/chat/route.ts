@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { streamAccountAnswer } from "@/agents/chat";
 import { handler, notFound, readJson, requireOwnedAccount, requireUser } from "@/lib/api";
+import { track } from "@/lib/activity";
 import {
   appendMessage,
   createThread,
@@ -58,6 +59,13 @@ export const POST = handler(
       history,
       onComplete: async ({ answer, sources }) => {
         await appendMessage({ threadId, role: "assistant", content: answer, sources });
+        track({
+          userId: user.id,
+          action: "chat_asked",
+          subjectType: "account",
+          subjectId: account.id,
+          detail: { sources: sources.length },
+        });
       },
     });
 
