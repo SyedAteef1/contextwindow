@@ -24,7 +24,7 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
   );
 }
 
-export function Masthead({ current }: { current?: "meetings" | "accounts" }) {
+export function Masthead({ current }: { current?: "meetings" | "accounts" | "knowledge" }) {
   return (
     <header className="sticky top-0 z-20 border-b border-rule bg-ground/85 backdrop-blur-sm">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3.5">
@@ -44,6 +44,7 @@ export function Masthead({ current }: { current?: "meetings" | "accounts" }) {
         <nav className="flex items-center gap-6">
           <NavLink href="/meetings" label="Meetings" active={current === "meetings"} />
           <NavLink href="/accounts" label="Accounts" active={current === "accounts"} />
+          <NavLink href="/knowledge" label="Knowledge" active={current === "knowledge"} />
           <span className="ml-2 border-l border-rule pl-6">
             <LogoutButton />
           </span>
@@ -60,7 +61,7 @@ export function Page({
   sidebar,
 }: {
   children: ReactNode;
-  current?: "meetings" | "accounts";
+  current?: "meetings" | "accounts" | "knowledge";
   className?: string;
   /** Persistent navigation down the left. Collapses away below `lg`. */
   sidebar?: ReactNode;
