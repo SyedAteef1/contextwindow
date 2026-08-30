@@ -414,6 +414,20 @@ export const meetingBriefs = pgTable(
       .notNull()
       .references(() => meetings.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
+    /**
+     * The handful of facts a rep needs before the paragraphs.
+     *
+     * The brief itself is prose, and prose is right for it — the judgement in
+     * "this is a builder-stage buyer: fast, technical, founder-led" does not
+     * survive being cut into fields. But a rep opening this two minutes before
+     * a call reads the top of the screen and nothing else, so the four or five
+     * things they would otherwise hunt for are lifted out and shown first.
+     *
+     * Extracted alongside the prose rather than parsed out of it: asking the
+     * model for both in one pass is one call, and parsing markdown for facts
+     * breaks the first time it phrases a sentence differently.
+     */
+    facts: jsonb("facts").$type<{ label: string; value: string }[]>(),
     /** The research prompt requires every claim to carry one of these. */
     citations: jsonb("citations").$type<Citation[]>(),
     generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),

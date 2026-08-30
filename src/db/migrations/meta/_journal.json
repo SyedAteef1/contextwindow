@@ -134,6 +134,13 @@
       "when": 1787481099561,
       "tag": "0018_calendar_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787481099562,
+      "tag": "0019_brief_facts",
+      "breakpoints": true
     }
   ]
 }

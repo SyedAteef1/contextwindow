@@ -6,6 +6,7 @@
  * is retrievable by the chat agent from the moment it exists.
  */
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { db } from "@/db";
 import {
@@ -17,7 +18,7 @@ import {
   workspaces,
   type Citation,
 } from "@/db/schema";
-import { runText } from "@/lib/llm";
+import { runStructured, runText } from "@/lib/llm";
 import { formatPlaybook, indexDocument, loadPlaybookSnippets } from "@/lib/retrieval";
 import { workspaceIdForAccount } from "@/lib/workspace";
 import { RESEARCH_SYSTEM } from "./prompts";
@@ -200,18 +201,22 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     throw new Error("Research agent returned an empty brief");
   }
 
+  const facts = await extractFacts(result.text, account.companyName);
+
   const [brief] = await db
     .insert(meetingBriefs)
     .values({
       meetingId: meeting.id,
       content: result.text,
       citations: result.citations,
+      facts,
     })
     .onConflictDoUpdate({
       target: meetingBriefs.meetingId,
       set: {
         content: result.text,
         citations: result.citations,
+        facts,
         generatedAt: new Date(),
         // A regenerated brief has not been delivered yet.
         notifiedAt: null,
@@ -297,4 +302,55 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     chunksIndexed,
     precomputed,
   };
+}
+
+/** What a rep scans in the two minutes before a call. */
+const FACTS_SCHEMA = z.object({
+  facts: z
+    .array(
+      z.object({
+        /** One or two words. It is a column header, not a sentence. */
+        label: z.string(),
+        /** Short enough to read at a glance — a figure, a place, a stage. */
+        value: z.string(),
+      }),
+    )
+    .max(6),
+});
+
+/**
+ * Lift the scannable facts out of a brief that has already been written.
+ *
+ * Run against our own prose rather than the web: it costs one cheap call, it
+ * cannot contradict the paragraphs underneath it, and there is nothing to
+ * verify because everything it can say is already cited above.
+ *
+ * Never throws. A brief without a fact strip is a brief; a brief that failed to
+ * save because a summariser hiccuped is nothing.
+ */
+async function extractFacts(
+  content: string,
+  companyName: string,
+): Promise<{ label: string; value: string }[] | null> {
+  try {
+    const result = await runStructured({
+      schema: FACTS_SCHEMA,
+      system:
+        "You pull the few facts a salesperson scans before a call. Use only what the brief states. " +
+        "Prefer: what they do, where they are, stage or size, money raised, who decides, the one risk. " +
+        "Labels are one or two words. Values are short — a figure, a place, a phrase, never a sentence. " +
+        "Omit anything the brief does not say rather than guessing.",
+      messages: [
+        { role: "user", content: `Brief on ${companyName}:\n\n${content}` },
+      ],
+      maxTokens: 500,
+    });
+    const facts = result.facts
+      .filter((fact) => fact.label.trim() && fact.value.trim())
+      .slice(0, 6);
+    return facts.length > 0 ? facts : null;
+  } catch (error) {
+    console.error(`Extracting facts for ${companyName} failed:`, error);
+    return null;
+  }
 }
