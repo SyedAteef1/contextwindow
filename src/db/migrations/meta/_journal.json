@@ -127,6 +127,13 @@
       "when": 1787481099560,
       "tag": "0017_workspace_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1787481099561,
+      "tag": "0018_calendar_channels",
+      "breakpoints": true
     }
   ]
 }

@@ -115,7 +115,7 @@ export default async function MeetingsPage() {
       )}
 
       {ordered.length === 0 ? (
-        <EmptyRail domain={user.emailDomain} action={<SyncButton />} />
+        <EmptyRail domain={user.emailDomain} />
       ) : (
         <TimeRail meetings={ordered} now={now} timeZone={user.timezone} />
       )}

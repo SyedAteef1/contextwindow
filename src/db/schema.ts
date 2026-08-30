@@ -649,6 +649,43 @@ export const usage = pgTable(
   (t) => [uniqueIndex("uq_usage_user").on(t.userId)],
 );
 
+/**
+ * An open push channel on a rep's Google Calendar.
+ *
+ * Polling every five minutes means a meeting booked at 09:00 is not researched
+ * until 09:05, and a rep who books a call for the same afternoon notices that.
+ * Google will instead POST to us within seconds of the calendar changing, which
+ * is the difference between "it appeared" and "it appeared eventually".
+ *
+ * Channels expire — Google caps a calendar watch at about a week — so the
+ * expiry is stored and the scheduler renews anything close to it. `resourceId`
+ * is Google's handle for the thing being watched and is what `stop` needs; the
+ * channel id is ours, and is how an incoming notification is matched to a rep.
+ */
+export const calendarChannels = pgTable(
+  "calendar_channels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Ours, sent to Google and returned on every notification. */
+    channelId: text("channel_id").notNull(),
+    /** Google's handle for the watched resource. Needed to stop the channel. */
+    resourceId: text("resource_id").notNull(),
+    /** A shared secret echoed back, so a forged POST can be rejected. */
+    token: text("token").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("uq_calendar_channel").on(t.channelId),
+    index("ix_calendar_channel_user").on(t.userId),
+    // The renewal sweep reads this and nothing else.
+    index("ix_calendar_channel_expiry").on(t.expiresAt),
+  ],
+);
+
 export const authEventEnum = pgEnum("auth_event", ["signed_up", "signed_in"]);
 
 /**

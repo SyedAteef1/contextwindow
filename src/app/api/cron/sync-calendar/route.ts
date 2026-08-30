@@ -11,6 +11,7 @@ import { handler } from "@/lib/api";
 import { timingSafeEqualString } from "@/lib/crypto";
 import { env } from "@/lib/env";
 import { syncAllCalendars } from "@/lib/pipeline/calendar-sync";
+import { renewExpiringWatches } from "@/lib/google/calendar-watch";
 
 export const maxDuration = 300;
 
@@ -24,6 +25,15 @@ export const GET = handler(async (request: Request) => {
 
   const results = await syncAllCalendars();
 
+  /*
+   * Renew push channels on the same tick.
+   *
+   * A lapsed channel fails silently — notifications simply stop — so it is
+   * renewed well before expiry. This poll is the safety net underneath it:
+   * if every channel died, briefs would be late rather than absent.
+   */
+  const watches = await renewExpiringWatches();
+
   const totals = results.reduce(
     (accumulator, result) => ({
       users: accumulator.users + 1,
@@ -36,5 +46,5 @@ export const GET = handler(async (request: Request) => {
     { users: 0, created: 0, botsScheduled: 0, briefsGenerated: 0, quotaSkipped: 0, errors: 0 },
   );
 
-  return NextResponse.json({ ok: true, totals, results });
+  return NextResponse.json({ ok: true, totals, watches, results });
 });

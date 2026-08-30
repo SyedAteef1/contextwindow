@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { AwaitingFirstSync } from "@/components/awaiting-first-sync";
 
 /**
  * The dashboard before a calendar has been checked.
@@ -13,14 +13,7 @@ import type { ReactNode } from "react";
  * Nodes are hollow because nothing has happened yet. The one CTA is the only
  * lit thing on the screen.
  */
-export function EmptyRail({
-  domain,
-  action,
-}: {
-  /** The rep's own domain, so "external" means something concrete. */
-  domain: string;
-  action: ReactNode;
-}) {
+export function EmptyRail({ domain }: { domain: string }) {
   const moments: { stamp: string; title: string; body: string }[] = [
     {
       stamp: "Before",
@@ -55,10 +48,11 @@ export function EmptyRail({
         ))}
       </div>
 
-      {/* The line the rail is missing, and the button that draws it. */}
-      <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-dashed border-rule pt-7">
-        {action}
-        <p className="text-[13px] text-faint">
+      {/* No button. The sync started when the calendar was connected and runs
+          every few minutes after that; offering one would imply otherwise. */}
+      <div className="mt-10 border-t border-dashed border-rule pt-7">
+        <AwaitingFirstSync domain={domain} />
+        <p className="mt-3 text-[13px] text-faint">
           Internal-only meetings are skipped. Nothing joins a call until you are on Pro.
         </p>
       </div>

@@ -19,6 +19,8 @@ import { db } from "@/db";
 import { workspaceDocuments, workspaces } from "@/db/schema";
 import { badRequest, handler, requireUser } from "@/lib/api";
 import { normaliseUrl, scrapeCompanySite } from "@/lib/scrape";
+import { syncUserCalendar } from "@/lib/pipeline/calendar-sync";
+import { startCalendarWatch } from "@/lib/google/calendar-watch";
 import { indexDocument } from "@/lib/retrieval";
 
 export const maxDuration = 60;
@@ -92,6 +94,35 @@ export const POST = handler(async (request: Request) => {
       scraped = true;
     }
   }
+
+  /*
+   * The first sync, started here rather than waited for.
+   *
+   * The scheduler already polls every five minutes, so a calendar is never
+   * stale — but a brand new rep would spend those five minutes looking at an
+   * empty dashboard wondering whether anything worked, which is the worst
+   * possible first impression of a product whose whole claim is that it
+   * arrives before you ask.
+   *
+   * Not awaited, because it fetches a calendar and can write briefs: that is
+   * tens of seconds, and nobody should sit on a spinner for it. The dashboard
+   * knows how to show that a first sync is running.
+   */
+  void syncUserCalendar(user.id).catch((error) => {
+    console.error(`First calendar sync for ${user.id} failed:`, error);
+  });
+
+  /*
+   * And ask Google to tell us about changes from here on, so a call booked
+   * this afternoon is researched in seconds rather than at the next poll.
+   *
+   * Not fatal if it fails. Google refuses to open a channel until the
+   * receiving domain is verified, and a deployment without that should still
+   * work — five minutes late — rather than refuse to onboard anyone.
+   */
+  void startCalendarWatch(user.id).catch((error) => {
+    console.error(`Opening a calendar watch for ${user.id} failed:`, error);
+  });
 
   return NextResponse.json({ ok: true, scraped });
 });
