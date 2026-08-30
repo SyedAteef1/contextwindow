@@ -5,7 +5,8 @@
  * web search, writes to `meeting_briefs`, and indexes the result so the brief
  * is retrievable by the chat agent from the moment it exists.
  */
-import { eq } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
+import { z } from "zod";
 
 import { db } from "@/db";
 import {
@@ -14,13 +15,15 @@ import {
   meetingBriefs,
   meetings,
   users,
+  workspaces,
   type Citation,
 } from "@/db/schema";
-import { runText } from "@/lib/llm";
+import { runStructured, runText } from "@/lib/llm";
 import { formatPlaybook, indexDocument, loadPlaybookSnippets } from "@/lib/retrieval";
 import { workspaceIdForAccount } from "@/lib/workspace";
 import { RESEARCH_SYSTEM } from "./prompts";
 import { sendBriefEmail } from "@/lib/brief-email";
+import { trackNow } from "@/lib/activity";
 import { precomputeAnswers } from "./precompute";
 
 export type BriefResult = {
@@ -48,6 +51,16 @@ function buildResearchRequest(input: {
   externalAttendees: { email: string; displayName: string | null }[];
   knownContacts: { name: string | null; role: string | null; email: string }[];
   playbook: string;
+  /** Who the *seller* is, in their own words. Read off their website at sign-up. */
+  seller?: { name: string; sells: string | null; idealCustomer: string | null } | null;
+  /**
+   * Companies this workspace already works with.
+   *
+   * The strongest sentence a rep has is "your competitor already uses us", and
+   * it is the one piece of context no amount of web search can supply — it
+   * lives in this database and nowhere else.
+   */
+  ourAccounts?: { name: string; industry: string | null; stage: string }[];
 }): string {
   const lines: string[] = [];
 
@@ -83,6 +96,49 @@ function buildResearchRequest(input: {
       if (contact.role) parts.push(contact.role);
       lines.push(`- ${parts.join(" — ")}`);
     }
+  }
+
+  if (input.seller && (input.seller.sells || input.seller.idealCustomer)) {
+    lines.push("");
+    lines.push(`## Who we are (the seller)`);
+    lines.push(`We are ${input.seller.name}.`);
+    if (input.seller.sells) {
+      lines.push("");
+      lines.push(`What we sell, from our own website:`);
+      lines.push(input.seller.sells);
+    }
+    if (input.seller.idealCustomer) {
+      lines.push("");
+      lines.push(`Who we are looking for: ${input.seller.idealCustomer}`);
+      lines.push(
+        `Judge this buyer against that. Say plainly where they do not fit — a brief that flatters a bad prospect costs the rep the call.`,
+      );
+    }
+  }
+
+  if (input.ourAccounts && input.ourAccounts.length > 0) {
+    lines.push("");
+    lines.push(`## Companies we already work with`);
+    lines.push(
+      `Every name below is a real relationship of ours. Closed-won means they bought.`,
+    );
+    for (const other of input.ourAccounts) {
+      const parts = [other.name];
+      if (other.industry) parts.push(other.industry);
+      parts.push(other.stage.replace(/_/g, " "));
+      lines.push(`- ${parts.join(" — ")}`);
+    }
+    lines.push("");
+    lines.push(
+      `If any of them competes with ${input.companyName}, sells to the same buyers, or is ` +
+        `recognisably the same kind of company, put that in a section called ` +
+        `"Who else like them we work with" and say in one line why they are comparable. ` +
+        `That sentence is the strongest thing the rep can say on this call, so do not bury it.`,
+    );
+    lines.push(
+      `Only ever name a company from that list. Never invent a customer, and never imply we ` +
+        `work with someone we do not — a rep will repeat this out loud to the buyer.`,
+    );
   }
 
   if (input.playbook) {
@@ -138,6 +194,32 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     }),
   );
 
+  // The seller's own context, gathered once at sign-up. Loaded here rather
+  // than threaded through every caller: a brief is worth less without it, and
+  // no caller should be able to forget it.
+  const workspaceId = await workspaceIdForAccount(account.id);
+  const sellerWorkspace = await db.query.workspaces.findFirst({
+    where: eq(workspaces.id, workspaceId),
+  });
+
+  /*
+   * The other companies this workspace sells to.
+   *
+   * Capped and ordered so a large workspace does not spend its whole prompt
+   * budget on a customer list: won deals first, because "they bought" is the
+   * claim worth making, then everyone else.
+   */
+  const siblings = await db
+    .select({
+      name: accounts.companyName,
+      industry: accounts.industry,
+      stage: accounts.dealStage,
+    })
+    .from(accounts)
+    .where(and(eq(accounts.workspaceId, workspaceId), ne(accounts.id, account.id)))
+    .orderBy(sql`case when ${accounts.dealStage} = 'closed_won' then 0 else 1 end`)
+    .limit(40);
+
   const prompt = buildResearchRequest({
     companyName: account.companyName,
     domain: account.domain,
@@ -148,6 +230,14 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     externalAttendees,
     knownContacts,
     playbook,
+    ourAccounts: siblings,
+    seller: sellerWorkspace
+      ? {
+          name: sellerWorkspace.name,
+          sells: sellerWorkspace.description,
+          idealCustomer: sellerWorkspace.idealCustomer,
+        }
+      : null,
   });
 
   const result = await runText({
@@ -164,18 +254,22 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     throw new Error("Research agent returned an empty brief");
   }
 
+  const facts = await extractFacts(result.text, account.companyName);
+
   const [brief] = await db
     .insert(meetingBriefs)
     .values({
       meetingId: meeting.id,
       content: result.text,
       citations: result.citations,
+      facts,
     })
     .onConflictDoUpdate({
       target: meetingBriefs.meetingId,
       set: {
         content: result.text,
         citations: result.citations,
+        facts,
         generatedAt: new Date(),
         // A regenerated brief has not been delivered yet.
         notifiedAt: null,
@@ -237,6 +331,23 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     console.error(`Emailing the brief for meeting ${meeting.id} failed:`, error);
   }
 
+  /*
+   * Awaited, unlike the routes.
+   *
+   * `track` is fire-and-forget because an HTTP handler has a person waiting on
+   * it. This is a background job that already took seconds, so one awaited
+   * insert costs nothing — and an insert still in flight after the job returns
+   * holds a row lock on `users` that will deadlock against anything taking an
+   * exclusive lock, which is exactly how this surfaced in the tests.
+   */
+  await trackNow({
+    userId: meeting.ownerUserId,
+    action: "brief_generated",
+    subjectType: "meeting",
+    subjectId: meeting.id,
+    detail: { citations: result.citations.length, chunks: chunksIndexed },
+  });
+
   return {
     briefId: brief.id,
     content: result.text,
@@ -244,4 +355,55 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     chunksIndexed,
     precomputed,
   };
+}
+
+/** What a rep scans in the two minutes before a call. */
+const FACTS_SCHEMA = z.object({
+  facts: z
+    .array(
+      z.object({
+        /** One or two words. It is a column header, not a sentence. */
+        label: z.string(),
+        /** Short enough to read at a glance — a figure, a place, a stage. */
+        value: z.string(),
+      }),
+    )
+    .max(6),
+});
+
+/**
+ * Lift the scannable facts out of a brief that has already been written.
+ *
+ * Run against our own prose rather than the web: it costs one cheap call, it
+ * cannot contradict the paragraphs underneath it, and there is nothing to
+ * verify because everything it can say is already cited above.
+ *
+ * Never throws. A brief without a fact strip is a brief; a brief that failed to
+ * save because a summariser hiccuped is nothing.
+ */
+async function extractFacts(
+  content: string,
+  companyName: string,
+): Promise<{ label: string; value: string }[] | null> {
+  try {
+    const result = await runStructured({
+      schema: FACTS_SCHEMA,
+      system:
+        "You pull the few facts a salesperson scans before a call. Use only what the brief states. " +
+        "Prefer: what they do, where they are, stage or size, money raised, who decides, the one risk. " +
+        "Labels are one or two words. Values are short — a figure, a place, a phrase, never a sentence. " +
+        "Omit anything the brief does not say rather than guessing.",
+      messages: [
+        { role: "user", content: `Brief on ${companyName}:\n\n${content}` },
+      ],
+      maxTokens: 500,
+    });
+    const facts = result.facts
+      .filter((fact) => fact.label.trim() && fact.value.trim())
+      .slice(0, 6);
+    return facts.length > 0 ? facts : null;
+  } catch (error) {
+    console.error(`Extracting facts for ${companyName} failed:`, error);
+    return null;
+  }
 }

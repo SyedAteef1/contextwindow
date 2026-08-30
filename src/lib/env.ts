@@ -199,6 +199,15 @@ const schema = z.object({
   SLACK_BOT_TOKEN: z.string().optional(),
   SLACK_CHANNEL_ID: z.string().optional(),
   /**
+   * Every sign-in, as a running log.
+   *
+   * Separate from the signups channel on purpose. A registration is news and
+   * deserves a ping; a returning rep signing in on a Tuesday is a log line,
+   * and putting the two in one room means the news is buried by the noise
+   * within a week. This channel is never mentioned into — see `mention()`.
+   */
+  SLACK_USER_LOG_CHANNEL_ID: z.string().optional(),
+  /**
    * Who to tag, so the alert is a notification rather than a message in a room
    * nobody has open. A member id (`U…`, from Slack profile → Copy member ID),
    * or `!here` / `!channel` for the whole room.

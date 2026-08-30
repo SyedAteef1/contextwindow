@@ -64,9 +64,32 @@ export const meetingStatusEnum = pgEnum("meeting_status", [
   "transcribed", // transcript stored, wrap-up not yet run
   "processed", // summary + intent written
   "skipped_quota", // over the free-tier cap
+  /**
+   * The brief was written and delivered, but the bot is not joining.
+   *
+   * Distinct from `skipped_quota` on purpose: one means "you have used up this
+   * month", the other means "your plan does not include the bot". They need
+   * different words on screen and a different button, and collapsing them into
+   * one status made the free tier look broken rather than free.
+   */
+  "bot_requires_upgrade",
   "failed",
   "cancelled", // removed from the calendar
 ]);
+
+/**
+ * What a workspace is entitled to.
+ *
+ * `free` is the research agent: connect a calendar and briefs start arriving,
+ * with no bot in anyone's meeting and nothing to install. `pro` adds the parts
+ * that cost real money to run — a bot in the call, live answers, and the
+ * wrap-up afterwards.
+ *
+ * It sits on the workspace rather than the user because a sales team buys
+ * together; the *meter* stays per-rep, so one rep cannot burn the floor's
+ * quota.
+ */
+export const planEnum = pgEnum("plan", ["free", "pro"]);
 
 export const dealStageEnum = pgEnum("deal_stage", [
   "discovery",
@@ -124,6 +147,26 @@ export const workspaces = pgTable(
     domain: text("domain").notNull(),
     /** What this company sells, in their own words. Indexed for retrieval. */
     description: text("description"),
+    /**
+     * The seller's own website.
+     *
+     * Asked for once, at sign-up, because it is the single highest-yield thing
+     * a new workspace can give us: one URL produces the positioning, the
+     * product language and often the customer list, without anyone typing a
+     * paragraph. Everything else in the knowledge base is optional; this is the
+     * one question worth interrupting someone for.
+     */
+    website: text("website"),
+    /**
+     * Who they sell to, in their words — the answer to "what are you looking
+     * for". Steers research towards the signals this team cares about rather
+     * than generic company facts.
+     */
+    idealCustomer: text("ideal_customer"),
+    /** Set once the website has been asked for, so we never ask twice. */
+    onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
+    /** Everyone starts free; the bot is what an upgrade buys. */
+    plan: planEnum("plan").notNull().default("free"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -371,6 +414,20 @@ export const meetingBriefs = pgTable(
       .notNull()
       .references(() => meetings.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
+    /**
+     * The handful of facts a rep needs before the paragraphs.
+     *
+     * The brief itself is prose, and prose is right for it — the judgement in
+     * "this is a builder-stage buyer: fast, technical, founder-led" does not
+     * survive being cut into fields. But a rep opening this two minutes before
+     * a call reads the top of the screen and nothing else, so the four or five
+     * things they would otherwise hunt for are lifted out and shown first.
+     *
+     * Extracted alongside the prose rather than parsed out of it: asking the
+     * model for both in one pass is one call, and parsing markdown for facts
+     * breaks the first time it phrases a sentence differently.
+     */
+    facts: jsonb("facts").$type<{ label: string; value: string }[]>(),
     /** The research prompt requires every claim to carry one of these. */
     citations: jsonb("citations").$type<Citation[]>(),
     generatedAt: timestamp("generated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -585,8 +642,20 @@ export const usage = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    /** Bot-attended calls. What `pro` buys, and what the cap protects. */
     meetingsProcessedThisMonth: integer("meetings_processed_this_month").notNull().default(0),
     freeTierLimit: integer("free_tier_limit").notNull().default(5),
+    /*
+     * Briefs are free, but not infinite.
+     *
+     * A brief is one model call plus a web search, which is cheap enough to
+     * give away and expensive enough that a runaway calendar sync should not
+     * be able to run it two hundred times in a month. The ceiling is set well
+     * above what a working rep does — nobody on a real calendar will ever see
+     * it — so it reads as unlimited while still being bounded.
+     */
+    briefsThisMonth: integer("briefs_this_month").notNull().default(0),
+    briefLimit: integer("brief_limit").notNull().default(25),
     periodStart: timestamp("period_start", { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -594,7 +663,135 @@ export const usage = pgTable(
   (t) => [uniqueIndex("uq_usage_user").on(t.userId)],
 );
 
+/**
+ * An open push channel on a rep's Google Calendar.
+ *
+ * Polling every five minutes means a meeting booked at 09:00 is not researched
+ * until 09:05, and a rep who books a call for the same afternoon notices that.
+ * Google will instead POST to us within seconds of the calendar changing, which
+ * is the difference between "it appeared" and "it appeared eventually".
+ *
+ * Channels expire — Google caps a calendar watch at about a week — so the
+ * expiry is stored and the scheduler renews anything close to it. `resourceId`
+ * is Google's handle for the thing being watched and is what `stop` needs; the
+ * channel id is ours, and is how an incoming notification is matched to a rep.
+ */
+export const calendarChannels = pgTable(
+  "calendar_channels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Ours, sent to Google and returned on every notification. */
+    channelId: text("channel_id").notNull(),
+    /** Google's handle for the watched resource. Needed to stop the channel. */
+    resourceId: text("resource_id").notNull(),
+    /** A shared secret echoed back, so a forged POST can be rejected. */
+    token: text("token").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("uq_calendar_channel").on(t.channelId),
+    index("ix_calendar_channel_user").on(t.userId),
+    // The renewal sweep reads this and nothing else.
+    index("ix_calendar_channel_expiry").on(t.expiresAt),
+  ],
+);
+
+/**
+ * A team asking what Pro costs.
+ *
+ * Distinct from `demo_requests`, which is a stranger with no account. This is a
+ * signed-in workspace saying they want the notetaker, so it already knows who
+ * they are and how many of them there are — the whole form is a seat count and
+ * an optional sentence.
+ *
+ * Deliberately a request rather than a checkout. Every team gets engineers in
+ * the room for setup, so the price depends on what they connect; a card field
+ * would be quoting before anyone has asked what they need.
+ */
+export const quoteStatusEnum = pgEnum("quote_status", ["requested", "quoted", "closed"]);
+
+export const quoteRequests = pgTable(
+  "quote_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    /** Who asked. Kept so the reply goes to a person, not to a domain. */
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    seats: integer("seats"),
+    note: text("note"),
+    status: quoteStatusEnum("status").notNull().default("requested"),
+    /** When a price was actually sent back. */
+    quotedAt: timestamp("quoted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("ix_quote_workspace").on(t.workspaceId),
+    // The queue: what has been asked and not yet answered.
+    index("ix_quote_status").on(t.status, t.createdAt),
+  ],
+);
+
 export const authEventEnum = pgEnum("auth_event", ["signed_up", "signed_in"]);
+
+/**
+ * What a rep actually did.
+ *
+ * Deliberately a short list rather than every click. The question this table
+ * has to answer is "is this account getting value" — before a renewal, when a
+ * rep goes quiet, when something looks broken — and a log that records
+ * everything answers it worse than one that records the handful of moments
+ * where the product either delivered or was used. Page views are not on it.
+ *
+ * Kept in step with the privacy policy: a row is a user, a verb, a subject and
+ * a time. No IP address, no device fingerprint, no page URL. Those are personal
+ * data we would then have to justify holding, and none of them answer the
+ * question above.
+ */
+export const activityActionEnum = pgEnum("activity_action", [
+  "calendar_synced",
+  "brief_generated",
+  "brief_opened",
+  "transcript_uploaded",
+  "chat_asked",
+  "followup_approved",
+  "followup_rejected",
+  "recap_sent",
+  "upgrade_requested",
+]);
+
+export const activityEvents = pgTable(
+  "activity_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    action: activityActionEnum("action").notNull(),
+    /** The row this was done to — a meeting, an account — when there is one. */
+    subjectType: text("subject_type"),
+    subjectId: uuid("subject_id"),
+    /**
+     * Small, non-identifying detail that makes a row answerable on its own:
+     * how many meetings a sync found, how long an answer took. Never content.
+     */
+    detail: jsonb("detail").$type<Record<string, string | number | boolean>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // The two questions asked of it: what did this rep do, and what happened
+    // lately. Both are ordered by time, so both indexes carry it.
+    index("ix_activity_user_time").on(t.userId, t.createdAt),
+    index("ix_activity_time").on(t.createdAt),
+  ],
+);
 
 /**
  * Who arrived, and when.

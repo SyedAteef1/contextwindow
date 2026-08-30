@@ -35,11 +35,12 @@ const KINDS = [
  * they came from.
  */
 export function AccountKnowledge({
-  accountId,
+  accountId = null,
   companyName,
   initial,
 }: {
-  accountId: string;
+  /** Null for the seller's own material, which applies to every account. */
+  accountId?: string | null;
   companyName: string;
   initial: Doc[];
 }) {
@@ -74,10 +75,10 @@ export function AccountKnowledge({
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch(`/api/accounts/${accountId}/knowledge`, {
+      const response = await fetch("/api/knowledge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editing?.id, title, content, kind }),
+        body: JSON.stringify({ id: editing?.id, accountId, title, content, kind }),
       });
       if (!response.ok) {
         const detail = await response.json().catch(() => null);
@@ -101,10 +102,9 @@ export function AccountKnowledge({
     const previous = docs;
     setDocs((current) => current.filter((doc) => doc.id !== id));
     try {
-      const response = await fetch(
-        `/api/accounts/${accountId}/knowledge?documentId=${encodeURIComponent(id)}`,
-        { method: "DELETE" },
-      );
+      const response = await fetch(`/api/knowledge/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
       if (!response.ok) throw new Error();
     } catch {
       setDocs(previous);

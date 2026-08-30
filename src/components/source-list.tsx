@@ -17,12 +17,23 @@ function hostOf(url: string): string | null {
   }
 }
 
+/** Enough to judge the research by; the rest are one click away. */
+const VISIBLE = 5;
+
 /**
  * Sources for a brief, numbered.
  *
  * Numbered rather than bulleted because the model refers to results by index
  * while it works, so the numbering here matches the order it saw them in.
  * Duplicates are collapsed: one article cited three times is one source.
+ *
+ * Only the first few are shown. A thorough brief cites twenty-odd pages, and a
+ * list that long pushed the brief itself off the screen — the rep scrolled past
+ * their own preparation to reach the footnotes. The count is always visible, so
+ * nothing is hidden, only folded.
+ *
+ * Folded with `<details>` rather than state: it costs no JavaScript, it is
+ * open to a keyboard and to find-in-page, and it prints expanded.
  */
 export function SourceList({ citations }: { citations: Citation[] }) {
   const seen = new Set<string>();
@@ -44,32 +55,59 @@ export function SourceList({ citations }: { citations: Citation[] }) {
       </div>
 
       <ol className="mt-2.5 space-y-px">
-        {unique.map((citation, index) => {
-          const host = hostOf(citation.url);
-          return (
-            <li key={citation.url}>
-              <a
-                href={citation.url}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="group -mx-2 flex items-baseline gap-2.5 rounded px-2 py-1 transition-colors hover:bg-sunken/60"
-              >
-                <span className="w-5 shrink-0 pt-px text-right font-mono text-[10px] tabular-nums text-faint">
-                  {index + 1}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px] leading-snug text-muted group-hover:text-ink">
-                    {citation.title || citation.url}
-                  </span>
-                  {host && (
-                    <span className="mt-0.5 block font-mono text-[10.5px] text-faint">{host}</span>
-                  )}
-                </span>
-              </a>
-            </li>
-          );
-        })}
+        {unique.slice(0, VISIBLE).map((citation, index) => (
+          <Source key={citation.url} citation={citation} index={index} />
+        ))}
       </ol>
+
+      {unique.length > VISIBLE && (
+        <details className="group/sources mt-1">
+          <summary className="-mx-2 inline-flex cursor-pointer list-none items-center gap-1.5 rounded px-2 py-1 text-[12px] text-faint transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+            <svg
+              viewBox="0 0 12 12"
+              aria-hidden
+              className="size-2.5 transition-transform duration-150 ease-out group-open/sources:rotate-90"
+            >
+              <path d="M4 2.5 L8 6 L4 9.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <span className="group-open/sources:hidden">
+              {unique.length - VISIBLE} more source{unique.length - VISIBLE === 1 ? "" : "s"}
+            </span>
+            <span className="hidden group-open/sources:inline">Show fewer</span>
+          </summary>
+
+          <ol className="mt-1 space-y-px">
+            {unique.slice(VISIBLE).map((citation, index) => (
+              <Source key={citation.url} citation={citation} index={index + VISIBLE} />
+            ))}
+          </ol>
+        </details>
+      )}
     </div>
+  );
+}
+
+/** One source: its number, its title, and the host that says whether to trust it. */
+function Source({ citation, index }: { citation: Citation; index: number }) {
+  const host = hostOf(citation.url);
+  return (
+    <li>
+      <a
+        href={citation.url}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        className="group -mx-2 flex items-baseline gap-2.5 rounded px-2 py-1 transition-colors hover:bg-sunken/60"
+      >
+        <span className="w-5 shrink-0 pt-px text-right font-mono text-[10px] tabular-nums text-faint">
+          {index + 1}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[12.5px] leading-snug text-muted group-hover:text-ink">
+            {citation.title || citation.url}
+          </span>
+          {host && <span className="mt-0.5 block font-mono text-[10.5px] text-faint">{host}</span>}
+        </span>
+      </a>
+    </li>
   );
 }

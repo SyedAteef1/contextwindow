@@ -230,15 +230,27 @@ export async function upsertUserAndCredentials(
       .insert(authEvents)
       .values({ userId: user.id, event: isNewUser ? "signed_up" : "signed_in" });
 
-  // Only the first time. A sign-in is not news; a sign-up is.
-  if (isNewUser) {
+    // Every sign-in, including the first, so the log is a complete record of
+    // who was here and when rather than a record of who was new.
     notify({
-      kind: "signup",
+      kind: "signin",
       email: user.email,
       name: user.name,
       domain: emailDomain,
+      at: new Date(),
+      isNewUser,
     });
-  }
+
+    // And again, separately, the first time. A returning rep is a log line; a
+    // registration is news, and it goes where news gets answered.
+    if (isNewUser) {
+      notify({
+        kind: "signup",
+        email: user.email,
+        name: user.name,
+        domain: emailDomain,
+      });
+    }
   } catch (error) {
     console.error("Failed to record the auth event:", error);
   }

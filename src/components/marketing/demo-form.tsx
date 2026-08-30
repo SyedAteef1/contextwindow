@@ -56,9 +56,9 @@ export function DemoForm({ source }: { source?: string }) {
 
   if (state === "sent") {
     return (
-      <div className="flex flex-col items-center gap-3 rounded border border-emerald-500/20 bg-emerald-500/5 px-8 py-10 text-center">
-        <p className="text-lg font-medium text-white">Request received.</p>
-        <p className="max-w-sm text-sm leading-relaxed text-zinc-400">
+      <div className="flex flex-col items-center gap-3 rounded border border-live/25 bg-live/[0.06] px-8 py-10 text-center">
+        <p className="text-lg font-medium text-ink">Request received.</p>
+        <p className="max-w-sm text-sm leading-relaxed text-muted">
           We read every one of these ourselves. Expect a reply within one working day, from a person
           rather than a sequence.
         </p>
@@ -67,8 +67,8 @@ export function DemoForm({ source }: { source?: string }) {
   }
 
   const input =
-    "w-full rounded border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-zinc-600 focus:border-white/25";
-  const label = "text-xs font-medium uppercase tracking-widest text-zinc-500";
+    "w-full rounded border border-rule bg-sunken/60 px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-faint focus:border-cobalt/60";
+  const label = "text-xs font-medium uppercase tracking-widest text-muted";
 
   return (
     <form onSubmit={submit} className="flex w-full flex-col gap-4 text-left">
@@ -117,7 +117,7 @@ export function DemoForm({ source }: { source?: string }) {
               How many reps?
             </option>
             {TEAM_SIZES.map((size) => (
-              <option key={size} value={size} className="bg-zinc-950">
+              <option key={size} value={size} className="bg-ground">
                 {size}
               </option>
             ))}
@@ -127,7 +127,7 @@ export function DemoForm({ source }: { source?: string }) {
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="message" className={label}>
-          What are you trying to fix? <span className="text-zinc-600">(optional)</span>
+          What are you trying to fix? <span className="text-faint">(optional)</span>
         </label>
         <textarea
           id="message"
@@ -140,7 +140,7 @@ export function DemoForm({ source }: { source?: string }) {
       </div>
 
       {error && (
-        <p className="rounded border border-red-500/20 bg-red-500/10 px-3.5 py-2.5 text-sm text-red-300">
+        <p className="rounded border border-flag/25 bg-flag/10 px-3.5 py-2.5 text-sm text-flag">
           {error}
         </p>
       )}
@@ -149,14 +149,14 @@ export function DemoForm({ source }: { source?: string }) {
         <button
           type="submit"
           disabled={state === "sending"}
-          className="group inline-flex w-fit items-center gap-2 rounded bg-white px-5 py-3 text-sm font-medium text-zinc-950 transition-transform duration-150 ease-out active:scale-[0.97] disabled:opacity-50"
+          className="group inline-flex w-fit items-center gap-2 rounded bg-cobalt-deep px-5 py-3 text-sm font-semibold text-ink shadow-[0_0_28px_-10px_var(--color-cobalt)] transition-[transform,box-shadow] duration-150 ease-out hover:shadow-[0_0_36px_-8px_var(--color-cobalt)] active:scale-[0.97] disabled:opacity-50 disabled:shadow-none"
         >
           {state === "sending" ? "Sending…" : "Request a demo"}
           {state !== "sending" && (
             <ArrowRight className="size-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5" />
           )}
         </button>
-        <p className="text-xs text-zinc-600">
+        <p className="text-xs text-faint">
           No calendar access, no card, nothing installed. A conversation first.
         </p>
       </div>

@@ -40,9 +40,9 @@ type Tone = "neutral" | "signal" | "flag" | "live" | "quiet";
 
 const TONE_CLASS: Record<Tone, string> = {
   neutral: "border-rule bg-surface text-ink-soft",
-  signal: "border-transparent bg-signal-soft text-signal",
-  flag: "border-transparent bg-flag-soft text-flag",
-  live: "border-transparent bg-live-soft text-live",
+  signal: "border-transparent bg-signal/10 text-signal",
+  flag: "border-transparent bg-flag/10 text-flag",
+  live: "border-transparent bg-live/10 text-live",
   quiet: "border-transparent bg-sunken text-muted",
 };
 
@@ -122,7 +122,7 @@ export function Button({
     primary: "bg-ink text-ground hover:bg-ink-soft",
     secondary: "border border-rule bg-surface text-ink hover:bg-sunken",
     ghost: "text-muted hover:text-ink hover:bg-sunken",
-    danger: "border border-rule bg-surface text-flag hover:bg-flag-soft",
+    danger: "border border-rule bg-surface text-flag hover:bg-flag/10",
   }[variant];
 
   return (

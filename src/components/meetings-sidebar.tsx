@@ -25,22 +25,37 @@ type Row = MeetingRailRow;
  * free. The open/closed default is computed on the server from which company
  * you are currently looking at.
  */
+/**
+ * Status as a dot, with the words kept for the tooltip and the screen reader.
+ *
+ * A column of uppercase red FAILED beside every call read as an app in
+ * trouble, and shouted loudest about the meetings that mattered least. The
+ * information is worth one 6px mark: colour carries the state, the title
+ * attribute carries the detail, and the eye is left free for the names.
+ */
 const STATUS_LABEL: Partial<Record<Row["status"], string>> = {
-  brief_ready: "Brief",
-  bot_scheduled: "Bot set",
-  recording: "Live",
-  transcribed: "Transcript",
-  processed: "Summary",
-  skipped_quota: "Over limit",
-  failed: "Failed",
+  detected: "Found on your calendar",
+  brief_pending: "Researching",
+  brief_ready: "Brief ready",
+  bot_scheduled: "Notetaker booked",
+  recording: "Recording now",
+  transcribed: "Writing the summary",
+  processed: "Summary ready",
+  skipped_quota: "Over the free limit",
+  bot_requires_upgrade: "Brief only — no notetaker",
+  failed: "Needs attention",
   cancelled: "Cancelled",
 };
 
-function statusTone(status: Row["status"]): string {
-  if (status === "recording") return "text-live";
-  if (status === "failed" || status === "skipped_quota") return "text-flag";
-  if (status === "processed" || status === "transcribed") return "text-muted";
-  return "text-signal";
+/** Four states worth telling apart at a glance, and nothing finer. */
+function statusDot(status: Row["status"]): string {
+  if (status === "recording") return "bg-live";
+  if (status === "failed") return "bg-flag";
+  if (status === "skipped_quota") return "bg-signal";
+  if (status === "processed" || status === "transcribed" || status === "brief_ready")
+    return "bg-muted";
+  // Scheduled, researching, or waiting on a plan: present, not yet resolved.
+  return "bg-rule";
 }
 
 /**
@@ -97,12 +112,10 @@ function Item({
           />
           {label && (
             <span
-              className={cn(
-                "font-mono text-[9.5px] uppercase tracking-[0.1em]",
-                statusTone(row.status),
-              )}
+              title={label}
+              className={cn("size-1.5 shrink-0 rounded-full", statusDot(row.status))}
             >
-              {label}
+              <span className="sr-only">{label}</span>
             </span>
           )}
         </span>

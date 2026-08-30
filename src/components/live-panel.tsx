@@ -125,7 +125,7 @@ export function LivePanel({ meetingId, live }: { meetingId: string; live: boolea
                 {item.latencyMs !== null && item.status !== "answering" && (
                   <p className="mt-2 flex items-center gap-2">
                     {item.via === "cache" ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-live-soft px-2 py-[2px] font-mono text-[9.5px] font-medium uppercase tracking-[0.1em] text-live">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-live/10 px-2 py-[2px] font-mono text-[9.5px] font-medium uppercase tracking-[0.1em] text-live">
                         ⚡ Ready before the call
                       </span>
                     ) : (

@@ -11,6 +11,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { followupProposals } from "@/db/schema";
 import { badRequest, handler, notFound, readJson, requireOwnedAccount, requireUser } from "@/lib/api";
+import { track } from "@/lib/activity";
 import { createCalendarEvent } from "@/lib/google/calendar";
 import { getAccessTokenForUser } from "@/lib/google/oauth";
 
@@ -88,6 +89,13 @@ export const POST = handler(
       .returning();
 
     if (!updated) throw badRequest("This follow-up was already actioned.");
+
+    track({
+      userId: user.id,
+      action: "followup_approved",
+      subjectType: "meeting",
+      subjectId: updated.meetingId,
+    });
 
     return NextResponse.json({
       proposal: updated,

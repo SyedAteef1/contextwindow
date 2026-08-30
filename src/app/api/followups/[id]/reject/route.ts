@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { followupProposals } from "@/db/schema";
 import { badRequest, handler, notFound, requireOwnedAccount, requireUser } from "@/lib/api";
+import { track } from "@/lib/activity";
 
 export const POST = handler(
   async (_request: Request, context: { params: Promise<{ id: string }> }) => {
@@ -24,6 +25,13 @@ export const POST = handler(
       .returning();
 
     if (!updated) throw badRequest("This follow-up was already actioned.");
+    track({
+      userId: user.id,
+      action: "followup_rejected",
+      subjectType: "meeting",
+      subjectId: updated.meetingId,
+    });
+
     return NextResponse.json({ proposal: updated });
   },
 );

@@ -15,6 +15,7 @@ import { db } from "@/db";
 import { accounts, meetingBriefs, meetings, users } from "@/db/schema";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
+import { planForUser } from "@/lib/usage";
 import { markdownToBlocks, renderEmail } from "@/lib/mail/template";
 
 /**
@@ -113,6 +114,10 @@ export async function sendBriefEmail(meetingId: string): Promise<BriefEmailResul
 
   try {
     const when = whenLine(meeting.scheduledAt);
+    const onFree = (await planForUser(owner.id)) === "free";
+    const upsell = onFree
+      ? ` You are on the free plan, so the notetaker is not joining this one — see ${env().APP_URL}/#pricing.`
+      : "";
     const message = await sendMail(owner.id, {
       to: [owner.email],
       subject: `Brief — ${company}, ${when}`,
@@ -128,7 +133,7 @@ export async function sendBriefEmail(meetingId: string): Promise<BriefEmailResul
           label: "Open the brief",
           url: `${env().APP_URL}/meetings/${meeting.id}`,
         },
-        footer: `Sent because a brief was written for your call with ${company}. Nothing here has been sent to anyone at ${company}.`,
+        footer: `Sent because a brief was written for your call with ${company}. Nothing here has been sent to anyone at ${company}.${upsell}`,
       }),
     });
     return { sent: true, messageId: message.id };

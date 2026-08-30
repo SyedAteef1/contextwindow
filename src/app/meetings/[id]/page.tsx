@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BriefButton } from "@/components/brief-button";
+import { BriefResearching } from "@/components/brief-researching";
+import { BriefFacts } from "@/components/brief-facts";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
+import { hasOpenQuoteRequest } from "@/lib/usage";
 import { Page } from "@/components/chrome";
 import { CallPlayback } from "@/components/call-playback";
 import { MeetingNav } from "@/components/meeting-nav";
@@ -121,7 +125,7 @@ export default async function MeetingPage({
         </div>
 
         {meeting.errorMessage && (
-          <p className="mt-4 rounded-md border border-flag/25 bg-flag-soft px-3.5 py-2.5 text-[13px] text-flag">
+          <p className="mt-4 rounded-md border border-flag/25 bg-flag/10 px-3.5 py-2.5 text-[13px] text-flag">
             {meeting.errorMessage}
           </p>
         )}
@@ -156,6 +160,9 @@ export default async function MeetingPage({
       />
 
       <div className="space-y-9">
+        {/* Below the brief, deliberately. A rep opening this page came for
+            their preparation, not for an offer, and a blue box with a button
+            above the fold answered a question nobody had asked yet. */}
         {/* --- Live answers: first while the call is happening ------------- */}
         {(meeting.status === "recording" || liveAnswerCount > 0) && (
           <LivePanel meetingId={meeting.id} live={meeting.status === "recording"} />
@@ -290,16 +297,24 @@ export default async function MeetingPage({
             aside={brief ? `Researched ${shortDate(brief.generatedAt)}` : undefined}
           />
           {brief ? (
-            <Card className="px-6 py-5">
+            <Card>
               <MarkBriefSeen meetingId={meeting.id} />
-              <Markdown>{brief.content}</Markdown>
+              {brief.facts && brief.facts.length > 0 && <BriefFacts facts={brief.facts} />}
+              <div className="px-6 py-5">
+                <Markdown>{brief.content}</Markdown>
 
-              {brief.citations && <SourceList citations={brief.citations} />}
+                {brief.citations && <SourceList citations={brief.citations} />}
 
-              <div className="mt-6 border-t border-rule-soft pt-4">
-                <BriefButton meetingId={meeting.id} hasBrief />
+                <div className="mt-6 border-t border-rule-soft pt-4">
+                  <BriefButton meetingId={meeting.id} hasBrief />
+                </div>
               </div>
             </Card>
+          ) : meeting.status === "detected" || meeting.status === "brief_pending" ? (
+            // Research is already running for these two states — the sync
+            // starts it the moment a meeting is detected. Offering a button
+            // here invited a second run of work already in flight.
+            <BriefResearching companyName={account.companyName} />
           ) : (
             <Empty
               title="No brief yet"
@@ -342,6 +357,13 @@ export default async function MeetingPage({
           ))}
 
         {/* --- Ask about it -------------------------------------------------- */}
+        {meeting.status === "bot_requires_upgrade" && view === "brief" && (
+          <UpgradePrompt
+            companyName={account.companyName}
+            alreadyRequested={await hasOpenQuoteRequest(user.id)}
+          />
+        )}
+
         {view === "chat" && (
           <ChatPanel
             accountId={account.id}

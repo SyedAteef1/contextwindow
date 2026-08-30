@@ -29,7 +29,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Next reads the environment at build time for anything inlined into client
 # bundles; nothing secret is, so a placeholder is enough to satisfy validation.
-ENV NEXT_TELEMETRY_DISABLED=1
+# The runner stage copies `.next/standalone` and runs `node server.js`, so this
+# build — and only this build — needs standalone output. See next.config.ts.
+ENV NEXT_TELEMETRY_DISABLED=1 BUILD_STANDALONE=1
 # `.next/cache` is what makes a Next build incremental. It is not copied into
 # the runtime image — it exists only to make the next build cheaper.
 RUN --mount=type=cache,target=/app/.next/cache \

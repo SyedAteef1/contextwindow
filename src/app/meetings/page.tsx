@@ -5,7 +5,8 @@ import { MeetingsSidebar } from "@/components/meetings-sidebar";
 import { SyncButton } from "@/components/sync-button";
 import { TimeRail } from "@/components/time-rail";
 import { TimezoneSync } from "@/components/timezone-sync";
-import { Empty, Pill } from "@/components/ui";
+import { EmptyRail } from "@/components/empty-rail";
+import { Pill } from "@/components/ui";
 import {
   currentUser,
   listMeetingsForRail,
@@ -52,7 +53,7 @@ export default async function MeetingsPage() {
             </span>
           ) : null
         }
-        action={<SyncButton />}
+        action={ordered.length > 0 ? <SyncButton /> : null}
       />
 
       {freshBriefs.length > 0 && (
@@ -86,7 +87,7 @@ export default async function MeetingsPage() {
       )}
 
       {followups.length > 0 && (
-        <section className="mb-9 rounded-lg border border-signal/25 bg-signal-soft/45 px-5 py-4">
+        <section className="mb-9 rounded-lg border border-signal/25 bg-signal/[0.07] px-5 py-4">
           <div className="mb-3 flex items-center gap-2.5">
             <p className="eyebrow !text-signal">Waiting on you</p>
             <span className="h-px flex-1 bg-signal/20" aria-hidden />
@@ -114,13 +115,7 @@ export default async function MeetingsPage() {
       )}
 
       {ordered.length === 0 ? (
-        <Empty
-          title="No external calls found yet"
-          action={<SyncButton />}
-        >
-          Meetings with someone outside {user.emailDomain} show up here once your calendar is
-          checked. Each one gets a brief before the call and a summary after it.
-        </Empty>
+        <EmptyRail domain={user.emailDomain} />
       ) : (
         <TimeRail meetings={ordered} now={now} timeZone={user.timezone} />
       )}
