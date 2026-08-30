@@ -5,7 +5,7 @@
  * web search, writes to `meeting_briefs`, and indexes the result so the brief
  * is retrievable by the chat agent from the moment it exists.
  */
-import { eq } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/db";
@@ -53,6 +53,14 @@ function buildResearchRequest(input: {
   playbook: string;
   /** Who the *seller* is, in their own words. Read off their website at sign-up. */
   seller?: { name: string; sells: string | null; idealCustomer: string | null } | null;
+  /**
+   * Companies this workspace already works with.
+   *
+   * The strongest sentence a rep has is "your competitor already uses us", and
+   * it is the one piece of context no amount of web search can supply — it
+   * lives in this database and nowhere else.
+   */
+  ourAccounts?: { name: string; industry: string | null; stage: string }[];
 }): string {
   const lines: string[] = [];
 
@@ -106,6 +114,31 @@ function buildResearchRequest(input: {
         `Judge this buyer against that. Say plainly where they do not fit — a brief that flatters a bad prospect costs the rep the call.`,
       );
     }
+  }
+
+  if (input.ourAccounts && input.ourAccounts.length > 0) {
+    lines.push("");
+    lines.push(`## Companies we already work with`);
+    lines.push(
+      `Every name below is a real relationship of ours. Closed-won means they bought.`,
+    );
+    for (const other of input.ourAccounts) {
+      const parts = [other.name];
+      if (other.industry) parts.push(other.industry);
+      parts.push(other.stage.replace(/_/g, " "));
+      lines.push(`- ${parts.join(" — ")}`);
+    }
+    lines.push("");
+    lines.push(
+      `If any of them competes with ${input.companyName}, sells to the same buyers, or is ` +
+        `recognisably the same kind of company, put that in a section called ` +
+        `"Who else like them we work with" and say in one line why they are comparable. ` +
+        `That sentence is the strongest thing the rep can say on this call, so do not bury it.`,
+    );
+    lines.push(
+      `Only ever name a company from that list. Never invent a customer, and never imply we ` +
+        `work with someone we do not — a rep will repeat this out loud to the buyer.`,
+    );
   }
 
   if (input.playbook) {
@@ -164,9 +197,28 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
   // The seller's own context, gathered once at sign-up. Loaded here rather
   // than threaded through every caller: a brief is worth less without it, and
   // no caller should be able to forget it.
+  const workspaceId = await workspaceIdForAccount(account.id);
   const sellerWorkspace = await db.query.workspaces.findFirst({
-    where: eq(workspaces.id, await workspaceIdForAccount(account.id)),
+    where: eq(workspaces.id, workspaceId),
   });
+
+  /*
+   * The other companies this workspace sells to.
+   *
+   * Capped and ordered so a large workspace does not spend its whole prompt
+   * budget on a customer list: won deals first, because "they bought" is the
+   * claim worth making, then everyone else.
+   */
+  const siblings = await db
+    .select({
+      name: accounts.companyName,
+      industry: accounts.industry,
+      stage: accounts.dealStage,
+    })
+    .from(accounts)
+    .where(and(eq(accounts.workspaceId, workspaceId), ne(accounts.id, account.id)))
+    .orderBy(sql`case when ${accounts.dealStage} = 'closed_won' then 0 else 1 end`)
+    .limit(40);
 
   const prompt = buildResearchRequest({
     companyName: account.companyName,
@@ -178,6 +230,7 @@ export async function generateMeetingBrief(meetingId: string): Promise<BriefResu
     externalAttendees,
     knownContacts,
     playbook,
+    ourAccounts: siblings,
     seller: sellerWorkspace
       ? {
           name: sellerWorkspace.name,
