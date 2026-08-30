@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BriefButton } from "@/components/brief-button";
+import { BriefResearching } from "@/components/brief-researching";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { Page } from "@/components/chrome";
 import { CallPlayback } from "@/components/call-playback";
@@ -307,6 +308,11 @@ export default async function MeetingPage({
                 <BriefButton meetingId={meeting.id} hasBrief />
               </div>
             </Card>
+          ) : meeting.status === "detected" || meeting.status === "brief_pending" ? (
+            // Research is already running for these two states — the sync
+            // starts it the moment a meeting is detected. Offering a button
+            // here invited a second run of work already in flight.
+            <BriefResearching companyName={account.companyName} />
           ) : (
             <Empty
               title="No brief yet"
