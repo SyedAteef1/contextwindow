@@ -583,3 +583,21 @@ describe("research agent", () => {
     expect(rows[0].notifiedAt).toBeNull();
   });
 });
+
+/**
+ * "Your competitor already uses us."
+ *
+ * The one thing no amount of web search can supply — it lives in this database
+ * and nowhere else — so the prompt has to carry it, and has to forbid inventing
+ * it. A rep repeats this sentence to the buyer's face.
+ */
+describe("research prompt: who we already work with", () => {
+  it("lists our own accounts and forbids naming anyone else", async () => {
+    const { RESEARCH_SYSTEM } = await import("@/agents/prompts");
+    expect(RESEARCH_SYSTEM).toContain("Who else like them we work with");
+    expect(RESEARCH_SYSTEM).toContain("never invent a customer");
+    // The escape hatch matters as much as the section: a stretched comparison
+    // is worse than none, because it burns the rep's credibility mid-call.
+    expect(RESEARCH_SYSTEM).toContain("Omit the section entirely");
+  });
+});
