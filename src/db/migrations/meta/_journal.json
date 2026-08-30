@@ -141,6 +141,13 @@
       "when": 1787481099562,
       "tag": "0019_brief_facts",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787481099563,
+      "tag": "0020_quote_requests",
+      "breakpoints": true
     }
   ]
 }

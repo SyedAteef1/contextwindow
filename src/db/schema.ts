@@ -700,6 +700,45 @@ export const calendarChannels = pgTable(
   ],
 );
 
+/**
+ * A team asking what Pro costs.
+ *
+ * Distinct from `demo_requests`, which is a stranger with no account. This is a
+ * signed-in workspace saying they want the notetaker, so it already knows who
+ * they are and how many of them there are — the whole form is a seat count and
+ * an optional sentence.
+ *
+ * Deliberately a request rather than a checkout. Every team gets engineers in
+ * the room for setup, so the price depends on what they connect; a card field
+ * would be quoting before anyone has asked what they need.
+ */
+export const quoteStatusEnum = pgEnum("quote_status", ["requested", "quoted", "closed"]);
+
+export const quoteRequests = pgTable(
+  "quote_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    /** Who asked. Kept so the reply goes to a person, not to a domain. */
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    seats: integer("seats"),
+    note: text("note"),
+    status: quoteStatusEnum("status").notNull().default("requested"),
+    /** When a price was actually sent back. */
+    quotedAt: timestamp("quoted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("ix_quote_workspace").on(t.workspaceId),
+    // The queue: what has been asked and not yet answered.
+    index("ix_quote_status").on(t.status, t.createdAt),
+  ],
+);
+
 export const authEventEnum = pgEnum("auth_event", ["signed_up", "signed_in"]);
 
 /**

@@ -7,7 +7,7 @@
 import { and, eq, lt, sql } from "drizzle-orm";
 
 import { db } from "@/db";
-import { usage, users, workspaces } from "@/db/schema";
+import { quoteRequests, usage, users, workspaces } from "@/db/schema";
 import { env } from "./env";
 
 export type Plan = "free" | "pro";
@@ -158,4 +158,20 @@ export async function setFreeTierLimit(userId: string, limit: number): Promise<U
     .set({ freeTierLimit: limit, updatedAt: new Date() })
     .where(eq(usage.userId, userId));
   return getUsage(userId);
+}
+
+/**
+ * Whether this workspace is already waiting on a price.
+ *
+ * Asked by every surface that shows the upgrade prompt, so a rep who requested
+ * a quote on Monday is not asked again on Tuesday by a different screen.
+ */
+export async function hasOpenQuoteRequest(userId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: quoteRequests.id })
+    .from(users)
+    .innerJoin(quoteRequests, eq(quoteRequests.workspaceId, users.workspaceId))
+    .where(and(eq(users.id, userId), eq(quoteRequests.status, "requested")))
+    .limit(1);
+  return rows.length > 0;
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "@/db";
@@ -6,9 +5,10 @@ import { workspaceDocuments, workspaces } from "@/db/schema";
 import { AccountKnowledge } from "@/components/account-knowledge";
 import { Page, PageHead } from "@/components/chrome";
 import { Eyebrow, Pill } from "@/components/ui";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { WorkspaceProfile } from "@/components/workspace-profile";
 import { currentUser } from "@/lib/queries";
-import { getUsage, planForUser } from "@/lib/usage";
+import { getUsage, hasOpenQuoteRequest, planForUser } from "@/lib/usage";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +50,8 @@ export default async function KnowledgePage() {
     getUsage(user.id),
     planForUser(user.id),
   ]);
+
+  const quoteOpen = plan === "free" ? await hasOpenQuoteRequest(user.id) : false;
 
   if (!workspace) {
     return (
@@ -135,15 +137,14 @@ export default async function KnowledgePage() {
               )}
             </dl>
 
-            {plan === "free" && (
-              <Link
-                href="/#pricing"
-                className="mt-4 inline-flex items-center rounded bg-cobalt-deep px-4 py-2 text-[13px] font-semibold text-ink transition-transform duration-150 ease-out active:scale-[0.97]"
-              >
-                Request the bot
-              </Link>
-            )}
+
           </div>
+
+          {plan === "free" && (
+            <div className="mt-4">
+              <UpgradePrompt alreadyRequested={quoteOpen} />
+            </div>
+          )}
         </section>
       </div>
     </Page>

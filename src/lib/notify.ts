@@ -39,6 +39,15 @@ export type NotifyEvent =
       domain: string;
     }
   | {
+      /** A signed-in team asking what Pro costs. Goes where arrivals go. */
+      kind: "quote_request";
+      email: string;
+      company: string;
+      seats?: number | null;
+      note?: string | null;
+      plan: string;
+    }
+  | {
       kind: "demo_request";
       name: string;
       email: string;
@@ -79,6 +88,17 @@ function render(event: NotifyEvent): { title: string; lines: string[] } {
         `*${event.name ?? event.email}*`,
         event.name ? event.email : "",
         `Domain: ${event.domain}`,
+      ].filter(Boolean),
+    };
+  }
+  if (event.kind === "quote_request") {
+    return {
+      title: "Quote requested",
+      lines: [
+        `*${event.company}* wants Pro`,
+        event.email,
+        event.seats ? `Seats: ${event.seats}` : "",
+        event.note ? `\n> ${event.note}` : "",
       ].filter(Boolean),
     };
   }

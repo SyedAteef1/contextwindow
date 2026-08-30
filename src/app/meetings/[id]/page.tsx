@@ -5,6 +5,7 @@ import { BriefButton } from "@/components/brief-button";
 import { BriefResearching } from "@/components/brief-researching";
 import { BriefFacts } from "@/components/brief-facts";
 import { UpgradePrompt } from "@/components/upgrade-prompt";
+import { hasOpenQuoteRequest } from "@/lib/usage";
 import { Page } from "@/components/chrome";
 import { CallPlayback } from "@/components/call-playback";
 import { MeetingNav } from "@/components/meeting-nav";
@@ -357,7 +358,10 @@ export default async function MeetingPage({
 
         {/* --- Ask about it -------------------------------------------------- */}
         {meeting.status === "bot_requires_upgrade" && view === "brief" && (
-          <UpgradePrompt companyName={account.companyName} />
+          <UpgradePrompt
+            companyName={account.companyName}
+            alreadyRequested={await hasOpenQuoteRequest(user.id)}
+          />
         )}
 
         {view === "chat" && (
