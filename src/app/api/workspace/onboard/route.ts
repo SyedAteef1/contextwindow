@@ -16,12 +16,13 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { workspaceDocuments, workspaces } from "@/db/schema";
+import { workspaces } from "@/db/schema";
 import { badRequest, handler, requireUser } from "@/lib/api";
-import { normaliseUrl, scrapeCompanySite } from "@/lib/scrape";
+import { normaliseUrl } from "@/lib/scrape";
+import { ingestCompanyWebsite } from "@/lib/company-profile";
 import { syncUserCalendar } from "@/lib/pipeline/calendar-sync";
 import { startCalendarWatch } from "@/lib/google/calendar-watch";
-import { indexDocument } from "@/lib/retrieval";
+
 
 export const maxDuration = 60;
 
@@ -55,44 +56,17 @@ export const POST = handler(async (request: Request) => {
 
   if (!workspace) throw badRequest("No workspace for this account.");
 
+  // One read, understood rather than stored raw. Awaited because the rep is
+  // watching a spinner they expect: this is the ten seconds that decides
+  // whether their first brief sounds like their company or like nobody's.
   let scraped = false;
   if (url) {
-    const site = await scrapeCompanySite(url.toString());
-    if (site) {
-      // Stored with a null accountId, which is what marks it as the seller's
-      // own material — retrieval unions that with per-account documents, so it
-      // reaches every brief without being attached to any one prospect.
-      const [doc] = await db
-        .insert(workspaceDocuments)
-        .values({
-          workspaceId: workspace.id,
-          accountId: null,
-          title: site.title ?? `${workspace.name} — website`,
-          content: site.text,
-          kind: "positioning",
-        })
-        .returning();
-
-      await db
-        .update(workspaces)
-        .set({ description: site.text.slice(0, 2000), updatedAt: new Date() })
-        .where(eq(workspaces.id, workspace.id));
-
-      try {
-        await indexDocument({
-          workspaceId: workspace.id,
-          accountId: null,
-          sourceType: "workspace_doc",
-          sourceId: doc.id,
-          content: site.text,
-        });
-      } catch (error) {
-        // Indexing can fail on a missing embedding provider; the document is
-        // stored either way and a reindex will pick it up.
-        console.error("Indexing the scraped site failed:", error);
-      }
-      scraped = true;
-    }
+    const result = await ingestCompanyWebsite({
+      workspaceId: workspace.id,
+      name: workspace.name,
+      url: url.toString(),
+    });
+    scraped = result.scraped;
   }
 
   /*

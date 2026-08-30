@@ -13,10 +13,10 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
-import { workspaceDocuments, workspaces } from "@/db/schema";
+import { workspaces } from "@/db/schema";
 import { badRequest, handler, requireUser } from "@/lib/api";
-import { indexDocument } from "@/lib/retrieval";
-import { normaliseUrl, scrapeCompanySite } from "@/lib/scrape";
+import { normaliseUrl } from "@/lib/scrape";
+import { ingestCompanyWebsite } from "@/lib/company-profile";
 
 export const maxDuration = 60;
 
@@ -56,39 +56,15 @@ export const PATCH = handler(async (request: Request) => {
 
   let scraped = false;
   if (body?.rescrape && workspace.website) {
-    const site = await scrapeCompanySite(workspace.website);
-    if (!site) {
+    const result = await ingestCompanyWebsite({
+      workspaceId,
+      name: workspace.name,
+      url: workspace.website,
+    });
+    if (!result.scraped) {
       throw badRequest(
         "Couldn't read that site — it may block automated readers. Paste the important part below instead.",
       );
-    }
-
-    const [doc] = await db
-      .insert(workspaceDocuments)
-      .values({
-        workspaceId,
-        accountId: null,
-        title: site.title ?? `${workspace.name} — website`,
-        content: site.text,
-        kind: "positioning",
-      })
-      .returning();
-
-    await db
-      .update(workspaces)
-      .set({ description: site.text.slice(0, 2000), updatedAt: new Date() })
-      .where(eq(workspaces.id, workspaceId));
-
-    try {
-      await indexDocument({
-        workspaceId,
-        accountId: null,
-        sourceType: "workspace_doc",
-        sourceId: doc.id,
-        content: site.text,
-      });
-    } catch (error) {
-      console.error("Indexing the re-read site failed:", error);
     }
     scraped = true;
   }
