@@ -23,30 +23,42 @@ async function notifySlack(lead: Record<string, string>): Promise<boolean> {
     return false;
   }
 
+  const source = (lead.source ?? '').trim() || 'book-a-demo';
+  // Landing-page brief requests come through the same intake; only the framing differs.
+  const isBrief = source === 'brief-request';
+
   const name = esc(lead.name) || '—';
   const company = esc(lead.company) || '—';
-  const phone = esc(lead.phone) || '—';
-  const teamSize = esc(lead.teamSize) || '—';
+  const phone = esc(lead.phone);
+  const teamSize = esc(lead.teamSize);
   const wants = esc(lead.message);
   const emailRaw = (lead.email ?? '').trim();
   const emailField = emailRaw ? `<mailto:${emailRaw}|${esc(emailRaw)}>` : '—';
 
-  const fallback = `🚀 New demo request — ${name} · ${emailRaw || '—'} · ${company}`;
+  const heading = isBrief ? '🗂️ New brief request' : '🚀 New demo request';
+  const companyLabel = isBrief ? 'Meeting with' : 'Company';
+  const detailsLabel = isBrief ? 'Call details' : 'Wants to see';
+
+  const fallback = `${heading} — ${name} · ${emailRaw || '—'} · ${company}`;
   const blocks: unknown[] = [
-    { type: 'header', text: { type: 'plain_text', text: '🚀 New demo request', emoji: true } },
+    { type: 'header', text: { type: 'plain_text', text: heading, emoji: true } },
     {
       type: 'section',
       fields: [
         { type: 'mrkdwn', text: `*Name*\n${name}` },
-        { type: 'mrkdwn', text: `*Company*\n${company}` },
+        { type: 'mrkdwn', text: `*${companyLabel}*\n${company}` },
         { type: 'mrkdwn', text: `*Work email*\n${emailField}` },
-        { type: 'mrkdwn', text: `*Phone*\n${phone}` },
-        { type: 'mrkdwn', text: `*Team size*\n${teamSize}` },
+        // Phone / team size only exist on the demo form — hide the empty rows otherwise.
+        ...(phone ? [{ type: 'mrkdwn', text: `*Phone*\n${phone}` }] : []),
+        ...(teamSize ? [{ type: 'mrkdwn', text: `*Team size*\n${teamSize}` }] : []),
       ],
     },
-    ...(wants ? [{ type: 'section', text: { type: 'mrkdwn', text: `*Wants to see*\n${wants}` } }] : []),
+    ...(wants ? [{ type: 'section', text: { type: 'mrkdwn', text: `*${detailsLabel}*\n${wants}` } }] : []),
     { type: 'divider' },
-    { type: 'context', elements: [{ type: 'mrkdwn', text: '📨 Submitted via *contextwindowhq.com*' }] },
+    {
+      type: 'context',
+      elements: [{ type: 'mrkdwn', text: `📨 Submitted via *contextwindowhq.com* · source: \`${esc(source)}\`` }],
+    },
   ];
 
   try {
@@ -88,7 +100,7 @@ export async function POST(req: Request) {
       properties: {
         company: body.company,
         team_size: body.teamSize,
-        source: body.source ?? "book-a-demo",
+        source: body.source ?? 'book-a-demo',
         slack_notified: slackOk,
         db_saved: dbOk,
       },
