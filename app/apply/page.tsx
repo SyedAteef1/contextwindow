@@ -127,7 +127,7 @@ export default function ApplyPage() {
 
       {/* Close */}
       <button
-        onClick={() => router.push("/landing")}
+        onClick={() => router.push("/")}
         aria-label="Close"
         className="fixed right-5 top-5 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/70 transition-colors duration-300 hover:border-white/40 hover:text-white"
       >
@@ -136,7 +136,7 @@ export default function ApplyPage() {
 
       <div className="relative z-10 mx-auto my-12 w-full max-w-[560px]">
         {/* Brand lockup */}
-        <Link href="/landing" className="mb-8 flex items-baseline justify-center text-[15px] tracking-[-0.02em]">
+        <Link href="/" className="mb-8 flex items-baseline justify-center text-[15px] tracking-[-0.02em]">
           <span className="font-semibold text-white">Context&nbsp;Window</span>
           <span className="font-normal text-white/45">&nbsp;\&nbsp;HQ</span>
         </Link>
@@ -288,7 +288,7 @@ export default function ApplyPage() {
                   Context Window HQ will reach out shortly.
                 </p>
                 <Link
-                  href="/landing"
+                  href="/"
                   className="mt-2 inline-flex items-center justify-center rounded-[75px] border border-white/25 px-7 py-3 text-[14px] text-white/90 transition-colors duration-300 hover:border-white/60"
                 >
                   Back to home
